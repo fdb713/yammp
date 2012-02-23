@@ -1,3 +1,23 @@
+/*
+ *  YAMMP - Yet Another Multi Media Player for android
+ *  Copyright (C) 2011-2012  Mariotaku Lee <mariotaku.lee@gmail.com>
+ *
+ *  This file is part of YAMMP.
+ *
+ *  YAMMP is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  YAMMP is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with YAMMP.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.yammp.app;
 
 import org.yammp.Constants;
@@ -11,6 +31,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Debug;
@@ -34,7 +57,6 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
@@ -48,7 +70,7 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 	private int mSelectedPosition;
 	private long mSelectedId;
 	private String mCurrentAlbumName, mCurrentArtistNameForAlbum;
-	private int mIdIdx, mAlbumIdx, mArtistIdx;
+	private int mIdIdx, mAlbumIdx, mArtistIdx, mArtIdx;
 	private boolean mBusy = false;
 	private int mFirstVisible, mLastVisible;
 
@@ -112,7 +134,7 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
-		String[] cols = new String[] { Audio.Albums._ID, Audio.Albums.ALBUM, Audio.Albums.ARTIST };
+		String[] cols = new String[] { Audio.Albums._ID, Audio.Albums.ALBUM, Audio.Albums.ARTIST, Audio.Albums.ALBUM_ART };
 		Uri uri = Audio.Albums.EXTERNAL_CONTENT_URI;
 		return new CursorLoader(getActivity(), uri, cols, null, null,
 				Audio.Albums.DEFAULT_SORT_ORDER);
@@ -131,6 +153,7 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 		mIdIdx = data.getColumnIndexOrThrow(Audio.Albums._ID);
 		mAlbumIdx = data.getColumnIndexOrThrow(Audio.Albums.ALBUM);
 		mArtistIdx = data.getColumnIndexOrThrow(Audio.Albums.ARTIST);
+		mArtIdx = data.getColumnIndexOrThrow(Audio.Albums.ALBUM_ART);
 
 		mAdapter.changeCursor(data);
 		mFirstVisible = mGridView.getFirstVisiblePosition();
@@ -219,7 +242,8 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 	}
 
 	@Override
-	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount,
+			int totalItemCount) {
 		mFirstVisible = firstVisibleItem;
 		mLastVisible = firstVisibleItem + visibleItemCount;
 	}
@@ -290,6 +314,8 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 
 	private class AlbumsAdapter extends SimpleCursorAdapter {
 
+		private final BitmapDrawable mDefaultAlbumIcon;
+		
 		private class ViewHolder {
 
 			TextView album_name;
@@ -307,6 +333,11 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 		private AlbumsAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to,
 				int flags) {
 			super(context, layout, cursor, from, to, flags);
+			 Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.ic_mp_albumart_unknown);
+            mDefaultAlbumIcon = new BitmapDrawable(getResources(), b);
+         // no filter or dither, it's a lot faster and we can't tell the difference
+            mDefaultAlbumIcon.setFilterBitmap(false);
+            mDefaultAlbumIcon.setDither(false);
 		}
 
 		@Override
@@ -343,30 +374,44 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 			int width = getResources().getDimensionPixelSize(R.dimen.gridview_bitmap_width);
 			int height = getResources().getDimensionPixelSize(R.dimen.gridview_bitmap_height);
 
-			Log.i("Debug", "usedMemory: " + Debug.getNativeHeapSize()/ 1024);
-			
+			Log.i("Debug", "usedMemory: " + Debug.getNativeHeapSize() / 1024);
+
 			if (viewholder != null && viewholder.album_art != null) {
+
+			 String art = cursor.getString(mArtIdx);
 				
-				if (cursor.getPosition() >= mFirstVisible - 1 && cursor.getPosition() <= mLastVisible + 1) {
-					//Bitmap result = MusicUtils.getCachedArtworkBitmap(getActivity(), aid, width, height);
-					Bitmap result = MusicUtils.getArtworkQuick(getActivity(), aid, width, height);
-					if (result != null) {
-						viewholder.album_art.setImageBitmap(result);
-					} else {
-					viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-					}
-				} else {
-					//viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-				}
-//					Log.d("debug", "mBusy = " + mBusy +  ", position = " + cursor.getPosition());
-//					if (mBusy) {
-//						viewholder.album_art.setVisibility(View.INVISIBLE);
+	            if (art == null || art.length() == 0) {
+	            	viewholder.album_art.setImageDrawable(mDefaultAlbumIcon);
+	            } else {
+	                Drawable d = MusicUtils.getCachedArtwork(context, aid, mDefaultAlbumIcon);
+	                viewholder.album_art.setImageDrawable(d);
+	                d = null;
+	            }
+				
+				//if (cursor.getPosition() >= mFirstVisible - 1
+				//		&& cursor.getPosition() <= mLastVisible + 1) {
+					// Bitmap result =
+					// MusicUtils.getCachedArtworkBitmap(getActivity(), aid,
+					// width, height);
+//					Bitmap result = MusicUtils.getArtworkQuick(getActivity(), aid, width, height);
+//					if (result != null) {
+//						viewholder.album_art.setImageBitmap(result);
 //					} else {
-//						viewholder.album_art.setVisibility(View.VISIBLE);
-//						
 //						viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
 //					}
-				
+				//} else {
+				// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+				//}
+				// Log.d("debug", "mBusy = " + mBusy + ", position = " +
+				// cursor.getPosition());
+				// if (mBusy) {
+				// viewholder.album_art.setVisibility(View.INVISIBLE);
+				// } else {
+				// viewholder.album_art.setVisibility(View.VISIBLE);
+				//
+				// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+				// }
+
 			}
 
 			long currentalbumid = MusicUtils.getCurrentAlbumId();

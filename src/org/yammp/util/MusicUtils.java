@@ -36,7 +36,9 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
@@ -1337,6 +1339,7 @@ public class MusicUtils implements Constants {
 	private static final BitmapFactory.Options mBitmapOptions = new BitmapFactory.Options();
 	private static final Uri mArtworkUri = Uri.parse("content://media/external/audio/albumart");
 	private static final HashMap<Long, Bitmap> mArtBitmapCache = new HashMap<Long, Bitmap>();
+	private static final HashMap<Long, Drawable> mArtCache = new HashMap<Long, Drawable>();
 	private static int mArtCacheId = -1;
 
 	static {
@@ -1387,6 +1390,33 @@ public class MusicUtils implements Constants {
 		}
 		return art;
 	}
+	
+	public static Drawable getCachedArtwork(Context context, long artIndex, BitmapDrawable defaultArtwork) {
+        Drawable d = null;
+        synchronized(mArtCache) {
+            d = mArtCache.get(artIndex);
+        }
+        if (d == null) {
+            d = defaultArtwork;
+            final Bitmap icon = defaultArtwork.getBitmap();
+            int w = icon.getWidth();
+            int h = icon.getHeight();
+            Bitmap b = MusicUtils.getArtworkQuick(context, artIndex, w, h);
+            if (b != null) {
+                d = new BitmapDrawable(b);
+                synchronized(mArtCache) {
+                    // the cache may have changed since we checked
+                    Drawable value = mArtCache.get(artIndex);
+                    if (value == null) {
+                        mArtCache.put(artIndex, d);
+                    } else {
+                        d = value;
+                    }
+                }
+            }
+        }
+        return d;
+    }
 
 	// Get album art for specified album. This method will not try to
 	// fall back to getting artwork directly from the file, nor will
@@ -1429,17 +1459,16 @@ public class MusicUtils implements Constants {
 				if (b != null) {
 					// finally rescale to exactly the size we need
 					if (mBitmapOptionsCache.outWidth != w || mBitmapOptionsCache.outHeight != h) {
-						
+
 						int value = 0;
 						if (b.getHeight() <= b.getWidth()) {
 							value = b.getHeight();
 						} else {
 							value = b.getWidth();
 						}
-						
-						Bitmap tmp = Bitmap.createBitmap(b,
-								(b.getWidth() - value) / 2, (b.getHeight() - value) / 2,
-								value, value);
+
+						Bitmap tmp = Bitmap.createBitmap(b, (b.getWidth() - value) / 2,
+								(b.getHeight() - value) / 2, value, value);
 						// Bitmap.createScaledBitmap() can return the same
 						// bitmap
 						if (tmp != b) b.recycle();
@@ -1735,4 +1764,27 @@ public class MusicUtils implements Constants {
 			}
 		}
 	}
+	
+	// A really simple BitmapDrawable-like class, that doesn't do
+    // scaling, dithering or filtering.
+    private static class FastBitmapDrawable extends Drawable {
+        private Bitmap mBitmap;
+        public FastBitmapDrawable(Bitmap b) {
+            mBitmap = b;
+        }
+        @Override
+        public void draw(Canvas canvas) {
+            canvas.drawBitmap(mBitmap, 0, 0, null);
+        }
+        @Override
+        public int getOpacity() {
+            return PixelFormat.OPAQUE;
+        }
+        @Override
+        public void setAlpha(int alpha) {
+        }
+        @Override
+        public void setColorFilter(ColorFilter cf) {
+        }
+    }
 }
