@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+** Copyright 2007, The Android Open Source Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License"); 
+** you may not use this file except in compliance with the License. 
+** You may obtain a copy of the License at 
+**
+**	 http://www.apache.org/licenses/LICENSE-2.0 
+**
+** Unless required by applicable law or agreed to in writing, software 
+** distributed under the License is distributed on an "AS IS" BASIS, 
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+** See the License for the specific language governing permissions and 
+** limitations under the License.
+*/
+-->
+
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+	<string name="goto_start">媒体库</string>
+	<string name="goto_playback">正在播放</string>
+	<string name="shuffle_all">全部随机播放</string>
+	<string name="play_all">全部播放</string>
+	<string name="delete_artist_desc">All songs by <xliff:g id="artist">%s</xliff:g> will be permanently deleted from your device.</string>
+	<string name="delete_album_desc">The entire album \"<xliff:g id="album">%s</xliff:g>\" will be permanently deleted from your device.</string>
+	<string name="delete_song_desc">\"<xliff:g id="song">%s</xliff:g>\" will be permanently deleted from your device.</string>
+	<string name="scanning">正在扫描媒体库…</string>
+	<string name="all_media">All media</string>
+	<string name="no_tracks">No songs</string>
+	<string name="no_playlists">No playlists</string>
+	<string name="delete">删除</string>
+	<string name="edit">编辑</string>
+	<string name="rename">更名</string>
+	<string name="playlist_deleted">Playlist deleted.</string>
+	<string name="playlist_renamed">Playlist renamed.</string>
+	<string name="podcasts">播客</string>
+	<string name="favorites">收藏</string>
+	<string name="my_playlists">我的播放列表</string>
+	<string name="smart_playlists">智能播放列表</string>
+	<string name="sdcard_missing_title">No SD card</string>
+	<string name="sdcard_missing_title_nosdcard">No USB storage</string>
+	<string name="sdcard_missing">Your phone does not have an SD card inserted.</string>
+	<string name="sdcard_missing_nosdcard">Your phone does not have USB storage.</string>
+	<string name="sdcard_busy_title">SD card unavailable</string>
+	<string name="sdcard_busy_title_nosdcard">USB storage unavailable</string>
+	<string name="sdcard_busy">Sorry, your SD card is busy.</string>
+	<string name="sdcard_busy_nosdcard">Sorry, your USB storage is busy.</string>
+	<string name="sdcard_error_title">SD card error</string>
+	<string name="sdcard_error_title_nosdcard">USB storage error</string>
+	<string name="sdcard_error">An error was encountered on your SD card.</string>
+	<string name="sdcard_error_nosdcard">An error was encountered on your USB storage.</string>
+	<string name="unknown_artist">未知艺术家</string>
+	<string name="unknown_album">未知专辑</string>
+	<string name="shuffle_on_notif">Shuffle is on.</string>
+	<string name="shuffle_off_notif">Shuffle is off.</string>
+	<string name="repeat_off_notif">Repeat is off.</string>
+	<string name="repeat_current_notif">Repeating current song.</string>
+	<string name="repeat_all_notif">Repeating all songs.</string>
+	<string name="play_selection">播放</string>
+	<string name="add_to_playlist">添加到播放列表</string>
+	<string name="queue">当前播放列表</string>
+	<string name="new_playlist">新建</string>
+	<string name="new_playlist_name_template">新播放列表 <xliff:g id="number">%d</xliff:g></string>
+	<string name="emptyplaylist">选择的播放列表为空。</string>
+	<string name="empty_queue">当前的播放列表为空。</string>
+	<string name="create_playlist_create_text">保存</string>
+	<string name="create_playlist_overwrite_text">覆盖</string>
+	<string name="service_start_error_title">Playback problem</string>
+	<string name="service_start_error_msg">Sorry, the song could not be played.</string>
+	<string name="save_as_playlist">Save as playlist</string>
+	<string name="clear_playlist">Clear playlist</string>
+	<string name="shortcut_label">Music playlist</string>
+	<string name="music_label">音乐</string>
+	<string name="playback_failed">Sorry, the player does not support this type of audio file.</string>
+	<string name="remove_from_playlist">Remove from playlist</string>
+	<string name="streamloadingtext">Connecting to <xliff:g id="host">%s</xliff:g></string>
+	<string name="mediasearch">通过以下方式搜索 <xliff:g id="term" example="久石讓">%s</xliff:g></string>
+	<string name="working_artists">Artists\u2026</string>
+	<string name="working_albums">Albums\u2026</string>
+	<string name="working_songs">Songs\u2026</string>
+	<string name="working_playlists">Playlists\u2026</string>
+	<string name="loading">Loading</string>
+	<string name="sort_by_track">Tracks</string>
+	<string name="sort_by_album">Albums</string>
+	<string name="sort_by_artist">Artists</string>
+	<string name="music_picker_title">Select music track</string>
+	<string name="gadget_track">Track <xliff:g id="track_number">%d</xliff:g></string>
+	<string name="fail_to_start_stream">Failed to play the requested stream.</string>
+	<string name="search_settings_description">Artists, albums, and tracks</string>
+	<string name="search_hint">搜索音乐</string>
+	<string name="widget_initial_text">Touch to select music.</string>
+	<string name="settings">设置</string>
+	<string name="enable_focus_loss_ducking_title">Focus loss ducking</string>
+	<string name="enable_focus_loss_ducking_summary">Instead of pausing playback, lower playback volume during audible notifications</string>
+	<string name="sleep_timer_disabled">Sleep timer disabled</string>
+	<string name="sleep_timer_enabled">Sleep timer enabled</string>
+	<string name="notification_sleep_timer">Music playback will stop at <xliff:g id="time">%s</xliff:g></string>
+	<string name="test">Test</string>
+	<string name="save">Save</string>
+	<string name="overwrite">Overwrite</string>
+	<string name="delete_music">删除曲目</string>
+	<string name="delete_lyrics">删除歌词</string>
+	<string name="touch_to_shuffle_all">轻触此处随机播放所有曲目</string>
+	<string name="delete_confirm">Following items will be deleted from your device:<xliff:g id="content">%s</xliff:g></string>
+	<string name="delete_artist_tracks">All songs by <xliff:g id="artist">%s</xliff:g></string>
+	<string name="delete_artist_lyrics">All lyrics from songs by <xliff:g id="artist">%s</xliff:g></string>
+	<string name="delete_album_tracks">Songs in the album \"<xliff:g id="album">%s</xliff:g>\"</string>
+	<string name="delete_album_lyrics">Lyrics from album \"<xliff:g id="album">%s</xliff:g>\"</string>
+	<string name="delete_song_track">Song \"<xliff:g id="song">%s</xliff:g>\"</string>
+	<string name="delete_song_lyrics">Lyrics of \"<xliff:g id="song">%s</xliff:g>\"</string>
+	<string name="now_playing">正在播放</string>
+	<string name="music_library">音乐库</string>
+	<string name="artists">艺术家</string>
+	<string name="albums">专辑</string>
+	<string name="tracks">曲目</string>
+	<string name="playlists">播放列表</string>
+	<string name="genres">流派</string>
+	<string name="artist">艺术家</string>
+	<string name="album">专辑</string>
+	<string name="track">曲目</string>
+	<string name="playlist">播放列表</string>
+	<string name="genre">流派</string>
+	<string name="recently_added">最近添加</string>
+	<string name="error_bad_parameters">你以错误的方式启动了这个Activity！请参阅项目页面上的文档解决出现的问题。</string>
+	<string name="added_to_favorites">已添加到收藏。</string>
+	<string name="removed_from_favorites">已从收藏中移除。</string>
+	<string name="sleep_timer">睡眠计时器</string>
+	<string name="disabled">禁用</string>
+	<string name="create_playlist_prompt">播放列表名称</string>
+	<string name="rename_playlist_prompt">重命名 \"<xliff:g id="playlist">%s</xliff:g>\"</string>
+	<string name="service_start_error">媒体回放错误</string>
+	<string name="set_time">设置时间</string>
+	<string name="music_picker">选择音轨</string>
+	<string name="widget_label_4x1">音沐音乐播放器（4x1）</string>
+	<string name="widget_label_4x2">音沐音乐播放器（4x2）</string>
+	<string name="widget_label_2x2">音沐音乐播放器（2x2）</string>
+	<string name="playback_service_name">音沐媒体播放服务</string>
+	<string name="base_settings">基本设置</string>
+	<string name="appearances_settings">外观设置</string>
+	<string name="other_settings">其他设置</string>
+	<string name="ui_color">界面配色</string>
+	<string name="ui_color_auto">Change automatically</string>
+	<string name="ui_color_auto_summaryon">Color will change to current album cover\'s main color</string>
+	<string name="ui_color_auto_summaryoff">Color will change to customized color</string>
+	<string name="ui_color_customize">Customize color</string>
+	<string name="ui_color_customize_summary">Choose UI color</string>
+	<string name="pick_color">选择颜色</string>
+	<string name="press_color_to_apply">按下色彩应用设置</string>
+	<string name="visualizer">可视化效果</string>
+	<string name="visualizer_type">可视化类型</string>
+	<string name="visualizer_type_summary">屏幕上显示的可视化效果的样式</string>
+	<string name="visualizer_antialias">抗锯齿效果</string>
+	<string name="visualizer_antialias_summaryon">效果更好，但是速度较慢</string>
+	<string name="visualizer_antialias_summaryoff">速度更快，但是会降低质量</string>
+	<string name="visualizer_refreshrate">刷新率</string>
+	<string name="visualizer_refreshrate_summary">可视化效果的刷新率</string>
+	<string name="visualizer_accuracy">精度</string>
+	<string name="visualizer_accuracy_summary">可视化效果的显示精度</string>
+	<string name="rescan_media">刷新媒体库</string>
+	<string name="rescan_media_summary">重新扫描设备中的所有媒体</string>
+	<string name="shaking_enabled">启用摇晃设备</string>
+	<string name="shaking_enabled_summary">启用摇晃设备的快捷操作</string>
+	<string name="shaking_behavior">摇晃设备行为</string>
+	<string name="shaking_behavior_summary">选择设备摇晃时设备的行为</string>
+	<string name="shaking_calibration">调整摇晃灵敏度</string>
+	<string name="shaking_calibration_summary">调整摇晃灵敏度以适应你的习惯</string>
+	<string name="shaking_calibration_manual">长按下面的按键，以你喜欢的方式摇晃设备，摇晃完毕后松开按键。注意！请在摇晃时握紧设备！</string>
+	<string name="credits_cat">感谢</string>
+	<string name="credits">关于与感谢</string>
+	<string name="app_name">音沐音乐播放器</string>
+	<string name="version">版本</string>
+	<string name="haptic_feedback">震动反馈</string>
+	<string name="haptic_feedback_summary">当检测到摇晃行为时震动设备</string>
+	<string name="play_toast">播放</string>
+	<string name="pause_toast">暂停</string>
+	<string name="next_toast">下一曲目</string>
+	<string name="prev_toast">上一曲目</string>
+	<string name="equalizer">均衡器</string>
+	<string name="equalizer_presets">预置项</string>
+	<string name="equalizer_reset">重置</string>
+	<string name="enable_scrobbling">Last.fm Scrobbling</string>
+	<string name="enable_scrobbling_summary">Scobble music to last.fm</string>
+	<string name="lyrics_not_exist">歌词不存在</string>
+	<string name="lyrics_invalid">歌词不能读取</string>
+	<string name="search_albumart">搜索专辑封面</string>
+	<string name="search_lyrics">搜索歌词</string>
+	<string name="download_lyrics">下载歌词</string>
+	<string name="searching_please_wait">正在搜索，请稍等。</string>
+	<string name="downloading_please_wait">正在下载，请稍等。</string>
+	<string name="confirm_overwrite">覆盖文件</string>
+	<string name="albumart_already_exist">专辑封面已经存在，你要覆盖这个歌词吗？</string>
+	<string name="lyrics_already_exist">歌词已经存在，你要覆盖这个歌词吗？</string>
+	<string name="search_noresult">没有找到结果，请尝试其他的关键词</string>
+	<string name="lyrics_wakelock">歌词显示时屏幕常亮</string>
+	<string name="lyrics_wakelock_summary">当歌词显示时保持屏幕开启</string>
+	<string name="blur_background">模糊背景</string>
+	<string name="blur_background_summary">可能拖慢设备，并可能在Android 3.0以上的设备无效</string>
+	<string name="gentle_sleeptimer">轻柔睡眠计时器</string>
+	<string name="gentle_sleeptimer_summaryon">当睡眠计时器到时间后会等待当前曲目播放完毕再停止播放</string>
+	<string name="gentle_sleeptimer_summaryoff">当睡眠计时器到时间后会立即停止播放</string>
+	<string name="plugins_manager">插件管理器</string>
+	<string name="no_plugin_found">没有找到插件。</string>
+	<string name="plugin_not_supported">插件不被支持。</string>
+	<string name="uninstall">卸载</string>
+	<string name="open_configure">打开/配置</string>
+	<string name="special_thanks_to">特别感谢</string>
+	<string name="special_thanks_to_summary">\@JavranC: Testing\n\@oliver661: Testing\n\@leytwit: Japanese translation</string>
+	<string name="media_storage_error_title">音沐暂时不能启动</string>
+	<string name="media_storage_error_checking">系统正在检查存储器。请稍等。音沐将在检查结束后启动。</string>
+	<string name="media_storage_error_removed">存储设备已经移除。在你连接存储设备之前，音沐无法启动。</string>
+	<string name="media_storage_error_corrupted">存储设备的文件系统已经损坏。\n你可以尝试修复文件系统，如果失败就将只能通过格式化继续使用存储设备。</string>
+	<string name="media_storage_error_shared">存储设备正在通过USB大容量存储方式连接。断开连接后稍等，音沐就能够启动。</string>
+	<string name="media_storage_error_unmounted">存储设备已经卸载。在你重新挂载它之前，音沐无法启动。</string>
+	<string name="media_storage_error_unknown">未知错误，你可以尝试重启设备，如果重启后问题依然存在，而你确信自己的设备没有故障，请将此情况通知我。</string>
+
+</resources>
