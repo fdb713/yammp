@@ -2,14 +2,14 @@
 
 This project used following open-source project.
 
-* [CyanogenMod Project][cyangoenmod]
+* [CyanogenMod Project][cyanogenmod]
 * [Toralyrics][toralyrics]
 * [juniversalchardet] [juniversalchardet]
 * [PMix] [pmix]
 * [android-ColorPickerPreference] [6]	
 * [shake-toolbox] [shake-toolbox]
 
-[cyangoenmod]: http://cyanogenmod.com/ "Main code"
+[cyanogenmod]: http://cyanogenmod.com/ "Main code"
 [toralyrics]: http://code.google.com/p/toralyrics "Lyrics parser and splitter"
 [juniversalchardet]: http://code.google.com/p/juniversalchardet "Charset detector"
 [pmix]: http://code.google.com/p/pmix "Last.fm library to fetching album art"
