@@ -1390,33 +1390,39 @@ public class MusicUtils implements Constants {
 		}
 		return art;
 	}
-	
-	public static Drawable getCachedArtwork(Context context, long artIndex, BitmapDrawable defaultArtwork) {
-        Drawable d = null;
-        synchronized(mArtCache) {
-            d = mArtCache.get(artIndex);
-        }
-        if (d == null) {
-            d = defaultArtwork;
-            final Bitmap icon = defaultArtwork.getBitmap();
-            int w = icon.getWidth();
-            int h = icon.getHeight();
-            Bitmap b = MusicUtils.getArtworkQuick(context, artIndex, w, h);
-            if (b != null) {
-                d = new BitmapDrawable(b);
-                synchronized(mArtCache) {
-                    // the cache may have changed since we checked
-                    Drawable value = mArtCache.get(artIndex);
-                    if (value == null) {
-                        mArtCache.put(artIndex, d);
-                    } else {
-                        d = value;
-                    }
-                }
-            }
-        }
-        return d;
-    }
+
+	public static Drawable getCachedArtwork(Context context, long index,
+			BitmapDrawable defaultArtwork) {
+		Drawable d = null;
+		synchronized (mArtCache) {
+			d = mArtCache.get(index);
+		}
+		if (d == null) {
+			d = defaultArtwork;
+			final Bitmap icon = defaultArtwork.getBitmap();
+			int w = icon.getWidth();
+			int h = icon.getHeight();
+			Bitmap b = MusicUtils.getArtworkQuick(context, index, w, h);
+			if (b != null) {
+				d = new BitmapDrawable(b);
+				synchronized (mArtCache) {
+					// the cache may have changed since we checked
+					Drawable value = mArtCache.get(index);
+					if (value == null) {
+						mArtCache.put(index, d);
+					} else {
+						d = value;
+					}
+				}
+			}
+		}
+		return d;
+	}
+
+	public static Drawable getCachedArtwork(Context context, long index, int width, int height) {
+		Bitmap b = MusicUtils.getArtworkQuick(context, index, width, height);
+		return new FastBitmapDrawable(b);
+	}
 
 	// Get album art for specified album. This method will not try to
 	// fall back to getting artwork directly from the file, nor will
@@ -1764,27 +1770,34 @@ public class MusicUtils implements Constants {
 			}
 		}
 	}
-	
+
 	// A really simple BitmapDrawable-like class, that doesn't do
-    // scaling, dithering or filtering.
-    private static class FastBitmapDrawable extends Drawable {
-        private Bitmap mBitmap;
-        public FastBitmapDrawable(Bitmap b) {
-            mBitmap = b;
-        }
-        @Override
-        public void draw(Canvas canvas) {
-            canvas.drawBitmap(mBitmap, 0, 0, null);
-        }
-        @Override
-        public int getOpacity() {
-            return PixelFormat.OPAQUE;
-        }
-        @Override
-        public void setAlpha(int alpha) {
-        }
-        @Override
-        public void setColorFilter(ColorFilter cf) {
-        }
-    }
+	// scaling, dithering or filtering.
+	private static class FastBitmapDrawable extends Drawable {
+
+		private Bitmap mBitmap;
+
+		public FastBitmapDrawable(Bitmap b) {
+			mBitmap = b;
+		}
+
+		@Override
+		public void draw(Canvas canvas) {
+			if (mBitmap == null) return;
+			canvas.drawBitmap(mBitmap, 0, 0, null);
+		}
+
+		@Override
+		public int getOpacity() {
+			return PixelFormat.OPAQUE;
+		}
+
+		@Override
+		public void setAlpha(int alpha) {
+		}
+
+		@Override
+		public void setColorFilter(ColorFilter cf) {
+		}
+	}
 }

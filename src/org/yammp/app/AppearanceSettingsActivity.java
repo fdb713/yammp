@@ -20,6 +20,7 @@
 
 package org.yammp.app;
 
+import org.mariotaku.actionbarcompat.app.ActionBarPreferenceActivity;
 import org.yammp.Constants;
 import org.yammp.R;
 
@@ -27,8 +28,6 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.MenuItem;
-
-import org.mariotaku.actionbarcompat.ActionBarPreferenceActivity;
 
 public class AppearanceSettingsActivity extends ActionBarPreferenceActivity implements Constants {
 

@@ -30,10 +30,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Debug;
@@ -134,7 +130,8 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
-		String[] cols = new String[] { Audio.Albums._ID, Audio.Albums.ALBUM, Audio.Albums.ARTIST, Audio.Albums.ALBUM_ART };
+		String[] cols = new String[] { Audio.Albums._ID, Audio.Albums.ALBUM, Audio.Albums.ARTIST,
+				Audio.Albums.ALBUM_ART };
 		Uri uri = Audio.Albums.EXTERNAL_CONTENT_URI;
 		return new CursorLoader(getActivity(), uri, cols, null, null,
 				Audio.Albums.DEFAULT_SORT_ORDER);
@@ -314,8 +311,6 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 
 	private class AlbumsAdapter extends SimpleCursorAdapter {
 
-		private final BitmapDrawable mDefaultAlbumIcon;
-		
 		private class ViewHolder {
 
 			TextView album_name;
@@ -333,11 +328,6 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 		private AlbumsAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to,
 				int flags) {
 			super(context, layout, cursor, from, to, flags);
-			 Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.ic_mp_albumart_unknown);
-            mDefaultAlbumIcon = new BitmapDrawable(getResources(), b);
-         // no filter or dither, it's a lot faster and we can't tell the difference
-            mDefaultAlbumIcon.setFilterBitmap(false);
-            mDefaultAlbumIcon.setDither(false);
 		}
 
 		@Override
@@ -371,48 +361,50 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 			// We don't actually need the path to the thumbnail file,
 			// we just use it to see if there is album art or not
 			long aid = cursor.getLong(mIdIdx);
-			int width = getResources().getDimensionPixelSize(R.dimen.gridview_bitmap_width);
-			int height = getResources().getDimensionPixelSize(R.dimen.gridview_bitmap_height);
+			int width = view.getWidth();
+			int height = view.getHeight();
 
 			Log.i("Debug", "usedMemory: " + Debug.getNativeHeapSize() / 1024);
 
-			if (viewholder != null && viewholder.album_art != null) {
+			// if (viewholder != null && viewholder.album_art != null) {
+			//
+			// String art = cursor.getString(mArtIdx);
+			//
+			// if (art == null || art.length() == 0) {
+			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			// } else {
+			// Drawable d = MusicUtils.getCachedArtwork(context, aid, width,
+			// height);
+			// viewholder.album_art.setImageDrawable(d);
+			// d = null;
+			// }
 
-			 String art = cursor.getString(mArtIdx);
-				
-	            if (art == null || art.length() == 0) {
-	            	viewholder.album_art.setImageDrawable(mDefaultAlbumIcon);
-	            } else {
-	                Drawable d = MusicUtils.getCachedArtwork(context, aid, mDefaultAlbumIcon);
-	                viewholder.album_art.setImageDrawable(d);
-	                d = null;
-	            }
-				
-				//if (cursor.getPosition() >= mFirstVisible - 1
-				//		&& cursor.getPosition() <= mLastVisible + 1) {
-					// Bitmap result =
-					// MusicUtils.getCachedArtworkBitmap(getActivity(), aid,
-					// width, height);
-//					Bitmap result = MusicUtils.getArtworkQuick(getActivity(), aid, width, height);
-//					if (result != null) {
-//						viewholder.album_art.setImageBitmap(result);
-//					} else {
-//						viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-//					}
-				//} else {
-				// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-				//}
-				// Log.d("debug", "mBusy = " + mBusy + ", position = " +
-				// cursor.getPosition());
-				// if (mBusy) {
-				// viewholder.album_art.setVisibility(View.INVISIBLE);
-				// } else {
-				// viewholder.album_art.setVisibility(View.VISIBLE);
-				//
-				// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-				// }
+			// if (cursor.getPosition() >= mFirstVisible - 1
+			// && cursor.getPosition() <= mLastVisible + 1) {
+			// Bitmap result =
+			// MusicUtils.getCachedArtworkBitmap(getActivity(), aid,
+			// width, height);
+			// Bitmap result = MusicUtils.getArtworkQuick(getActivity(),
+			// aid, width, height);
+			// if (result != null) {
+			// viewholder.album_art.setImageBitmap(result);
+			// } else {
+			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			// }
+			// } else {
+			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			// }
+			// Log.d("debug", "mBusy = " + mBusy + ", position = " +
+			// cursor.getPosition());
+			// if (mBusy) {
+			// viewholder.album_art.setVisibility(View.INVISIBLE);
+			// } else {
+			// viewholder.album_art.setVisibility(View.VISIBLE);
+			//
+			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			// }
 
-			}
+			// }
 
 			long currentalbumid = MusicUtils.getCurrentAlbumId();
 			if (currentalbumid == aid) {

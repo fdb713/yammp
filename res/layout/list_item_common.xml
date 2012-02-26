@@ -14,7 +14,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
 	android:layout_gravity="center_vertical"
@@ -25,38 +25,37 @@
 		android:id="@+id/name"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
+		android:layout_alignParentRight="true"
 		android:drawablePadding="@dimen/default_element_spacing"
 		android:drawableRight="@drawable/ic_indicator_nowplaying_small"
 		android:ellipsize="marquee"
 		android:gravity="center_vertical"
 		android:singleLine="true"
+		android:text="name"
 		android:textAppearance="?android:attr/textAppearanceMedium"/>
 
-	<LinearLayout
+	<TextView
+		android:id="@+id/summary"
 		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:gravity="center_vertical"
-		android:orientation="horizontal">
+		android:layout_height="wrap_content"
+		android:layout_alignParentLeft="true"
+		android:layout_below="@+id/name"
+		android:layout_toLeftOf="@+id/duration"
+		android:ellipsize="end"
+		android:scrollHorizontally="true"
+		android:singleLine="true"
+		android:textAppearance="?android:attr/textAppearanceSmall"/>
 
-		<TextView
-			android:id="@+id/summary"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:layout_weight="1"
-			android:ellipsize="end"
-			android:scrollHorizontally="true"
-			android:singleLine="true"
-			android:textAppearance="?android:attr/textAppearanceSmall"/>
+	<TextView
+		android:id="@+id/duration"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignBaseline="@+id/summary"
+		android:layout_alignBottom="@+id/summary"
+		android:layout_alignParentRight="true"
+		android:singleLine="true"
+		android:textColor="?android:attr/textColorTertiary"
+		android:textSize="12sp"
+		android:textStyle="bold"/>
 
-		<TextView
-			android:id="@+id/duration"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_weight="0"
-			android:singleLine="true"
-			android:textColor="?android:attr/textColorTertiary"
-			android:textSize="12sp"
-			android:textStyle="bold"/>
-	</LinearLayout>
-
-</LinearLayout>
+</RelativeLayout>

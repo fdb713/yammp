@@ -43,7 +43,7 @@
 		android:theme="@style/Theme">
 		<meta-data
 			android:name="android.app.default_searchable"
-			android:value="org.musicmod.android.QueryBrowserActivity"/>
+			android:value="org.yammp.QueryBrowserActivity"/>
 
 		<activity
 			android:name=".app.MusicBrowserActivity"
@@ -51,7 +51,7 @@
 			android:theme="@style/Theme.MusicBrowser">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN"/>
-				<action android:name="org.musicmod.android.MUSIC_BROWSER"/>
+				<action android:name="org.yammp.MUSIC_BROWSER"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 				<category android:name="android.intent.category.LAUNCHER"/>
@@ -64,7 +64,7 @@
 			android:label="@string/now_playing"
 			android:theme="@style/Theme.MusicPlayback">
 			<intent-filter>
-				<action android:name="org.musicmod.android.PLAYBACK_VIEWER"/>
+				<action android:name="org.yammp.PLAYBACK_VIEWER"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -102,7 +102,7 @@
 			android:label="@string/play_selection"
 			android:theme="@android:style/Theme.NoDisplay">
 			<intent-filter>
-				<action android:name="org.musicmod.android.PLAY_SHORTCUT"/>
+				<action android:name="org.yammp.PLAY_SHORTCUT"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -114,7 +114,7 @@
 			android:name=".app.MusicSettingsActivity"
 			android:label="@string/settings">
 			<intent-filter>
-				<action android:name="org.musicmod.android.MUSIC_SETTINGS"/>
+				<action android:name="org.yammp.MUSIC_SETTINGS"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -123,7 +123,7 @@
 			android:name=".app.AppearanceSettingsActivity"
 			android:label="@string/settings">
 			<intent-filter>
-				<action android:name="org.musicmod.android.APPEARANCE_SETTINGS"/>
+				<action android:name="org.yammp.APPEARANCE_SETTINGS"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -133,7 +133,7 @@
 			android:label="@string/equalizer"
 			android:theme="@android:style/Theme.Dialog">
 			<intent-filter>
-				<action android:name="org.musicmod.android.EQUALIZER"/>
+				<action android:name="org.yammp.EQUALIZER"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -142,7 +142,7 @@
 			android:name=".app.PluginsManagerActivity"
 			android:label="@string/plugins_manager">
 			<intent-filter>
-				<action android:name="org.musicmod.android.PLUGINS_MANAGER"/>
+				<action android:name="org.yammp.PLUGINS_MANAGER"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -152,7 +152,7 @@
 			android:label="@string/delete"
 			android:theme="@android:style/Theme.NoDisplay">
 			<intent-filter>
-				<action android:name="org.musicmod.android.DELETE_ITEMS"/>
+				<action android:name="org.yammp.DELETE_ITEMS"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -162,12 +162,12 @@
 			android:label="@string/rename"
 			android:theme="@android:style/Theme.NoDisplay">
 			<intent-filter>
-				<action android:name="org.musicmod.android.CREATE_PLAYLIST"/>
+				<action android:name="org.yammp.CREATE_PLAYLIST"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
 			<intent-filter>
-				<action android:name="org.musicmod.android.RENAME_PLAYLIST"/>
+				<action android:name="org.yammp.RENAME_PLAYLIST"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -178,7 +178,7 @@
 			android:label="@string/playlists"
 			android:theme="@android:style/Theme.NoDisplay">
 			<intent-filter>
-				<action android:name="org.musicmod.android.ADD_TO_PLAYLIST"/>
+				<action android:name="org.yammp.ADD_TO_PLAYLIST"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -190,15 +190,15 @@
 		</activity>
 		<activity
 			android:name=".dialog.SearchDialog"
-			android:label="@android:string/search_go"
+			android:label="@string/search"
 			android:theme="@android:style/Theme.NoDisplay">
 			<intent-filter>
-				<action android:name="org.musicmod.android.SEARCH_LYRICS"/>
+				<action android:name="org.yammp.SEARCH_LYRICS"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
 			<intent-filter>
-				<action android:name="org.musicmod.android.SEARCH_ALBUMART"/>
+				<action android:name="org.yammp.SEARCH_ALBUMART"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -208,7 +208,7 @@
 			android:label="@string/sleep_timer"
 			android:theme="@android:style/Theme.NoDisplay">
 			<intent-filter>
-				<action android:name="org.musicmod.android.SLEEP_TIMER"/>
+				<action android:name="org.yammp.SLEEP_TIMER"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
@@ -218,7 +218,7 @@
 			android:label="@string/set_time"
 			android:theme="@android:style/Theme.NoDisplay">
 			<intent-filter>
-				<action android:name="org.musicmod.android.WEEK_SELECTOR"/>
+				<action android:name="org.yammp.WEEK_SELECTOR"/>
 
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>

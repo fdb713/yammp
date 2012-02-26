@@ -133,10 +133,10 @@
 	<string name="service_start_error">媒体回放错误</string>
 	<string name="set_time">设置时间</string>
 	<string name="music_picker">选择音轨</string>
-	<string name="widget_label_4x1">音沐音乐播放器（4x1）</string>
-	<string name="widget_label_4x2">音沐音乐播放器（4x2）</string>
-	<string name="widget_label_2x2">音沐音乐播放器（2x2）</string>
-	<string name="playback_service_name">音沐媒体播放服务</string>
+	<string name="widget_label_4x1">YAMMP（4x1）</string>
+	<string name="widget_label_4x2">YAMMP（4x2）</string>
+	<string name="widget_label_2x2">YAMMP（2x2）</string>
+	<string name="playback_service_name">YAMMP媒体播放服务</string>
 	<string name="base_settings">基本设置</string>
 	<string name="appearances_settings">外观设置</string>
 	<string name="other_settings">其他设置</string>
@@ -169,7 +169,7 @@
 	<string name="shaking_calibration_manual">长按下面的按键，以你喜欢的方式摇晃设备，摇晃完毕后松开按键。注意！请在摇晃时握紧设备！</string>
 	<string name="credits_cat">感谢</string>
 	<string name="credits">关于与感谢</string>
-	<string name="app_name">音沐音乐播放器</string>
+	<string name="app_name">YAMMP媒体播放器</string>
 	<string name="version">版本</string>
 	<string name="haptic_feedback">震动反馈</string>
 	<string name="haptic_feedback_summary">当检测到摇晃行为时震动设备</string>
@@ -207,12 +207,12 @@
 	<string name="open_configure">打开/配置</string>
 	<string name="special_thanks_to">特别感谢</string>
 	<string name="special_thanks_to_summary">\@JavranC: Testing\n\@oliver661: Testing\n\@leytwit: Japanese translation</string>
-	<string name="media_storage_error_title">音沐暂时不能启动</string>
-	<string name="media_storage_error_checking">系统正在检查存储器。请稍等。音沐将在检查结束后启动。</string>
-	<string name="media_storage_error_removed">存储设备已经移除。在你连接存储设备之前，音沐无法启动。</string>
+	<string name="media_storage_error_title">YAMMP暂时不能启动</string>
+	<string name="media_storage_error_checking">系统正在检查存储器。请稍等。YAMMP将在检查结束后启动。</string>
+	<string name="media_storage_error_removed">存储设备已经移除。在你连接存储设备之前，YAMMP无法启动。</string>
 	<string name="media_storage_error_corrupted">存储设备的文件系统已经损坏。\n你可以尝试修复文件系统，如果失败就将只能通过格式化继续使用存储设备。</string>
-	<string name="media_storage_error_shared">存储设备正在通过USB大容量存储方式连接。断开连接后稍等，音沐就能够启动。</string>
-	<string name="media_storage_error_unmounted">存储设备已经卸载。在你重新挂载它之前，音沐无法启动。</string>
+	<string name="media_storage_error_shared">存储设备正在通过USB大容量存储方式连接。断开连接后稍等，YAMMP就能够启动。</string>
+	<string name="media_storage_error_unmounted">存储设备已经卸载。在你重新挂载它之前，YAMMP无法启动。</string>
 	<string name="media_storage_error_unknown">未知错误，你可以尝试重启设备，如果重启后问题依然存在，而你确信自己的设备没有故障，请将此情况通知我。</string>
 
 </resources>

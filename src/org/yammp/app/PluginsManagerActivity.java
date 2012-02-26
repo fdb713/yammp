@@ -20,9 +20,10 @@
 
 package org.yammp.app;
 
+import org.mariotaku.actionbarcompat.app.ActionBarActivity;
+
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
-import org.mariotaku.actionbarcompat.ActionBarActivity;
 
 /**
  * Demonstration of the implementation of a custom Loader.

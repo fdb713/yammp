@@ -1,4 +1,4 @@
-#The MusicMod Project#
+#The YAMMP Project#
 
 This project used following open-source project.
 

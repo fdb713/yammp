@@ -22,8 +22,8 @@ package org.yammp.app;
 
 import java.util.ArrayList;
 
-import org.mariotaku.actionbarcompat.ActionBarActivity;
-import org.mariotaku.actionbarcompat.ActionBarCompat;
+import org.mariotaku.actionbarcompat.app.ActionBarActivity;
+import org.mariotaku.actionbarcompat.app.ActionBarCompat;
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.R;

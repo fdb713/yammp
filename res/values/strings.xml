@@ -138,10 +138,10 @@
 	<string name="service_start_error">Playback problem</string>
 	<string name="set_time">Set time</string>
 	<string name="music_picker">Select music track</string>
-	<string name="widget_label_4x1">MusicMod Music Player (4x1)</string>
-	<string name="widget_label_4x2">MusicMod Music Player (4x2)</string>
-	<string name="widget_label_2x2">MusicMod Music Player (2x2)</string>
-	<string name="playback_service_name">MusicMod Playback Service</string>
+	<string name="widget_label_4x1">YAMMP (4x1)</string>
+	<string name="widget_label_4x2">YAMMP (4x2)</string>
+	<string name="widget_label_2x2">YAMMP (2x2)</string>
+	<string name="playback_service_name">YAMMP Playback Service</string>
 	<string name="base_settings">Base settings</string>
 	<string name="appearances_settings">Appearances settings</string>
 	<string name="other_settings">Other settings</string>
@@ -178,7 +178,7 @@
 	<string name="shaking_calibration_manual">Long press following button, shake you device as the way you like after device vibrate, then release the button.\nATTENTION! HOLD YOUR DEVICE TIGHTLY WHILE SHAKING!</string>
 	<string name="credits_cat">Credits</string>
 	<string name="credits">About and Credits</string>
-	<string name="app_name">MusicMod Music Player</string>
+	<string name="app_name">YAMMP Android MultiMedia Player</string>
 	<string name="version">Version</string>
 	<string name="haptic_feedback">Haptic feedback</string>
 	<string name="haptic_feedback_summary">Vibrate when shake detected</string>
@@ -193,6 +193,7 @@
 	<string name="enable_scrobbling_summary">Scobble music to last.fm</string>
 	<string name="lyrics_not_exist">Lyrics not exist</string>
 	<string name="lyrics_invalid">Lyrics not readable</string>
+	<string name="search">Search</string>
 	<string name="search_albumart">Search Album art</string>
 	<string name="search_lyrics">Search Lyrics</string>
 	<string name="download_lyrics">Download Lyrics</string>

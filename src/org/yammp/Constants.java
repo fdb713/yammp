@@ -51,15 +51,15 @@ public interface Constants {
 	public static final String INTERNAL_VOLUME = "internal";
 	public static final String EXTERNAL_VOLUME = "external";
 
-	public final static String PLAYLIST_NAME_FAVORITES = "MusicMod Favorites";
+	public final static String PLAYLIST_NAME_FAVORITES = "YAMMP Favorites";
 
 	public final static String TYPE_ARTIST_ALBUM = "artist_album";
 	public final static String TYPE_ALBUM = "album";
 	public final static String TYPE_TRACK = "track";
 
-	public final static String LOGTAG_SERVICE = "MusicMod.Service";
-	public final static String LOGTAG_TEST = "MusicMod.Test";
-	public final static String LOGTAG_MUSICUTILS = "MusicMod.MusicUtils";
+	public final static String LOGTAG_SERVICE = "YAMMP.Service";
+	public final static String LOGTAG_TEST = "YAMMP.Test";
+	public final static String LOGTAG_MUSICUTILS = "YAMMP.MusicUtils";
 	public final static String LOGTAG_WIDGET_4x1 = "MusicAppWidgetProvider4x1";
 	public final static String LOGTAG_WIDGET_2x2 = "MusicAppWidgetProvider2x2";
 
@@ -77,8 +77,8 @@ public interface Constants {
 	public final static int LYRICS_STATUS_NOT_FOUND = 1;
 	public final static int LYRICS_STATUS_INVALID = 2;
 
-	public final static String PLUGINS_PNAME_PATTERN = "org.musicmod.plugin";
-	public final static String THEMES_PNAME_PATTERN = "org.musicmod.theme";
+	public final static String PLUGINS_PNAME_PATTERN = "org.yammp.plugin";
+	public final static String THEMES_PNAME_PATTERN = "org.yammp.theme";
 
 	public final static String SERVICECMD = "org.yammp.musicservicecommand";
 	public final static String CMDNAME = "command";
@@ -103,7 +103,7 @@ public interface Constants {
 	public static final String CYCLEREPEAT_ACTION = "org.yammp.musicservicecommand.cyclerepeat";
 	public static final String TOGGLESHUFFLE_ACTION = "org.yammp.musicservicecommand.toggleshuffle";
 
-	public final static String TESTCMD_MUSICPLAYBACKACTIVITY = "org.musicmod.test.musicplaybackactivity";
+	public final static String TESTCMD_MUSICPLAYBACKACTIVITY = "org.yammp.test.musicplaybackactivity";
 
 	public final static String SHAREDPREFS_PREFERENCES = "preferences";
 	public final static String SHAREDPREFS_EQUALIZER = "equalizer";

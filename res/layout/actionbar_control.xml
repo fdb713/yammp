@@ -28,8 +28,7 @@
 		android:adjustViewBounds="true"
 		android:background="@drawable/image_shadow"
 		android:inAnimation="@android:anim/fade_in"
-		android:outAnimation="@android:anim/fade_out">
-	</ImageSwitcher>
+		android:outAnimation="@android:anim/fade_out"/>
 
 	<ImageButton
 		android:id="@+id/next"
@@ -56,6 +55,7 @@
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_alignTop="@+id/album_art"
+		android:layout_toLeftOf="@+id/play_pause"
 		android:layout_toRightOf="@+id/album_art"
 		android:ellipsize="marquee"
 		android:singleLine="true"
@@ -65,8 +65,9 @@
 		android:id="@+id/track_detail"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_alignLeft="@+id/track_name"
 		android:layout_below="@+id/track_name"
+		android:layout_toLeftOf="@+id/play_pause"
+		android:layout_toRightOf="@+id/album_art"
 		android:ellipsize="marquee"
 		android:singleLine="true"
 		android:textAppearance="?android:attr/textAppearanceSmall"/>
