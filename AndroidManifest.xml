@@ -35,6 +35,9 @@
 	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
 	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 
+	<supports-screens android:anyDensity="true">
+	</supports-screens>
+
 	<application
 		android:allowTaskReparenting="true"
 		android:icon="@drawable/ic_launcher_music"

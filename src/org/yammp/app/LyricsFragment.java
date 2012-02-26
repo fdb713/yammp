@@ -211,8 +211,9 @@ public class LyricsFragment extends Fragment implements Constants, OnLineSelecte
 	}
 
 	private void scrollLyrics(boolean force) {
-
+		if (mService == null) return;
 		try {
+			if (mLyricsScrollView == null) return;
 			mLyricsScrollView.setCurrentLine(mService.getCurrentLyricsId(), force);
 		} catch (RemoteException e) {
 			e.printStackTrace();
