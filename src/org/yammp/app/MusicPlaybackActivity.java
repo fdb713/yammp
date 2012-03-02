@@ -29,6 +29,7 @@ import org.yammp.IMusicPlaybackService;
 import org.yammp.MusicPlaybackService;
 import org.yammp.R;
 import org.yammp.util.ColorAnalyser;
+import org.yammp.util.EqualizerWrapper;
 import org.yammp.util.MusicUtils;
 import org.yammp.util.ServiceToken;
 import org.yammp.util.PreferencesEditor;
@@ -490,6 +491,13 @@ public class MusicPlaybackActivity extends ActionBarActivity implements Constant
 		return super.onCreateOptionsMenu(menu);
 	}
 
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		MenuItem item = menu.findItem(R.id.equalizer);
+		if (item != null) item.setVisible(EqualizerWrapper.isSupported());
+		return super.onPrepareOptionsMenu(menu);
+	}
+	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 
@@ -1295,6 +1303,7 @@ public class MusicPlaybackActivity extends ActionBarActivity implements Constant
 			View view = getView();
 
 			mAlbum = (ImageSwitcher) view.findViewById(R.id.album_art);
+			mAlbum.setOnLongClickListener(mSearchAlbumArtListener);
 			mAlbum.setFactory(this);
 
 			mShuffleButton = (ImageButton) view.findViewById(R.id.toggle_shuffle);

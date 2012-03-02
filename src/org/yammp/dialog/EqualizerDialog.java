@@ -58,6 +58,8 @@ public class EqualizerDialog extends FragmentActivity implements Constants {
 	@Override
 	public void onCreate(Bundle icicle) {
 
+		if (!EqualizerWrapper.isSupported()) finish();
+		
 		super.onCreate(icicle);
 
 		mPrefs = new PreferencesEditor(getApplicationContext());

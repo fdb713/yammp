@@ -18,7 +18,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	android:installLocation="auto"
 	package="org.yammp"
-	android:versionCode="25"
+	android:versionCode="26"
 	android:versionName="@string/app_version">
 
 	<original-package android:name="com.android.music"/>
@@ -37,6 +37,8 @@
 
 	<supports-screens android:anyDensity="true">
 	</supports-screens>
+
+	<uses-permission android:name="android.permission.BROADCAST_STICKY"/>
 
 	<application
 		android:allowTaskReparenting="true"
@@ -243,6 +245,11 @@
 			android:label="@string/widget_label_4x1">
 			<intent-filter>
 				<action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+				<action android:name="org.yammp.playstatechanged"/>
+				<action android:name="org.yammp.metachanged"/>
+				<action android:name="org.yammp.favoritestatechanged"/>
+				<action android:name="org.yammp.newlyricsloaded"/>
+				<action android:name="org.yammp.lyricsrefreshed"/>
 			</intent-filter>
 
 			<meta-data
@@ -254,6 +261,13 @@
 			android:label="@string/widget_label_4x2">
 			<intent-filter>
 				<action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+				<action android:name="org.yammp.playstatechanged"/>
+				<action android:name="org.yammp.metachanged"/>
+				<action android:name="org.yammp.favoritestatechanged"/>
+				<action android:name="org.yammp.newlyricsloaded"/>
+				<action android:name="org.yammp.lyricsrefreshed"/>
+				<action android:name="org.yammp.repeatmodechanged"/>
+				<action android:name="org.yammp.shufflemodechanged"/>
 			</intent-filter>
 
 			<meta-data

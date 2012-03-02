@@ -4,10 +4,13 @@ import org.yammp.R;
 import org.yammp.util.LyricsSplitter;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,6 +21,11 @@ import android.widget.TextView;
 
 public class TextScrollView extends ScrollView implements OnLongClickListener {
 
+	// Namespaces to read attributes
+	private static final String ANDROID_NS = "http://schemas.android.com/apk/res/android";
+	
+	private static final String ATTR_TEXTSIZE = "textSize";
+	
 	private LinearLayout mScrollContainer;
 	private LinearLayout mContentContainer, mContentEmptyView;
 	private boolean mSmoothScrolling = false;
@@ -39,6 +47,7 @@ public class TextScrollView extends ScrollView implements OnLongClickListener {
 	public TextScrollView(Context context, AttributeSet attrs) {
 
 		super(context, attrs);
+		
 		init(context);
 	}
 
@@ -223,4 +232,5 @@ public class TextScrollView extends ScrollView implements OnLongClickListener {
 			}
 		}
 	};
+	
 }

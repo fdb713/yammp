@@ -26,6 +26,8 @@
 		android:summary="@string/rescan_media_summary"
 		android:title="@string/rescan_media"/>
 
+	<!-- Shake feature is not finished -->
+	<!--
 	<CheckBoxPreference
 		android:defaultValue="false"
 		android:key="shake_enabled"
@@ -48,6 +50,7 @@
 		android:key="shaking_calibration"
 		android:summary="@string/shaking_calibration_summary"
 		android:title="@string/shaking_calibration"/>
+	-->
 
 	<CheckBoxPreference
 		android:defaultValue="true"

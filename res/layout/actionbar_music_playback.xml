@@ -43,6 +43,9 @@
 			android:id="@+id/track_name"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
+			android:layout_alignParentLeft="true"
+			android:layout_alignParentRight="true"
+			android:layout_alignParentTop="true"
 			android:ellipsize="marquee"
 			android:singleLine="true"
 			android:textAppearance="?android:attr/textAppearanceMedium"/>
@@ -51,8 +54,9 @@
 			android:id="@+id/track_detail"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:layout_alignLeft="@+id/track_name"
+			android:layout_alignParentLeft="true"
 			android:layout_below="@+id/track_name"
+			android:layout_toLeftOf="@+id/current_time"
 			android:ellipsize="marquee"
 			android:singleLine="true"
 			android:textAppearance="?android:attr/textAppearanceSmall"/>
@@ -61,7 +65,6 @@
 			android:id="@+id/total_time"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:layout_alignBaseline="@+id/track_detail"
 			android:layout_alignBottom="@+id/track_detail"
 			android:layout_alignParentRight="true"
 			android:text="--:--"

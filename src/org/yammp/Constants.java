@@ -183,6 +183,8 @@ public interface Constants {
 	public final static String BROADCAST_KEY_SONGID = "songid";
 	public final static String BROADCAST_KEY_ALBUMID = "albumid";
 	public final static String BROADCAST_KEY_POSITION = "position";
+	public final static String BROADCAST_KEY_REPEATMODE = "repeatmode";
+	public final static String BROADCAST_KEY_SHUFFLEMODE = "shufflemode";
 	public final static String BROADCAST_KEY_DURATION = "duration";
 	public final static String BROADCAST_KEY_LISTSIZE = "listsize";
 	public final static String BROADCAST_KEY_STATE = "state";

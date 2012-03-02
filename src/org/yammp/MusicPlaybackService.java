@@ -24,7 +24,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -141,11 +140,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	// cards.
 	private int mCardId;
 
-	private MediaAppWidgetProvider4x1 mAppWidgetProvider4x1 = MediaAppWidgetProvider4x1
-			.getInstance();
-	private MediaAppWidgetProvider4x2 mAppWidgetProvider4x2 = MediaAppWidgetProvider4x2
-			.getInstance();
-
 	// interval after which we stop the service when idle
 	private static final int IDLE_DELAY = 60000;
 
@@ -166,6 +160,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	private float mShakingThreshold = DEFAULT_SHAKING_THRESHOLD;
 
 	private boolean mScrobbleEnabled = false;
+	private Intent mPlaybackIntent;
 
 	private Handler mMediaplayerHandler = new Handler() {
 
@@ -353,7 +348,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		public void onReceive(Context context, Intent intent) {
 
 			String action = intent.getAction();
-			String cmd = intent.getStringExtra("command");
+			String cmd = intent.getStringExtra(CMDNAME);
 			MusicUtils.debugLog("mIntentReceiver.onReceive " + action + " / " + cmd);
 			if (CMDNEXT.equals(cmd) || NEXT_ACTION.equals(action)) {
 				next(true);
@@ -383,18 +378,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				} else {
 					removeFromFavorites();
 				}
-			} else if (MediaAppWidgetProvider4x1.CMDAPPWIDGETUPDATE.equals(cmd)) {
-				// Someone asked us to refresh a set of specific widgets,
-				// probably
-				// because they were just added.
-				int[] appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
-				mAppWidgetProvider4x1.performUpdate(MusicPlaybackService.this, appWidgetIds);
-			} else if (MediaAppWidgetProvider4x2.CMDAPPWIDGETUPDATE.equals(cmd)) {
-				// Someone asked us to refresh a set of specific widgets,
-				// probably
-				// because they were just added.
-				int[] appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
-				mAppWidgetProvider4x2.performUpdate(MusicPlaybackService.this, appWidgetIds);
 			}
 		}
 	};
@@ -441,6 +424,8 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public void onCreate() {
 
 		super.onCreate();
+
+		mPlaybackIntent = new Intent();
 
 		mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
@@ -569,6 +554,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		}
 		mWakeLock.release();
 		mNotification.cancelAll();
+		removeStickyBroadcast(mPlaybackIntent);
 		super.onDestroy();
 	}
 
@@ -975,26 +961,29 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	 * stopped because the last file in the list has been played, or that the
 	 * play-state changed (paused/resumed).
 	 */
-	private void notifyChange(String what) {
+	private void notifyChange(String action) {
 
-		Intent i = new Intent(what);
-		i.putExtra(BROADCAST_KEY_ID, getAudioId());
-		i.putExtra(BROADCAST_KEY_ARTIST, getArtistName());
-		i.putExtra(BROADCAST_KEY_ALBUM, getAlbumName());
-		i.putExtra(BROADCAST_KEY_TRACK, getTrackName());
-		i.putExtra(BROADCAST_KEY_PLAYING, isPlaying());
-		i.putExtra(BROADCAST_KEY_ISFAVORITE, isFavorite());
-		i.putExtra(BROADCAST_KEY_SONGID, getAudioId());
-		i.putExtra(BROADCAST_KEY_ALBUMID, getAlbumId());
-		i.putExtra(BROADCAST_KEY_DURATION, duration());
-		i.putExtra(BROADCAST_KEY_POSITION, position());
-		if (mPlayList != null)
-			i.putExtra(BROADCAST_KEY_LISTSIZE, Long.valueOf(mPlayList.length));
-		else
-			i.putExtra(BROADCAST_KEY_LISTSIZE, Long.valueOf(mPlayListLen));
-		sendBroadcast(i);
+		mPlaybackIntent.setAction(action);
+		mPlaybackIntent.putExtra(BROADCAST_KEY_ID, getAudioId());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_ARTIST, getArtistName());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_ALBUM, getAlbumName());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_TRACK, getTrackName());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_PLAYING, isPlaying());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_ISFAVORITE, isFavorite());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_SONGID, getAudioId());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_ALBUMID, getAlbumId());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_DURATION, duration());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_POSITION, position());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_SHUFFLEMODE, getShuffleMode());
+		mPlaybackIntent.putExtra(BROADCAST_KEY_REPEATMODE, getRepeatMode());
+		if (mPlayList != null) {
+			mPlaybackIntent.putExtra(BROADCAST_KEY_LISTSIZE, Long.valueOf(mPlayList.length));
+		} else {
+			mPlaybackIntent.putExtra(BROADCAST_KEY_LISTSIZE, Long.valueOf(mPlayListLen));
+		}
+		sendStickyBroadcast(mPlaybackIntent);
 
-		if (BROADCAST_META_CHANGED.equals(what)) {
+		if (BROADCAST_META_CHANGED.equals(action)) {
 			mLyricsHandler.sendEmptyMessage(NEW_LYRICS_LOADED);
 			if (isPlaying()) {
 				sendScrobbleBroadcast(SCROBBLE_PLAYSTATE_START);
@@ -1002,7 +991,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				sendScrobbleBroadcast(SCROBBLE_PLAYSTATE_COMPLETE);
 			}
 		}
-		if (BROADCAST_PLAYSTATE_CHANGED.equals(what)) {
+		if (BROADCAST_PLAYSTATE_CHANGED.equals(action)) {
 			notifyLyricsChange(BROADCAST_LYRICS_REFRESHED);
 			if (isPlaying()) {
 				mLyricsHandler.sendEmptyMessage(LYRICS_RESUMED);
@@ -1012,16 +1001,11 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				sendScrobbleBroadcast(SCROBBLE_PLAYSTATE_PAUSE);
 			}
 		}
-
-		if (BROADCAST_QUEUE_CHANGED.equals(what)) {
+		if (BROADCAST_QUEUE_CHANGED.equals(action)) {
 			saveQueue(true);
 		} else {
 			saveQueue(false);
 		}
-
-		// Share this notification directly with our widgets
-		mAppWidgetProvider4x1.notifyChange(this, what);
-		mAppWidgetProvider4x2.notifyChange(this, what);
 	}
 
 	public void notifyLyricsChange(String action) {
@@ -1031,6 +1015,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			i.putExtra(BROADCAST_KEY_LYRICS_ID, mLyricsId);
 		} else if (BROADCAST_NEW_LYRICS_LOADED.equals(action)) {
 			i.putExtra(BROADCAST_KEY_LYRICS_STATUS, mLyricsStatus);
+			i.putExtra(BROADCAST_KEY_LYRICS, mLyrics);
 		} else {
 			return;
 		}

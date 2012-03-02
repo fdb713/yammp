@@ -470,7 +470,7 @@ public class MusicUtils implements Constants {
 			// string is not a valid number, so return original value.
 			return orig;
 		}
-		if (genre_id >= 0 || genre_id < GENRES_DB.length) {
+		if (genre_id >= 0 && genre_id < GENRES_DB.length) {
 			return GENRES_DB[genre_id];
 		} else {
 			return "Unknown";

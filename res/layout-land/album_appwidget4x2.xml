@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2009 The Android Open Source Project
+<!--
+     Copyright (C) 2009 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -13,120 +14,146 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="148dip"
-    android:background="@drawable/appwidget_bg"
-    android:gravity="center">
+	android:layout_width="match_parent"
+	android:layout_height="148dip"
+	android:background="@drawable/appwidget_bg"
+	android:gravity="center">
 
-    <ImageView android:id="@+id/albumart"
-        android:layout_width="128dip"
-        android:layout_height="128dip"
-        android:scaleType="fitCenter"
-        android:adjustViewBounds="true"
-        android:padding="6dip" />
+	<ImageView
+		android:id="@+id/album_art"
+		android:layout_width="128dip"
+		android:layout_height="128dip"
+		android:adjustViewBounds="true"
+		android:padding="6dip"
+		android:scaleType="fitCenter"/>
 
-    <ImageView android:id="@+id/albumart_info_divider"
-        android:layout_width="1dip"
-        android:layout_height="match_parent"
-        android:layout_toRightOf="@id/albumart"
-        android:src="@drawable/appwidget_divider"
-        android:scaleType="fitXY" />
+	<ImageView
+		android:id="@+id/album_art_info_divider"
+		android:layout_width="1dip"
+		android:layout_height="match_parent"
+		android:layout_toRightOf="@id/album_art"
+		android:scaleType="fitXY"
+		android:src="@drawable/appwidget_divider"/>
 
-    <LinearLayout android:id="@+id/controls"
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="60dip"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@id/albumart_info_divider">
+	<LinearLayout
+		android:id="@+id/controls"
+		android:layout_width="match_parent"
+		android:layout_height="60dip"
+		android:layout_alignParentBottom="true"
+		android:layout_toRightOf="@+id/album_art_info_divider"
+		android:orientation="horizontal">
 
-        <ImageButton android:id="@+id/control_prev"
-            android:layout_width="0dip"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:src="@drawable/btn_playback_ic_prev"
-            android:background="@drawable/appwidget_button_center"
-            android:scaleType="center" />
+		<ImageButton
+			android:id="@+id/control_prev"
+			android:layout_width="0dip"
+			android:layout_height="match_parent"
+			android:layout_weight="1"
+			android:background="@drawable/appwidget_button_center"
+			android:scaleType="center"
+			android:src="@drawable/btn_playback_ic_prev"/>
 
-        <ImageButton android:id="@+id/control_play"
-            android:layout_width="0dip"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:src="@drawable/btn_playback_ic_play"
-            android:background="@drawable/appwidget_button_center"
-            android:scaleType="center" />
+		<ImageButton
+			android:id="@+id/control_play"
+			android:layout_width="0dip"
+			android:layout_height="match_parent"
+			android:layout_weight="1"
+			android:background="@drawable/appwidget_button_center"
+			android:scaleType="center"
+			android:src="@drawable/btn_playback_ic_play"/>
 
-        <ImageButton android:id="@+id/control_next"
-            android:layout_width="0dip"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:src="@drawable/btn_playback_ic_next"
-            android:background="@drawable/appwidget_button_lowerright"
-            android:scaleType="center" />
+		<ImageButton
+			android:id="@+id/control_next"
+			android:layout_width="0dip"
+			android:layout_height="match_parent"
+			android:layout_weight="1"
+			android:background="@drawable/appwidget_button_lowerright"
+			android:scaleType="center"
+			android:src="@drawable/btn_playback_ic_next"/>
+	</LinearLayout>
 
-    </LinearLayout>
+	<ImageView
+		android:id="@+id/controls_info_divider"
+		android:layout_width="match_parent"
+		android:layout_height="1dip"
+		android:layout_above="@id/controls"
+		android:layout_toRightOf="@+id/album_art_info_divider"
+		android:scaleType="fitXY"
+		android:src="@drawable/appwidget_divider"/>
 
-    <ImageView android:id="@+id/controls_info_divider"
-        android:layout_width="match_parent"
-        android:layout_height="1dip"
-        android:layout_above="@id/controls"
-        android:layout_toRightOf="@id/albumart_info_divider"
-        android:src="@drawable/appwidget_divider"
-        android:scaleType="fitXY" />
+	<ImageButton
+		android:id="@+id/control_repeat"
+		android:layout_width="40dip"
+		android:layout_height="32dip"
+		android:layout_marginLeft="6dip"
+		android:layout_toRightOf="@+id/album_art_info_divider"
+		android:background="@drawable/appwidget_button_center"
+		android:src="@drawable/ic_mp_repeat_off_btn"/>
 
-    <ImageButton android:id="@+id/control_repeat"
-        android:layout_width="40dip"
-        android:layout_height="32dip"
-        android:layout_toRightOf="@id/albumart_info_divider"
-        android:layout_marginLeft="6dip"
-        android:src="@drawable/ic_mp_repeat_off_btn"
-        android:background="@drawable/appwidget_button_center" />
+	<ImageButton
+		android:id="@+id/control_shuffle"
+		android:layout_width="40dip"
+		android:layout_height="32dip"
+		android:layout_alignParentRight="true"
+		android:layout_marginRight="6dip"
+		android:background="@drawable/appwidget_button_center"
+		android:src="@drawable/ic_mp_shuffle_off_btn"/>
 
-    <ImageButton android:id="@+id/control_shuffle"
-        android:layout_width="40dip"
-        android:layout_height="32dip"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="6dip"
-        android:src="@drawable/ic_mp_shuffle_off_btn"
-        android:background="@drawable/appwidget_button_center" />
+	<TextView
+		android:id="@+id/track_name"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignBottom="@+id/control_repeat"
+		android:layout_alignTop="@+id/control_repeat"
+		android:layout_toLeftOf="@+id/control_shuffle"
+		android:layout_toRightOf="@+id/control_repeat"
+		android:ellipsize="marquee"
+		android:gravity="center"
+		android:singleLine="true"
+		android:textColor="#FFFFFFFF"
+		android:textSize="16sp"/>
 
-    <LinearLayout android:id="@+id/info"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_toLeftOf="@id/control_shuffle"
-        android:layout_toRightOf="@id/control_repeat"
-        android:layout_above="@id/controls_info_divider"
-        android:gravity="center"
-        android:paddingLeft="8dip"
-        android:paddingRight="8dip">
+	<TextView
+		android:id="@+id/lyrics_line"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignLeft="@+id/controls_info_divider"
+		android:layout_below="@+id/artist_name"
+		android:layout_toRightOf="@+id/album_art"
+		android:ellipsize="marquee"
+		android:singleLine="true"
+		android:textColor="#FFFFFFFF"
+		android:textSize="12sp"/>
 
-        <TextView android:id="@+id/artistname"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFFFF"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:singleLine="true"
-            android:ellipsize="end" />
+	<LinearLayout
+		android:id="@+id/info"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignBottom="@+id/album_art"
+		android:layout_alignLeft="@+id/album_art"
+		android:layout_alignRight="@+id/album_art"
+		android:background="#80000000"
+		android:orientation="vertical">
 
-        <TextView android:id="@+id/albumname"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFFFF"
-            android:textSize="13sp"
-            android:singleLine="true"
-            android:ellipsize="end" />
+		<TextView
+			android:id="@+id/artist_name"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="marquee"
+			android:singleLine="true"
+			android:text="artist"
+			android:textColor="#FFFFFFFF"
+			android:textSize="13sp"/>
 
-        <TextView android:id="@+id/trackname"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFFFF"
-            android:textSize="13sp"
-            android:singleLine="true"
-            android:ellipsize="end" />
-
-    </LinearLayout>
+		<TextView
+			android:id="@+id/album_name"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="marquee"
+			android:singleLine="true"
+			android:text="album"
+			android:textColor="#FFFFFFFF"
+			android:textSize="13sp"/>
+	</LinearLayout>
 
 </RelativeLayout>
