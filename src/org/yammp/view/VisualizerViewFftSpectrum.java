@@ -68,17 +68,6 @@ public class VisualizerViewFftSpectrum extends View {
 		setColor(mColor);
 	}
 
-	public void updateVisualizer(byte[] data) {
-		byte[] model = new byte[data.length / 2 + 1];
-		int j = 0;
-		for (int i = 0; i <= mFftSamples * 2; i += 2) {
-			model[j] = (byte) Math.hypot(data[i], data[i + 1]);
-			j++;
-		}
-		mData = model;
-		invalidate();
-	}
-
 	public void setAntiAlias(boolean antialias) {
 		mForePaint.setAntiAlias(antialias);
 	}
@@ -94,18 +83,22 @@ public class VisualizerViewFftSpectrum extends View {
 		mPoints = null;
 	}
 
-	@Override
-	protected void onSizeChanged(int width, int height, int old_width, int old_height) {
-		mForePaint.setStrokeWidth((float) width / (float) mFftSamples / 2.0f);
+	public void updateVisualizer(byte[] data) {
+		byte[] model = new byte[data.length / 2 + 1];
+		int j = 0;
+		for (int i = 0; i <= mFftSamples * 2; i += 2) {
+			model[j] = (byte) Math.hypot(data[i], data[i + 1]);
+			j++;
+		}
+		mData = model;
+		invalidate();
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 
-		if (mData == null) {
-			return;
-		}
+		if (mData == null) return;
 
 		if (mPoints == null || mPoints.length < mData.length * 4) {
 			mPoints = new float[mData.length * 4];
@@ -116,13 +109,17 @@ public class VisualizerViewFftSpectrum extends View {
 			if (mData[i] < 0) {
 				mData[i] = 127;
 			}
-			mPoints[i * 4] = mRect.width() * i / mFftSamples + (getWidth() / mFftSamples / 2.0f);
+			mPoints[i * 4] = mRect.width() * i / mFftSamples + getWidth() / mFftSamples / 2.0f;
 			mPoints[i * 4 + 1] = mRect.height() / 2;
-			mPoints[i * 4 + 2] = mRect.width() * i / mFftSamples
-					+ (getWidth() / mFftSamples / 2.0f);
+			mPoints[i * 4 + 2] = mRect.width() * i / mFftSamples + getWidth() / mFftSamples / 2.0f;
 			mPoints[i * 4 + 3] = mRect.height() / 2 - 2 - mData[i] * 2;
 		}
 		canvas.drawLines(mPoints, mForePaint);
 
+	}
+
+	@Override
+	protected void onSizeChanged(int width, int height, int old_width, int old_height) {
+		mForePaint.setStrokeWidth((float) width / (float) mFftSamples / 2.0f);
 	}
 }

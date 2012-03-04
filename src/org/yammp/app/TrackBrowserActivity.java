@@ -20,6 +20,12 @@
 
 package org.yammp.app;
 
+import org.mariotaku.actionbarcompat.app.FragmentActivity;
+import org.yammp.Constants;
+import org.yammp.R;
+import org.yammp.util.MusicUtils;
+import org.yammp.util.ServiceToken;
+
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -29,13 +35,7 @@ import android.os.IBinder;
 import android.provider.MediaStore.Audio;
 import android.view.MenuItem;
 
-import org.mariotaku.actionbarcompat.app.ActionBarActivity;
-import org.yammp.Constants;
-import org.yammp.R;
-import org.yammp.util.MusicUtils;
-import org.yammp.util.ServiceToken;
-
-public class TrackBrowserActivity extends ActionBarActivity implements Constants, ServiceConnection {
+public class TrackBrowserActivity extends FragmentActivity implements Constants, ServiceConnection {
 
 	private ServiceToken mToken;
 	private Intent intent;
@@ -55,10 +55,12 @@ public class TrackBrowserActivity extends ActionBarActivity implements Constants
 			bundle = new Bundle();
 		}
 
-		if (bundle.getString(INTENT_KEY_ACTION) == null)
+		if (bundle.getString(INTENT_KEY_ACTION) == null) {
 			bundle.putString(INTENT_KEY_ACTION, intent.getAction());
-		if (bundle.getString(INTENT_KEY_TYPE) == null)
+		}
+		if (bundle.getString(INTENT_KEY_TYPE) == null) {
 			bundle.putString(INTENT_KEY_TYPE, intent.getType());
+		}
 
 		TrackFragment fragment = new TrackFragment(bundle);
 
@@ -68,9 +70,30 @@ public class TrackBrowserActivity extends ActionBarActivity implements Constants
 	}
 
 	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case android.R.id.home:
+				finish();
+				break;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+	@Override
 	public void onSaveInstanceState(Bundle outcicle) {
 		outcicle.putAll(bundle);
 		super.onSaveInstanceState(outcicle);
+	}
+
+	@Override
+	public void onServiceConnected(ComponentName name, IBinder service) {
+
+	}
+
+	@Override
+	public void onServiceDisconnected(ComponentName name) {
+
+		finish();
 	}
 
 	@Override
@@ -85,27 +108,6 @@ public class TrackBrowserActivity extends ActionBarActivity implements Constants
 
 		MusicUtils.unbindFromService(mToken);
 		super.onStop();
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case android.R.id.home:
-				finish();
-				break;
-		}
-		return super.onOptionsItemSelected(item);
-	}
-
-	@Override
-	public void onServiceConnected(ComponentName name, IBinder service) {
-
-	}
-
-	@Override
-	public void onServiceDisconnected(ComponentName name) {
-
-		finish();
 	}
 
 	private void setTitle() {

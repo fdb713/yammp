@@ -22,18 +22,15 @@ package org.yammp.app;
 
 import java.util.ArrayList;
 
-import org.mariotaku.actionbarcompat.app.ActionBarActivity;
 import org.mariotaku.actionbarcompat.app.ActionBarCompat;
+import org.mariotaku.actionbarcompat.app.FragmentActivity;
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.R;
 import org.yammp.dialog.ScanningProgress;
 import org.yammp.util.MusicUtils;
-import org.yammp.util.ServiceToken;
 import org.yammp.util.PreferencesEditor;
-
-import com.viewpagerindicator.TitlePageIndicator;
-import com.viewpagerindicator.TitleProvider;
+import org.yammp.util.ServiceToken;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -67,8 +64,81 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ViewSwitcher;
 
-public class MusicBrowserActivity extends ActionBarActivity implements Constants,
+import com.viewpagerindicator.TitlePageIndicator;
+import com.viewpagerindicator.TitleProvider;
+
+public class MusicBrowserActivity extends FragmentActivity implements Constants,
 		ViewSwitcher.ViewFactory, ServiceConnection {
+
+	private class AsyncAlbumArtLoader extends AsyncTask<Void, Void, Drawable> {
+
+		@Override
+		public Drawable doInBackground(Void... params) {
+
+			if (mService != null) {
+				try {
+					Bitmap bitmap = MusicUtils.getArtwork(getApplicationContext(),
+							mService.getAudioId(), mService.getAlbumId());
+					if (bitmap == null) return null;
+					int value = 0;
+					if (bitmap.getHeight() <= bitmap.getWidth()) {
+						value = bitmap.getHeight();
+					} else {
+						value = bitmap.getWidth();
+					}
+					Bitmap result = Bitmap.createBitmap(bitmap, (bitmap.getWidth() - value) / 2,
+							(bitmap.getHeight() - value) / 2, value, value);
+					return new BitmapDrawable(getResources(), result);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public void onPostExecute(Drawable result) {
+			if (mAlbumArt != null) {
+				if (result != null) {
+					mAlbumArt.setImageDrawable(result);
+				} else {
+					mAlbumArt.setImageResource(R.drawable.ic_mp_albumart_unknown);
+				}
+			}
+		}
+	}
+
+	private class TabsAdapter extends FragmentPagerAdapter implements TitleProvider {
+
+		private final ArrayList<Fragment> mFragments = new ArrayList<Fragment>();
+		private final ArrayList<String> mTitles = new ArrayList<String>();
+
+		public TabsAdapter(FragmentManager manager) {
+			super(manager);
+		}
+
+		public void addFragment(Fragment fragment, String name) {
+			mFragments.add(fragment);
+			mTitles.add(name);
+			notifyDataSetChanged();
+		}
+
+		@Override
+		public int getCount() {
+			return mFragments.size();
+		}
+
+		@Override
+		public Fragment getItem(int position) {
+			return mFragments.get(position);
+		}
+
+		@Override
+		public String getTitle(int position) {
+			return mTitles.get(position);
+		}
+
+	}
 
 	private ViewPager mViewPager;
 	private TabsAdapter mTabsAdapter;
@@ -78,8 +148,106 @@ public class MusicBrowserActivity extends ActionBarActivity implements Constants
 	private ImageSwitcher mAlbumArt;
 	private TextView mTrackName, mTrackDetail;
 	private ImageButton mPlayPauseButton, mNextButton;
+
 	private AsyncAlbumArtLoader mAlbumArtLoader;
+
 	private TitlePageIndicator mIndicator;
+
+	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (BROADCAST_META_CHANGED.equals(intent.getAction())
+					|| BROADCAST_META_CHANGED.equals(intent.getAction())) {
+				updateNowplaying();
+			} else if (BROADCAST_PLAYSTATE_CHANGED.equals(intent.getAction())) {
+				updatePlayPauseButton();
+			}
+
+		}
+
+	};
+
+	private OnClickListener mActionBarClickListener = new OnClickListener() {
+
+		@Override
+		public void onClick(View v) {
+			if (mService == null) return;
+			try {
+				if (mService.getAudioId() > -1 || mService.getPath() != null) {
+					Intent intent = new Intent(INTENT_PLAYBACK_VIEWER);
+					intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+					startActivity(intent);
+				} else {
+					MusicUtils.shuffleAll(getApplicationContext());
+				}
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+
+		}
+	};
+
+	private OnClickListener mPlayPauseClickListener = new OnClickListener() {
+
+		@Override
+		public void onClick(View v) {
+			if (mService == null) return;
+			try {
+				if (mService.isPlaying()) {
+					mService.pause();
+				} else {
+					mService.play();
+				}
+
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+
+		}
+	};
+
+	private OnClickListener mNextClickListener = new OnClickListener() {
+
+		@Override
+		public void onClick(View v) {
+			if (mService == null) return;
+			try {
+				mService.next();
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+
+		}
+	};
+
+	private OnPageChangeListener mOnPageChangeListener = new OnPageChangeListener() {
+
+		@Override
+		public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+		}
+
+		@Override
+		public void onPageScrollStateChanged(int state) {
+
+		}
+
+		@Override
+		public void onPageSelected(int position) {
+
+			mPrefs.setIntState(STATE_KEY_CURRENTTAB, position);
+		}
+	};
+
+	@Override
+	public View makeView() {
+		ImageView i = new ImageView(this);
+		i.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+		i.setLayoutParams(new ImageSwitcher.LayoutParams(LayoutParams.WRAP_CONTENT,
+				LayoutParams.MATCH_PARENT));
+		return i;
+	}
 
 	@Override
 	public void onCreate(Bundle icicle) {
@@ -100,33 +268,6 @@ public class MusicBrowserActivity extends ActionBarActivity implements Constants
 		configureActivity();
 		configureTabs(icicle);
 
-	}
-
-	@Override
-	public void onStart() {
-		super.onStart();
-		mToken = MusicUtils.bindToService(this, this);
-		IntentFilter filter = new IntentFilter();
-		filter.addAction(BROADCAST_META_CHANGED);
-		filter.addAction(BROADCAST_QUEUE_CHANGED);
-		filter.addAction(BROADCAST_PLAYSTATE_CHANGED);
-		registerReceiver(mMediaStatusReceiver, filter);
-
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		outState.putAll(getIntent().getExtras() != null ? getIntent().getExtras() : new Bundle());
-		super.onSaveInstanceState(outState);
-	}
-
-	@Override
-	public void onStop() {
-
-		unregisterReceiver(mMediaStatusReceiver);
-		MusicUtils.unbindFromService(mToken);
-		mService = null;
-		super.onStop();
 	}
 
 	@Override
@@ -159,12 +300,9 @@ public class MusicBrowserActivity extends ActionBarActivity implements Constants
 	}
 
 	@Override
-	public View makeView() {
-		ImageView i = new ImageView(this);
-		i.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-		i.setLayoutParams(new ImageSwitcher.LayoutParams(LayoutParams.WRAP_CONTENT,
-				LayoutParams.MATCH_PARENT));
-		return i;
+	public void onSaveInstanceState(Bundle outState) {
+		outState.putAll(getIntent().getExtras() != null ? getIntent().getExtras() : new Bundle());
+		super.onSaveInstanceState(outState);
 	}
 
 	@Override
@@ -179,20 +317,26 @@ public class MusicBrowserActivity extends ActionBarActivity implements Constants
 		finish();
 	}
 
-	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
+	@Override
+	public void onStart() {
+		super.onStart();
+		mToken = MusicUtils.bindToService(this, this);
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(BROADCAST_META_CHANGED);
+		filter.addAction(BROADCAST_QUEUE_CHANGED);
+		filter.addAction(BROADCAST_PLAYSTATE_CHANGED);
+		registerReceiver(mMediaStatusReceiver, filter);
 
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (BROADCAST_META_CHANGED.equals(intent.getAction())
-					|| BROADCAST_META_CHANGED.equals(intent.getAction())) {
-				updateNowplaying();
-			} else if (BROADCAST_PLAYSTATE_CHANGED.equals(intent.getAction())) {
-				updatePlayPauseButton();
-			}
+	}
 
-		}
+	@Override
+	public void onStop() {
 
-	};
+		unregisterReceiver(mMediaStatusReceiver);
+		MusicUtils.unbindFromService(mToken);
+		mService = null;
+		super.onStop();
+	}
 
 	private void configureActivity() {
 
@@ -269,7 +413,9 @@ public class MusicBrowserActivity extends ActionBarActivity implements Constants
 				mTrackName.setText(R.string.music_library);
 				mTrackDetail.setText(R.string.touch_to_shuffle_all);
 			}
-			if (mAlbumArtLoader != null) mAlbumArtLoader.cancel(true);
+			if (mAlbumArtLoader != null) {
+				mAlbumArtLoader.cancel(true);
+			}
 			mAlbumArtLoader = new AsyncAlbumArtLoader();
 			mAlbumArtLoader.execute();
 		} catch (RemoteException e) {
@@ -287,148 +433,6 @@ public class MusicBrowserActivity extends ActionBarActivity implements Constants
 			}
 		} catch (RemoteException e) {
 			e.printStackTrace();
-		}
-	}
-
-	private OnClickListener mActionBarClickListener = new OnClickListener() {
-
-		@Override
-		public void onClick(View v) {
-			if (mService == null) return;
-			try {
-				if (mService.getAudioId() > -1 || mService.getPath() != null) {
-					Intent intent = new Intent(INTENT_PLAYBACK_VIEWER);
-					intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-					startActivity(intent);
-				} else {
-					MusicUtils.shuffleAll(getApplicationContext());
-				}
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
-
-		}
-	};
-
-	private OnClickListener mPlayPauseClickListener = new OnClickListener() {
-
-		@Override
-		public void onClick(View v) {
-			if (mService == null) return;
-			try {
-				if (mService.isPlaying()) {
-					mService.pause();
-				} else {
-					mService.play();
-				}
-
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
-
-		}
-	};
-
-	private OnClickListener mNextClickListener = new OnClickListener() {
-
-		@Override
-		public void onClick(View v) {
-			if (mService == null) return;
-			try {
-				mService.next();
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
-
-		}
-	};
-
-	private OnPageChangeListener mOnPageChangeListener = new OnPageChangeListener() {
-
-		@Override
-		public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-		}
-
-		@Override
-		public void onPageSelected(int position) {
-
-			mPrefs.setIntState(STATE_KEY_CURRENTTAB, position);
-		}
-
-		@Override
-		public void onPageScrollStateChanged(int state) {
-
-		}
-	};
-
-	private class TabsAdapter extends FragmentPagerAdapter implements TitleProvider {
-
-		private final ArrayList<Fragment> mFragments = new ArrayList<Fragment>();
-		private final ArrayList<String> mTitles = new ArrayList<String>();
-
-		public TabsAdapter(FragmentManager manager) {
-			super(manager);
-		}
-
-		public void addFragment(Fragment fragment, String name) {
-			mFragments.add(fragment);
-			mTitles.add(name);
-			notifyDataSetChanged();
-		}
-
-		@Override
-		public int getCount() {
-			return mFragments.size();
-		}
-
-		@Override
-		public Fragment getItem(int position) {
-			return mFragments.get(position);
-		}
-
-		@Override
-		public String getTitle(int position) {
-			return mTitles.get(position);
-		}
-
-	}
-
-	private class AsyncAlbumArtLoader extends AsyncTask<Void, Void, Drawable> {
-
-		@Override
-		public Drawable doInBackground(Void... params) {
-
-			if (mService != null) {
-				try {
-					Bitmap bitmap = MusicUtils.getArtwork(getApplicationContext(),
-							mService.getAudioId(), mService.getAlbumId());
-					if (bitmap == null) return null;
-					int value = 0;
-					if (bitmap.getHeight() <= bitmap.getWidth()) {
-						value = bitmap.getHeight();
-					} else {
-						value = bitmap.getWidth();
-					}
-					Bitmap result = Bitmap.createBitmap(bitmap, (bitmap.getWidth() - value) / 2,
-							(bitmap.getHeight() - value) / 2, value, value);
-					return new BitmapDrawable(getResources(), result);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
-			return null;
-		}
-
-		@Override
-		public void onPostExecute(Drawable result) {
-			if (mAlbumArt != null) {
-				if (result != null) {
-					mAlbumArt.setImageDrawable(result);
-				} else {
-					mAlbumArt.setImageResource(R.drawable.ic_mp_albumart_unknown);
-				}
-			}
 		}
 	}
 }

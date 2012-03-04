@@ -61,7 +61,9 @@ public class SortCursor extends AbstractCursor {
 		int length = mCursors.length;
 		mSortColumns = new int[length];
 		for (int i = 0; i < length; i++) {
-			if (mCursors[i] == null) continue;
+			if (mCursors[i] == null) {
+				continue;
+			}
 
 			// Register ourself as a data set observer
 			mCursors[i].registerDataSetObserver(mObserver);
@@ -74,7 +76,9 @@ public class SortCursor extends AbstractCursor {
 		mCursor = null;
 		String smallest = "";
 		for (int j = 0; j < length; j++) {
-			if (mCursors[j] == null || mCursors[j].isAfterLast()) continue;
+			if (mCursors[j] == null || mCursors[j].isAfterLast()) {
+				continue;
+			}
 			String current = mCursors[j].getString(mSortColumns[j]);
 			if (mCursor == null || current.compareToIgnoreCase(smallest) < 0) {
 				smallest = current;
@@ -89,6 +93,52 @@ public class SortCursor extends AbstractCursor {
 	}
 
 	@Override
+	public void close() {
+
+		int length = mCursors.length;
+		for (int i = 0; i < length; i++) {
+			if (mCursors[i] == null) {
+				continue;
+			}
+			mCursors[i].close();
+		}
+	}
+
+	@Override
+	public void deactivate() {
+
+		int length = mCursors.length;
+		for (int i = 0; i < length; i++) {
+			if (mCursors[i] == null) {
+				continue;
+			}
+			mCursors[i].deactivate();
+		}
+	}
+
+	@Override
+	public byte[] getBlob(int column) {
+
+		return mCursor.getBlob(column);
+	}
+
+	@Override
+	public String[] getColumnNames() {
+
+		if (mCursor != null)
+			return mCursor.getColumnNames();
+		else {
+			// All of the cursors may be empty, but they can still return
+			// this information.
+			int length = mCursors.length;
+			for (int i = 0; i < length; i++) {
+				if (mCursors[i] != null) return mCursors[i].getColumnNames();
+			}
+			throw new IllegalStateException("No cursor that can return names");
+		}
+	}
+
+	@Override
 	public int getCount() {
 
 		int count = 0;
@@ -99,6 +149,48 @@ public class SortCursor extends AbstractCursor {
 			}
 		}
 		return count;
+	}
+
+	@Override
+	public double getDouble(int column) {
+
+		return mCursor.getDouble(column);
+	}
+
+	@Override
+	public float getFloat(int column) {
+
+		return mCursor.getFloat(column);
+	}
+
+	@Override
+	public int getInt(int column) {
+
+		return mCursor.getInt(column);
+	}
+
+	@Override
+	public long getLong(int column) {
+
+		return mCursor.getLong(column);
+	}
+
+	@Override
+	public short getShort(int column) {
+
+		return mCursor.getShort(column);
+	}
+
+	@Override
+	public String getString(int column) {
+
+		return mCursor.getString(column);
+	}
+
+	@Override
+	public boolean isNull(int column) {
+
+		return mCursor.isNull(column);
 	}
 
 	@Override
@@ -133,14 +225,18 @@ public class SortCursor extends AbstractCursor {
 
 		if (mLastCacheHit >= 0) {
 			for (int i = 0; i < length; i++) {
-				if (mCursors[i] == null) continue;
+				if (mCursors[i] == null) {
+					continue;
+				}
 				mCursors[i].moveToPosition(mCurRowNumCache[mLastCacheHit][i]);
 			}
 		}
 
 		if (newPosition < oldPosition || oldPosition == -1) {
 			for (int i = 0; i < length; i++) {
-				if (mCursors[i] == null) continue;
+				if (mCursors[i] == null) {
+					continue;
+				}
 				mCursors[i].moveToFirst();
 			}
 			oldPosition = 0;
@@ -164,7 +260,9 @@ public class SortCursor extends AbstractCursor {
 					smallestIdx = j;
 				}
 			}
-			if (i == newPosition) break;
+			if (i == newPosition) {
+				break;
+			}
 			if (mCursors[smallestIdx] != null) {
 				mCursors[smallestIdx].moveToNext();
 			}
@@ -182,92 +280,6 @@ public class SortCursor extends AbstractCursor {
 	}
 
 	@Override
-	public String getString(int column) {
-
-		return mCursor.getString(column);
-	}
-
-	@Override
-	public short getShort(int column) {
-
-		return mCursor.getShort(column);
-	}
-
-	@Override
-	public int getInt(int column) {
-
-		return mCursor.getInt(column);
-	}
-
-	@Override
-	public long getLong(int column) {
-
-		return mCursor.getLong(column);
-	}
-
-	@Override
-	public float getFloat(int column) {
-
-		return mCursor.getFloat(column);
-	}
-
-	@Override
-	public double getDouble(int column) {
-
-		return mCursor.getDouble(column);
-	}
-
-	@Override
-	public boolean isNull(int column) {
-
-		return mCursor.isNull(column);
-	}
-
-	@Override
-	public byte[] getBlob(int column) {
-
-		return mCursor.getBlob(column);
-	}
-
-	@Override
-	public String[] getColumnNames() {
-
-		if (mCursor != null) {
-			return mCursor.getColumnNames();
-		} else {
-			// All of the cursors may be empty, but they can still return
-			// this information.
-			int length = mCursors.length;
-			for (int i = 0; i < length; i++) {
-				if (mCursors[i] != null) {
-					return mCursors[i].getColumnNames();
-				}
-			}
-			throw new IllegalStateException("No cursor that can return names");
-		}
-	}
-
-	@Override
-	public void deactivate() {
-
-		int length = mCursors.length;
-		for (int i = 0; i < length; i++) {
-			if (mCursors[i] == null) continue;
-			mCursors[i].deactivate();
-		}
-	}
-
-	@Override
-	public void close() {
-
-		int length = mCursors.length;
-		for (int i = 0; i < length; i++) {
-			if (mCursors[i] == null) continue;
-			mCursors[i].close();
-		}
-	}
-
-	@Override
 	public void registerDataSetObserver(DataSetObserver observer) {
 
 		int length = mCursors.length;
@@ -279,6 +291,21 @@ public class SortCursor extends AbstractCursor {
 	}
 
 	@Override
+	public boolean requery() {
+
+		int length = mCursors.length;
+		for (int i = 0; i < length; i++) {
+			if (mCursors[i] == null) {
+				continue;
+			}
+
+			if (mCursors[i].requery() == false) return false;
+		}
+
+		return true;
+	}
+
+	@Override
 	public void unregisterDataSetObserver(DataSetObserver observer) {
 
 		int length = mCursors.length;
@@ -287,20 +314,5 @@ public class SortCursor extends AbstractCursor {
 				mCursors[i].unregisterDataSetObserver(observer);
 			}
 		}
-	}
-
-	@Override
-	public boolean requery() {
-
-		int length = mCursors.length;
-		for (int i = 0; i < length; i++) {
-			if (mCursors[i] == null) continue;
-
-			if (mCursors[i].requery() == false) {
-				return false;
-			}
-		}
-
-		return true;
 	}
 }

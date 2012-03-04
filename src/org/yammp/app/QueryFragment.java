@@ -20,6 +20,10 @@
 
 package org.yammp.app;
 
+import org.yammp.Constants;
+import org.yammp.R;
+import org.yammp.util.MusicUtils;
+
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -44,191 +48,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import org.yammp.Constants;
-import org.yammp.R;
-import org.yammp.util.MusicUtils;
-
 public class QueryFragment extends ListFragment implements Constants, LoaderCallbacks<Cursor> {
-
-	private QueryListAdapter mAdapter;
-	private String mFilterString = "";
-	private Cursor mQueryCursor;
-	private ListView mTrackList;
-
-	public QueryFragment() {
-
-	}
-
-	public QueryFragment(Bundle arguments) {
-		setArguments(arguments);
-	}
-
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-
-		// We have a menu item to show in action bar.
-		setHasOptionsMenu(true);
-
-		mAdapter = new QueryListAdapter(getActivity(), R.layout.query_list_item, null,
-				new String[] {}, new int[] {}, 0);
-
-		setListAdapter(mAdapter);
-
-		getListView().setOnCreateContextMenuListener(this);
-
-		// Prepare the loader. Either re-connect with an existing one,
-		// or start a new one.
-		getLoaderManager().initLoader(0, getArguments(), this);
-
-	}
-
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.query_browser, container, false);
-		return view;
-	}
-
-	public void onServiceConnected(ComponentName name, IBinder service) {
-
-		Bundle bundle = getArguments();
-
-		String action = bundle != null ? bundle.getString(INTENT_KEY_ACTION) : null;
-		String data = bundle != null ? bundle.getString(INTENT_KEY_DATA) : null;
-
-		if (Intent.ACTION_VIEW.equals(action)) {
-			// this is something we got from the search bar
-			Uri uri = Uri.parse(data);
-			if (data.startsWith("content://media/external/audio/media/")) {
-				// This is a specific file
-				String id = uri.getLastPathSegment();
-				long[] list = new long[] { Long.valueOf(id) };
-				MusicUtils.playAll(getActivity(), list, 0);
-				getActivity().finish();
-				return;
-			} else if (data.startsWith("content://media/external/audio/albums/")) {
-				// This is an album, show the songs on it
-				Intent i = new Intent(Intent.ACTION_PICK);
-				i.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/track");
-				i.putExtra("album", uri.getLastPathSegment());
-				startActivity(i);
-				return;
-			} else if (data.startsWith("content://media/external/audio/artists/")) {
-				// This is an artist, show the albums for that artist
-				Intent i = new Intent(Intent.ACTION_PICK);
-				i.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/album");
-				i.putExtra("artist", uri.getLastPathSegment());
-				startActivity(i);
-				return;
-			}
-		}
-
-		mFilterString = bundle != null ? bundle.getString(SearchManager.QUERY) : null;
-		if (MediaStore.INTENT_ACTION_MEDIA_SEARCH.equals(action)) {
-			String focus = bundle != null ? bundle.getString(MediaStore.EXTRA_MEDIA_FOCUS) : null;
-			String artist = bundle != null ? bundle.getString(MediaStore.EXTRA_MEDIA_ARTIST) : null;
-			String album = bundle != null ? bundle.getString(MediaStore.EXTRA_MEDIA_ALBUM) : null;
-			String title = bundle != null ? bundle.getString(MediaStore.EXTRA_MEDIA_TITLE) : null;
-			if (focus != null) {
-				if (focus.startsWith("audio/") && title != null) {
-					mFilterString = title;
-				} else if (Audio.Albums.ENTRY_CONTENT_TYPE.equals(focus)) {
-					if (album != null) {
-						mFilterString = album;
-						if (artist != null) {
-							mFilterString = mFilterString + " " + artist;
-						}
-					}
-				} else if (Audio.Artists.ENTRY_CONTENT_TYPE.equals(focus)) {
-					if (artist != null) {
-						mFilterString = artist;
-					}
-				}
-			}
-		}
-
-		mTrackList = getListView();
-		mTrackList.setTextFilterEnabled(true);
-	}
-
-	public void onServiceDisconnected(ComponentName name) {
-
-	}
-
-	@Override
-	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-
-		String filter = "";
-
-		if (args != null) {
-			filter = args.getString(INTENT_KEY_FILTER) != null ? args.getString(INTENT_KEY_FILTER)
-					: "";
-		}
-
-		StringBuilder where = new StringBuilder();
-
-		where.append(Audio.Media.IS_MUSIC + "=1");
-		where.append(" AND " + Audio.Media.TITLE + " != ''");
-
-		String[] cols = new String[] { BaseColumns._ID, Audio.Media.MIME_TYPE,
-				Audio.Artists.ARTIST, Audio.Albums.ALBUM, Audio.Media.TITLE, "data1", "data2" };
-
-		Uri uri = Uri.parse("content://media/external/audio/search/fancy/" + Uri.encode(filter));
-
-		// Now create and return a CursorLoader that will take care of
-		// creating a Cursor for the data being displayed.
-		return new CursorLoader(getActivity(), uri, cols, where.toString(), null, null);
-	}
-
-	@Override
-	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-
-		if (data == null) {
-			getActivity().finish();
-			return;
-		}
-
-		mQueryCursor = data;
-		mAdapter.swapCursor(data);
-
-	}
-
-	@Override
-	public void onLoaderReset(Loader<Cursor> loader) {
-		mAdapter.swapCursor(null);
-	}
-
-	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
-
-		// Dialog doesn't allow us to wait for a result, so we need to store
-		// the info we need for when the dialog posts its result
-		mQueryCursor.moveToPosition(position);
-		if (mQueryCursor.isBeforeFirst() || mQueryCursor.isAfterLast()) {
-			return;
-		}
-		String selectedType = mQueryCursor.getString(mQueryCursor
-				.getColumnIndexOrThrow(Audio.Media.MIME_TYPE));
-
-		if ("artist".equals(selectedType)) {
-			Intent intent = new Intent(Intent.ACTION_PICK);
-			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-			intent.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/album");
-			intent.putExtra("artist", Long.valueOf(id).toString());
-			startActivity(intent);
-		} else if ("album".equals(selectedType)) {
-			Intent intent = new Intent(Intent.ACTION_PICK);
-			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-			intent.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/track");
-			intent.putExtra("album", Long.valueOf(id).toString());
-			startActivity(intent);
-		} else if (position >= 0 && id >= 0) {
-			long[] list = new long[] { id };
-			MusicUtils.playAll(getActivity(), list, 0);
-		} else {
-			Log.e("QueryBrowser", "invalid position/id: " + position + "/" + id);
-		}
-	}
 
 	private class QueryListAdapter extends SimpleCursorAdapter {
 
@@ -249,15 +69,6 @@ public class QueryFragment extends ListFragment implements Constants, LoaderCall
 		private QueryListAdapter(Context context, int layout, Cursor cursor, String[] from,
 				int[] to, int flags) {
 			super(context, layout, cursor, from, to, flags);
-		}
-
-		@Override
-		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-			View view = super.newView(context, cursor, parent);
-			ViewHolder viewholder = new ViewHolder(view);
-			view.setTag(viewholder);
-			return view;
 		}
 
 		@Override
@@ -323,6 +134,194 @@ public class QueryFragment extends ListFragment implements Constants, LoaderCall
 				viewholder.result_summary.setText(displayname + " - " + name);
 			}
 		}
+
+		@Override
+		public View newView(Context context, Cursor cursor, ViewGroup parent) {
+
+			View view = super.newView(context, cursor, parent);
+			ViewHolder viewholder = new ViewHolder(view);
+			view.setTag(viewholder);
+			return view;
+		}
+
+	}
+
+	private QueryListAdapter mAdapter;
+	private String mFilterString = "";
+	private Cursor mQueryCursor;
+
+	private ListView mTrackList;
+
+	public QueryFragment() {
+
+	}
+
+	public QueryFragment(Bundle arguments) {
+		setArguments(arguments);
+	}
+
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+
+		// We have a menu item to show in action bar.
+		setHasOptionsMenu(true);
+
+		mAdapter = new QueryListAdapter(getActivity(), R.layout.query_list_item, null,
+				new String[] {}, new int[] {}, 0);
+
+		setListAdapter(mAdapter);
+
+		getListView().setOnCreateContextMenuListener(this);
+
+		// Prepare the loader. Either re-connect with an existing one,
+		// or start a new one.
+		getLoaderManager().initLoader(0, getArguments(), this);
+
+	}
+
+	@Override
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+
+		String filter = "";
+
+		if (args != null) {
+			filter = args.getString(INTENT_KEY_FILTER) != null ? args.getString(INTENT_KEY_FILTER)
+					: "";
+		}
+
+		StringBuilder where = new StringBuilder();
+
+		where.append(Audio.Media.IS_MUSIC + "=1");
+		where.append(" AND " + Audio.Media.TITLE + " != ''");
+
+		String[] cols = new String[] { BaseColumns._ID, Audio.Media.MIME_TYPE,
+				Audio.Artists.ARTIST, Audio.Albums.ALBUM, Audio.Media.TITLE, "data1", "data2" };
+
+		Uri uri = Uri.parse("content://media/external/audio/search/fancy/" + Uri.encode(filter));
+
+		// Now create and return a CursorLoader that will take care of
+		// creating a Cursor for the data being displayed.
+		return new CursorLoader(getActivity(), uri, cols, where.toString(), null, null);
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		View view = inflater.inflate(R.layout.query_browser, container, false);
+		return view;
+	}
+
+	@Override
+	public void onListItemClick(ListView l, View v, int position, long id) {
+
+		// Dialog doesn't allow us to wait for a result, so we need to store
+		// the info we need for when the dialog posts its result
+		mQueryCursor.moveToPosition(position);
+		if (mQueryCursor.isBeforeFirst() || mQueryCursor.isAfterLast()) return;
+		String selectedType = mQueryCursor.getString(mQueryCursor
+				.getColumnIndexOrThrow(Audio.Media.MIME_TYPE));
+
+		if ("artist".equals(selectedType)) {
+			Intent intent = new Intent(Intent.ACTION_PICK);
+			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			intent.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/album");
+			intent.putExtra("artist", Long.valueOf(id).toString());
+			startActivity(intent);
+		} else if ("album".equals(selectedType)) {
+			Intent intent = new Intent(Intent.ACTION_PICK);
+			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			intent.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/track");
+			intent.putExtra("album", Long.valueOf(id).toString());
+			startActivity(intent);
+		} else if (position >= 0 && id >= 0) {
+			long[] list = new long[] { id };
+			MusicUtils.playAll(getActivity(), list, 0);
+		} else {
+			Log.e("QueryBrowser", "invalid position/id: " + position + "/" + id);
+		}
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> loader) {
+		mAdapter.swapCursor(null);
+	}
+
+	@Override
+	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
+		if (data == null) {
+			getActivity().finish();
+			return;
+		}
+
+		mQueryCursor = data;
+		mAdapter.swapCursor(data);
+
+	}
+
+	public void onServiceConnected(ComponentName name, IBinder service) {
+
+		Bundle bundle = getArguments();
+
+		String action = bundle != null ? bundle.getString(INTENT_KEY_ACTION) : null;
+		String data = bundle != null ? bundle.getString(INTENT_KEY_DATA) : null;
+
+		if (Intent.ACTION_VIEW.equals(action)) {
+			// this is something we got from the search bar
+			Uri uri = Uri.parse(data);
+			if (data.startsWith("content://media/external/audio/media/")) {
+				// This is a specific file
+				String id = uri.getLastPathSegment();
+				long[] list = new long[] { Long.valueOf(id) };
+				MusicUtils.playAll(getActivity(), list, 0);
+				getActivity().finish();
+				return;
+			} else if (data.startsWith("content://media/external/audio/albums/")) {
+				// This is an album, show the songs on it
+				Intent i = new Intent(Intent.ACTION_PICK);
+				i.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/track");
+				i.putExtra("album", uri.getLastPathSegment());
+				startActivity(i);
+				return;
+			} else if (data.startsWith("content://media/external/audio/artists/")) {
+				// This is an artist, show the albums for that artist
+				Intent i = new Intent(Intent.ACTION_PICK);
+				i.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/album");
+				i.putExtra("artist", uri.getLastPathSegment());
+				startActivity(i);
+				return;
+			}
+		}
+
+		mFilterString = bundle != null ? bundle.getString(SearchManager.QUERY) : null;
+		if (MediaStore.INTENT_ACTION_MEDIA_SEARCH.equals(action)) {
+			String focus = bundle != null ? bundle.getString(MediaStore.EXTRA_MEDIA_FOCUS) : null;
+			String artist = bundle != null ? bundle.getString(MediaStore.EXTRA_MEDIA_ARTIST) : null;
+			String album = bundle != null ? bundle.getString(MediaStore.EXTRA_MEDIA_ALBUM) : null;
+			String title = bundle != null ? bundle.getString(MediaStore.EXTRA_MEDIA_TITLE) : null;
+			if (focus != null) {
+				if (focus.startsWith("audio/") && title != null) {
+					mFilterString = title;
+				} else if (Audio.Albums.ENTRY_CONTENT_TYPE.equals(focus)) {
+					if (album != null) {
+						mFilterString = album;
+						if (artist != null) {
+							mFilterString = mFilterString + " " + artist;
+						}
+					}
+				} else if (Audio.Artists.ENTRY_CONTENT_TYPE.equals(focus)) {
+					if (artist != null) {
+						mFilterString = artist;
+					}
+				}
+			}
+		}
+
+		mTrackList = getListView();
+		mTrackList.setTextFilterEnabled(true);
+	}
+
+	public void onServiceDisconnected(ComponentName name) {
 
 	}
 

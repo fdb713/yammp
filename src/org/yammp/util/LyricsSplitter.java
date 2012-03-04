@@ -29,34 +29,32 @@ public class LyricsSplitter {
 			for (int i = 0; i < half / 2; i++) {
 				int pos = half - i;
 				char c = line.charAt(pos);
-				if (c == ' ' || c == '\u3000') {
+				if (c == ' ' || c == '\u3000')
 					return line.substring(0, pos).trim() + "\n"
 							+ line.substring(pos + 1, line.length()).trim();
-				} else if (c == '(' || c == '<' || c == '[' || c == '{' || c == '\uFF08'
-						|| c == '\u3010' || c == '\u3016' || c == '\u300C' || c == '/') {
+				else if (c == '(' || c == '<' || c == '[' || c == '{' || c == '\uFF08'
+						|| c == '\u3010' || c == '\u3016' || c == '\u300C' || c == '/')
 					return line.substring(0, pos).trim() + "\n"
 							+ line.substring(pos, line.length()).trim();
-				} else if (c == ')' || c == '>' || c == ']' || c == '}' || c == '\uFF09'
+				else if (c == ')' || c == '>' || c == ']' || c == '}' || c == '\uFF09'
 						|| c == '\u3011' || c == '\u3017' || c == '\u300D' || c == ','
-						|| c == '\uFF0C' || c == '\u3002') {
+						|| c == '\uFF0C' || c == '\u3002')
 					return line.substring(0, pos + 1).trim() + "\n"
 							+ line.substring(pos + 1, line.length()).trim();
-				}
 				pos = half + i + 1;
 				c = line.charAt(pos);
-				if (c == ' ' || c == '\u3000') {
+				if (c == ' ' || c == '\u3000')
 					return line.substring(0, pos).trim() + "\n"
 							+ line.substring(pos + 1, line.length()).trim();
-				} else if (c == '(' || c == '<' || c == '[' || c == '{' || c == '\uFF08'
-						|| c == '\u3010' || c == '\u3016' || c == '\u300C' || c == '/') {
+				else if (c == '(' || c == '<' || c == '[' || c == '{' || c == '\uFF08'
+						|| c == '\u3010' || c == '\u3016' || c == '\u300C' || c == '/')
 					return line.substring(0, pos).trim() + "\n"
 							+ line.substring(pos, line.length()).trim();
-				} else if (c == ')' || c == '>' || c == ']' || c == '}' || c == '\uFF09'
+				else if (c == ')' || c == '>' || c == ']' || c == '}' || c == '\uFF09'
 						|| c == '\u3011' || c == '\u3017' || c == '\u300D' || c == ','
-						|| c == '\uFF0C' || c == '\u3002') {
+						|| c == '\uFF0C' || c == '\u3002')
 					return line.substring(0, pos + 1).trim() + "\n"
 							+ line.substring(pos + 1, line.length()).trim();
-				}
 			}
 			return line.substring(0, half) + "\n" + line.substring(half, line.length());
 		}

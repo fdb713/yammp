@@ -38,22 +38,6 @@ public class CheckableRelativeLayout extends RelativeLayout implements Checkable
 	}
 
 	@Override
-	protected int[] onCreateDrawableState(int extraSpace) {
-
-		final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
-		if (isChecked()) {
-			mergeDrawableStates(drawableState, CHECKED_STATE_SET);
-		}
-		return drawableState;
-	}
-
-	@Override
-	public void toggle() {
-
-		setChecked(!mChecked);
-	}
-
-	@Override
 	public boolean isChecked() {
 
 		return mChecked;
@@ -66,5 +50,21 @@ public class CheckableRelativeLayout extends RelativeLayout implements Checkable
 			mChecked = checked;
 			refreshDrawableState();
 		}
+	}
+
+	@Override
+	public void toggle() {
+
+		setChecked(!mChecked);
+	}
+
+	@Override
+	protected int[] onCreateDrawableState(int extraSpace) {
+
+		final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
+		if (isChecked()) {
+			mergeDrawableStates(drawableState, CHECKED_STATE_SET);
+		}
+		return drawableState;
 	}
 }

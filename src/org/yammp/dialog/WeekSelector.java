@@ -33,8 +33,48 @@ import android.widget.Toast;
 
 public class WeekSelector extends FragmentActivity implements Constants {
 
+	public static class WeekSelectorDialogFragment extends DialogFragment implements
+			OnClickListener, OnCancelListener {
+
+		@Override
+		public void onCancel(DialogInterface dialog) {
+			getActivity().finish();
+		}
+
+		@Override
+		public void onClick(DialogInterface dialog, int which) {
+
+			switch (which) {
+				case DialogInterface.BUTTON_POSITIVE:
+					int numweeks = mAlert.getCurrentSelectedPos() + 1;
+					mPrefs.setIntPref(PREF_KEY_NUMWEEKS, numweeks);
+					getActivity().setResult(RESULT_OK);
+					break;
+				case DialogInterface.BUTTON_NEGATIVE:
+					break;
+
+			}
+			getActivity().finish();
+		}
+
+		@Override
+		public Dialog onCreateDialog(Bundle savedInstanceState) {
+
+			mAlert.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+			mAlert.setIcon(android.R.drawable.ic_dialog_info);
+			mAlert.setTitle(R.string.set_time);
+			mAlert.setButton(Dialog.BUTTON_POSITIVE, getString(android.R.string.ok), this);
+			mAlert.setButton(Dialog.BUTTON_NEGATIVE, getString(android.R.string.cancel), this);
+			mAlert.setOnCancelListener(this);
+
+			return mAlert;
+
+		}
+	}
+
 	private String action;
 	private static VerticalTextSpinnerDialog mAlert;
+
 	private static PreferencesEditor mPrefs;
 
 	@Override
@@ -67,44 +107,5 @@ public class WeekSelector extends FragmentActivity implements Constants {
 	public void onSaveInstanceState(Bundle savedInstanceState) {
 		savedInstanceState.putInt(PREF_KEY_NUMWEEKS, mAlert.getCurrentSelectedPos() + 1);
 		super.onSaveInstanceState(savedInstanceState);
-	}
-
-	public static class WeekSelectorDialogFragment extends DialogFragment implements
-			OnClickListener, OnCancelListener {
-
-		@Override
-		public Dialog onCreateDialog(Bundle savedInstanceState) {
-
-			mAlert.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-			mAlert.setIcon(android.R.drawable.ic_dialog_info);
-			mAlert.setTitle(R.string.set_time);
-			mAlert.setButton(Dialog.BUTTON_POSITIVE, getString(android.R.string.ok), this);
-			mAlert.setButton(Dialog.BUTTON_NEGATIVE, getString(android.R.string.cancel), this);
-			mAlert.setOnCancelListener(this);
-
-			return mAlert;
-
-		}
-
-		@Override
-		public void onClick(DialogInterface dialog, int which) {
-
-			switch (which) {
-				case DialogInterface.BUTTON_POSITIVE:
-					int numweeks = mAlert.getCurrentSelectedPos() + 1;
-					mPrefs.setIntPref(PREF_KEY_NUMWEEKS, numweeks);
-					getActivity().setResult(RESULT_OK);
-					break;
-				case DialogInterface.BUTTON_NEGATIVE:
-					break;
-
-			}
-			getActivity().finish();
-		}
-
-		@Override
-		public void onCancel(DialogInterface dialog) {
-			getActivity().finish();
-		}
 	}
 }

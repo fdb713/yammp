@@ -36,45 +36,18 @@ import android.support.v4.app.FragmentActivity;
 
 public class ScanningProgress extends FragmentActivity {
 
-	private DialogFragment mFragment;
-
-	@Override
-	public void onCreate(Bundle icicle) {
-
-		super.onCreate(icicle);
-		setVolumeControlStream(AudioManager.STREAM_MUSIC);
-
-		mFragment = new ScanningDialogFragment();
-		mFragment.show(getSupportFragmentManager(), "scanning_dialog");
-
-	}
-
-	@Override
-	public void onStart() {
-		super.onStart();
-		registerReceiver(mMountStateReceiver, new IntentFilter(Intent.ACTION_MEDIA_MOUNTED));
-	}
-
-	@Override
-	public void onStop() {
-		unregisterReceiver(mMountStateReceiver);
-		super.onStop();
-	}
-
-	private BroadcastReceiver mMountStateReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction())) {
-				startActivity(new Intent(getApplicationContext(), MusicBrowserActivity.class));
-				finish();
-			}
-		}
-
-	};
-
 	public static class ScanningDialogFragment extends DialogFragment implements OnClickListener,
 			OnCancelListener {
+
+		@Override
+		public void onCancel(DialogInterface dialog) {
+			getActivity().finish();
+		}
+
+		@Override
+		public void onClick(DialogInterface dialog, int which) {
+
+		}
 
 		@Override
 		public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -107,15 +80,42 @@ public class ScanningProgress extends FragmentActivity {
 			return builder.create();
 
 		}
+	}
+
+	private DialogFragment mFragment;
+
+	private BroadcastReceiver mMountStateReceiver = new BroadcastReceiver() {
 
 		@Override
-		public void onCancel(DialogInterface dialog) {
-			getActivity().finish();
+		public void onReceive(Context context, Intent intent) {
+			if (Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction())) {
+				startActivity(new Intent(getApplicationContext(), MusicBrowserActivity.class));
+				finish();
+			}
 		}
 
-		@Override
-		public void onClick(DialogInterface dialog, int which) {
+	};
 
-		}
+	@Override
+	public void onCreate(Bundle icicle) {
+
+		super.onCreate(icicle);
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+		mFragment = new ScanningDialogFragment();
+		mFragment.show(getSupportFragmentManager(), "scanning_dialog");
+
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+		registerReceiver(mMountStateReceiver, new IntentFilter(Intent.ACTION_MEDIA_MOUNTED));
+	}
+
+	@Override
+	public void onStop() {
+		unregisterReceiver(mMountStateReceiver);
+		super.onStop();
 	}
 }

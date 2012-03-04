@@ -35,8 +35,6 @@ import android.util.Log;
  */
 public class EqualizerWrapper {
 
-	private Object mEqualizer = null;
-
 	/**
 	 * Detect whether equalizer is supported.
 	 * 
@@ -52,6 +50,8 @@ public class EqualizerWrapper {
 		}
 		return true;
 	}
+
+	private Object mEqualizer = null;
 
 	/**
 	 * Class constructor.
@@ -89,129 +89,21 @@ public class EqualizerWrapper {
 	}
 
 	/**
-	 * Gets the number of frequency bands supported by the Equalizer engine.
+	 * Gets the band that has the most effect on the given frequency.
 	 * 
-	 * @return the number of bands
+	 * @param frequency
+	 *            frequency in milliHertz which is to be equalized via the
+	 *            returned band.
+	 * @return the frequency band that has most effect on the given frequency.
 	 * @throws IllegalStateException
 	 * @throws IllegalArgumentException
 	 * @throws UnsupportedOperationException
 	 */
-	public short getNumberOfBands() {
+	public short getBand(int frequency) {
 
 		try {
-			return (Short) mEqualizer.getClass().getMethod("getNumberOfBands", new Class[] {})
-					.invoke(mEqualizer, new Object[] {});
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
-		}
-		return 0;
-	}
-
-	/**
-	 * Gets the level range for use by {@link #setBandLevel(short,short)}. The
-	 * level is expressed in milliBel.
-	 * 
-	 * @return the band level range in an array of short integers. The first
-	 *         element is the lower limit of the range, the second element the
-	 *         upper limit.
-	 * @throws IllegalStateException
-	 * @throws IllegalArgumentException
-	 * @throws UnsupportedOperationException
-	 */
-	public short[] getBandLevelRange() {
-
-		try {
-			return (short[]) mEqualizer.getClass().getMethod("getBandLevelRange", new Class[] {})
-					.invoke(mEqualizer, new Object[] {});
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Sets the given equalizer band to the given gain value.
-	 * 
-	 * @param band
-	 *            frequency band that will have the new gain. The numbering of
-	 *            the bands starts from 0 and ends at (number of bands - 1).
-	 * @param level
-	 *            new gain in millibels that will be set to the given band.
-	 *            getBandLevelRange() will define the maximum and minimum
-	 *            values.
-	 * @throws IllegalStateException
-	 * @throws IllegalArgumentException
-	 * @throws UnsupportedOperationException
-	 * @see #getNumberOfBands()
-	 */
-	public void setBandLevel(short band, short level) {
-
-		try {
-			mEqualizer.getClass()
-					.getMethod("setBandLevel", new Class[] { short.class, short.class })
-					.invoke(mEqualizer, new Object[] { band, level });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
-		}
-	}
-
-	/**
-	 * Gets the gain set for the given equalizer band.
-	 * 
-	 * @param band
-	 *            frequency band whose gain is requested. The numbering of the
-	 *            bands starts from 0 and ends at (number of bands - 1).
-	 * @return the gain in millibels of the given band.
-	 * @throws IllegalStateException
-	 * @throws IllegalArgumentException
-	 * @throws UnsupportedOperationException
-	 */
-	public short getBandLevel(short band) {
-
-		try {
-			return (Short) mEqualizer.getClass()
-					.getMethod("getBandLevel", new Class[] { short.class })
-					.invoke(mEqualizer, new Object[] { band });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
-		}
-		return 0;
-	}
-
-	/**
-	 * Gets the center frequency of the given band.
-	 * 
-	 * @param band
-	 *            frequency band whose center frequency is requested. The
-	 *            numbering of the bands starts from 0 and ends at (number of
-	 *            bands - 1).
-	 * @return the center frequency in milliHertz
-	 * @throws IllegalStateException
-	 * @throws IllegalArgumentException
-	 * @throws UnsupportedOperationException
-	 */
-	public int getCenterFreq(short band) {
-
-		try {
-			return (Integer) mEqualizer.getClass()
-					.getMethod("getCenterFreq", new Class[] { short.class })
-					.invoke(mEqualizer, new Object[] { band });
+			return (Short) mEqualizer.getClass().getMethod("getBand", new Class[] { int.class })
+					.invoke(mEqualizer, new Object[] { frequency });
 		} catch (Exception e) {
 			if (e.getCause() == null) {
 				e.printStackTrace();
@@ -253,21 +145,76 @@ public class EqualizerWrapper {
 	}
 
 	/**
-	 * Gets the band that has the most effect on the given frequency.
+	 * Gets the gain set for the given equalizer band.
 	 * 
-	 * @param frequency
-	 *            frequency in milliHertz which is to be equalized via the
-	 *            returned band.
-	 * @return the frequency band that has most effect on the given frequency.
+	 * @param band
+	 *            frequency band whose gain is requested. The numbering of the
+	 *            bands starts from 0 and ends at (number of bands - 1).
+	 * @return the gain in millibels of the given band.
 	 * @throws IllegalStateException
 	 * @throws IllegalArgumentException
 	 * @throws UnsupportedOperationException
 	 */
-	public short getBand(int frequency) {
+	public short getBandLevel(short band) {
 
 		try {
-			return (Short) mEqualizer.getClass().getMethod("getBand", new Class[] { int.class })
-					.invoke(mEqualizer, new Object[] { frequency });
+			return (Short) mEqualizer.getClass()
+					.getMethod("getBandLevel", new Class[] { short.class })
+					.invoke(mEqualizer, new Object[] { band });
+		} catch (Exception e) {
+			if (e.getCause() == null) {
+				e.printStackTrace();
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Gets the level range for use by {@link #setBandLevel(short,short)}. The
+	 * level is expressed in milliBel.
+	 * 
+	 * @return the band level range in an array of short integers. The first
+	 *         element is the lower limit of the range, the second element the
+	 *         upper limit.
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 * @throws UnsupportedOperationException
+	 */
+	public short[] getBandLevelRange() {
+
+		try {
+			return (short[]) mEqualizer.getClass().getMethod("getBandLevelRange", new Class[] {})
+					.invoke(mEqualizer, new Object[] {});
+		} catch (Exception e) {
+			if (e.getCause() == null) {
+				e.printStackTrace();
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the center frequency of the given band.
+	 * 
+	 * @param band
+	 *            frequency band whose center frequency is requested. The
+	 *            numbering of the bands starts from 0 and ends at (number of
+	 *            bands - 1).
+	 * @return the center frequency in milliHertz
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 * @throws UnsupportedOperationException
+	 */
+	public int getCenterFreq(short band) {
+
+		try {
+			return (Integer) mEqualizer.getClass()
+					.getMethod("getCenterFreq", new Class[] { short.class })
+					.invoke(mEqualizer, new Object[] { band });
 		} catch (Exception e) {
 			if (e.getCause() == null) {
 				e.printStackTrace();
@@ -302,21 +249,18 @@ public class EqualizerWrapper {
 	}
 
 	/**
-	 * Sets the equalizer according to the given preset.
+	 * Gets the number of frequency bands supported by the Equalizer engine.
 	 * 
-	 * @param preset
-	 *            new preset that will be taken into use. The valid range is [0,
-	 *            number of presets-1].
+	 * @return the number of bands
 	 * @throws IllegalStateException
 	 * @throws IllegalArgumentException
 	 * @throws UnsupportedOperationException
-	 * @see #getNumberOfPresets()
 	 */
-	public void usePreset(short preset) {
+	public short getNumberOfBands() {
 
 		try {
-			mEqualizer.getClass().getMethod("usePreset", new Class[] { short.class })
-					.invoke(mEqualizer, new Object[] { preset });
+			return (Short) mEqualizer.getClass().getMethod("getNumberOfBands", new Class[] {})
+					.invoke(mEqualizer, new Object[] {});
 		} catch (Exception e) {
 			if (e.getCause() == null) {
 				e.printStackTrace();
@@ -324,6 +268,7 @@ public class EqualizerWrapper {
 				e.getCause().printStackTrace();
 			}
 		}
+		return 0;
 	}
 
 	/**
@@ -378,6 +323,55 @@ public class EqualizerWrapper {
 	}
 
 	/**
+	 * Releases the native AudioEffect resources. It is a good practice to
+	 * release the effect engine when not in use as control can be returned to
+	 * other applications or the native resources released.
+	 */
+	public void release() {
+
+		try {
+			mEqualizer.getClass().getMethod("release", new Class[] {})
+					.invoke(mEqualizer, new Object[] {});
+		} catch (Exception e) {
+			if (e.getCause() == null) {
+				e.printStackTrace();
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Sets the given equalizer band to the given gain value.
+	 * 
+	 * @param band
+	 *            frequency band that will have the new gain. The numbering of
+	 *            the bands starts from 0 and ends at (number of bands - 1).
+	 * @param level
+	 *            new gain in millibels that will be set to the given band.
+	 *            getBandLevelRange() will define the maximum and minimum
+	 *            values.
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 * @throws UnsupportedOperationException
+	 * @see #getNumberOfBands()
+	 */
+	public void setBandLevel(short band, short level) {
+
+		try {
+			mEqualizer.getClass()
+					.getMethod("setBandLevel", new Class[] { short.class, short.class })
+					.invoke(mEqualizer, new Object[] { band, level });
+		} catch (Exception e) {
+			if (e.getCause() == null) {
+				e.printStackTrace();
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+	}
+
+	/**
 	 * Enable or disable the effect. Creating an audio effect does not
 	 * automatically apply this effect on the audio source. It creates the
 	 * resources necessary to process this effect but the audio signal is still
@@ -411,15 +405,21 @@ public class EqualizerWrapper {
 	}
 
 	/**
-	 * Releases the native AudioEffect resources. It is a good practice to
-	 * release the effect engine when not in use as control can be returned to
-	 * other applications or the native resources released.
+	 * Sets the equalizer according to the given preset.
+	 * 
+	 * @param preset
+	 *            new preset that will be taken into use. The valid range is [0,
+	 *            number of presets-1].
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 * @throws UnsupportedOperationException
+	 * @see #getNumberOfPresets()
 	 */
-	public void release() {
+	public void usePreset(short preset) {
 
 		try {
-			mEqualizer.getClass().getMethod("release", new Class[] {})
-					.invoke(mEqualizer, new Object[] {});
+			mEqualizer.getClass().getMethod("usePreset", new Class[] { short.class })
+					.invoke(mEqualizer, new Object[] { preset });
 		} catch (Exception e) {
 			if (e.getCause() == null) {
 				e.printStackTrace();

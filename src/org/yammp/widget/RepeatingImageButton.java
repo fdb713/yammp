@@ -30,10 +30,43 @@ import android.widget.ImageButton;
  */
 public class RepeatingImageButton extends ImageButton {
 
+	public interface RepeatListener {
+
+		/**
+		 * This method will be called repeatedly at roughly the interval
+		 * specified in setRepeatListener(), for as long as the button is
+		 * pressed.
+		 * 
+		 * @param v
+		 *            The button as a View.
+		 * @param duration
+		 *            The number of milliseconds the button has been pressed so
+		 *            far.
+		 * @param repeatcount
+		 *            The number of previous calls in this sequence. If this is
+		 *            going to be the last call in this sequence (i.e. the user
+		 *            just stopped pressing the button), the value will be -1.
+		 */
+		void onRepeat(View v, long duration, int repeatcount);
+	}
+
 	private long mStartTime;
 	private int mRepeatCount;
 	private RepeatListener mListener;
+
 	private long mInterval = 500;
+
+	private Runnable mRepeater = new Runnable() {
+
+		@Override
+		public void run() {
+
+			doRepeat(false);
+			if (isPressed()) {
+				postDelayed(this, mInterval);
+			}
+		}
+	};
 
 	public RepeatingImageButton(Context context) {
 
@@ -50,44 +83,6 @@ public class RepeatingImageButton extends ImageButton {
 		super(context, attrs, defStyle);
 		setFocusable(true);
 		setLongClickable(true);
-	}
-
-	/**
-	 * Sets the listener to be called while the button is pressed and the
-	 * interval in milliseconds with which it will be called.
-	 * 
-	 * @param l
-	 *            The listener that will be called
-	 * @param interval
-	 *            The interval in milliseconds for calls
-	 */
-	public void setRepeatListener(RepeatListener l, long interval) {
-
-		mListener = l;
-		mInterval = interval;
-	}
-
-	@Override
-	public boolean performLongClick() {
-
-		mStartTime = SystemClock.elapsedRealtime();
-		mRepeatCount = 0;
-		post(mRepeater);
-		return true;
-	}
-
-	@Override
-	public boolean onTouchEvent(MotionEvent event) {
-
-		if (event.getAction() == MotionEvent.ACTION_UP) {
-			// remove the repeater, but call the hook one more time
-			removeCallbacks(mRepeater);
-			if (mStartTime != 0) {
-				doRepeat(true);
-				mStartTime = 0;
-			}
-		}
-		return super.onTouchEvent(event);
 	}
 
 	@Override
@@ -120,17 +115,43 @@ public class RepeatingImageButton extends ImageButton {
 		return super.onKeyUp(keyCode, event);
 	}
 
-	private Runnable mRepeater = new Runnable() {
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
 
-		@Override
-		public void run() {
-
-			doRepeat(false);
-			if (isPressed()) {
-				postDelayed(this, mInterval);
+		if (event.getAction() == MotionEvent.ACTION_UP) {
+			// remove the repeater, but call the hook one more time
+			removeCallbacks(mRepeater);
+			if (mStartTime != 0) {
+				doRepeat(true);
+				mStartTime = 0;
 			}
 		}
-	};
+		return super.onTouchEvent(event);
+	}
+
+	@Override
+	public boolean performLongClick() {
+
+		mStartTime = SystemClock.elapsedRealtime();
+		mRepeatCount = 0;
+		post(mRepeater);
+		return true;
+	}
+
+	/**
+	 * Sets the listener to be called while the button is pressed and the
+	 * interval in milliseconds with which it will be called.
+	 * 
+	 * @param l
+	 *            The listener that will be called
+	 * @param interval
+	 *            The interval in milliseconds for calls
+	 */
+	public void setRepeatListener(RepeatListener l, long interval) {
+
+		mListener = l;
+		mInterval = interval;
+	}
 
 	private void doRepeat(boolean last) {
 
@@ -138,25 +159,5 @@ public class RepeatingImageButton extends ImageButton {
 		if (mListener != null) {
 			mListener.onRepeat(this, now - mStartTime, last ? -1 : mRepeatCount++);
 		}
-	}
-
-	public interface RepeatListener {
-
-		/**
-		 * This method will be called repeatedly at roughly the interval
-		 * specified in setRepeatListener(), for as long as the button is
-		 * pressed.
-		 * 
-		 * @param v
-		 *            The button as a View.
-		 * @param duration
-		 *            The number of milliseconds the button has been pressed so
-		 *            far.
-		 * @param repeatcount
-		 *            The number of previous calls in this sequence. If this is
-		 *            going to be the last call in this sequence (i.e. the user
-		 *            just stopped pressing the button), the value will be -1.
-		 */
-		void onRepeat(View v, long duration, int repeatcount);
 	}
 }

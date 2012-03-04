@@ -23,6 +23,11 @@
 		android:id="@+id/lyrics_scroll"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:fadingEdgeLength="@dimen/lyrics_scroll_fading_edge"/>
+		android:fadingEdgeLength="@dimen/lyrics_scroll_fading_edge"
+		android:shadowColor="@android:color/black"
+		android:shadowDx="0"
+		android:shadowDy="0"
+		android:shadowRadius="2"
+		android:textSize="15sp"/>
 
 </FrameLayout>

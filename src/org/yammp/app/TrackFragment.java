@@ -57,6 +57,73 @@ import android.widget.TextView;
 
 public class TrackFragment extends ListFragment implements LoaderCallbacks<Cursor>, Constants {
 
+	private class TracksAdapter extends SimpleCursorAdapter {
+
+		private class ViewHolder {
+
+			TextView track_name;
+			TextView artist_name;
+			TextView track_duration;
+
+			public ViewHolder(View view) {
+				track_name = (TextView) view.findViewById(R.id.name);
+				artist_name = (TextView) view.findViewById(R.id.summary);
+				track_duration = (TextView) view.findViewById(R.id.duration);
+			}
+
+		}
+
+		private TracksAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to,
+				int flags) {
+			super(context, layout, cursor, from, to, flags);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+
+			ViewHolder viewholder = (ViewHolder) view.getTag();
+
+			String track_name = cursor.getString(mTrackIdx);
+			viewholder.track_name.setText(track_name);
+
+			String artist_name = cursor.getString(mArtistIdx);
+			if (artist_name == null || MediaStore.UNKNOWN_STRING.equals(artist_name)) {
+				viewholder.artist_name.setText(R.string.unknown_artist);
+			} else {
+				viewholder.artist_name.setText(artist_name);
+			}
+
+			long secs = cursor.getLong(mDurationIdx) / 1000;
+
+			if (secs <= 0) {
+				viewholder.track_duration.setText("");
+			} else {
+				viewholder.track_duration.setText(MusicUtils.makeTimeString(context, secs));
+			}
+
+			long audio_id = cursor.getLong(mIdIdx);
+
+			long currentaudioid = MusicUtils.getCurrentAudioId();
+			if (currentaudioid == audio_id) {
+				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
+						R.drawable.ic_indicator_nowplaying_small, 0);
+			} else {
+				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+			}
+
+		}
+
+		@Override
+		public View newView(Context context, Cursor cursor, ViewGroup parent) {
+
+			View view = super.newView(context, cursor, parent);
+			ViewHolder viewholder = new ViewHolder(view);
+			view.setTag(viewholder);
+			return view;
+		}
+
+	}
+
 	private TracksAdapter mAdapter;
 	private Cursor mCursor;
 	private int mSelectedPosition;
@@ -65,7 +132,50 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 	private int mIdIdx, mTrackIdx, mAlbumIdx, mArtistIdx, mDurationIdx;
 	private boolean mEditMode = false;
 	private ListView mListView;
+
 	long mPlaylistId = -1;
+
+	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (getListView() != null) {
+				getListView().invalidateViews();
+			}
+		}
+
+	};
+
+	// TODO make drag-n-drop move item work.
+	private OnDropListener mDropListener = new OnDropListener() {
+
+		@Override
+		public void onDrop(int from, int to) {
+
+			if (mPlaylistId >= 0) {
+				Playlists.Members.moveItem(getActivity().getContentResolver(), mPlaylistId, from,
+						to);
+			} else if (mPlaylistId == PLAYLIST_QUEUE) {
+				MusicUtils.moveQueueItem(from, to);
+				reloadQueueCursor();
+			} else if (mPlaylistId == PLAYLIST_FAVORITES) {
+				long favorites_id = MusicUtils.getFavoritesId(getActivity());
+				Playlists.Members.moveItem(getActivity().getContentResolver(), favorites_id, from,
+						to);
+			}
+
+			mListView.invalidateViews();
+		}
+	};
+
+	private OnRemoveListener mRemoveListener = new OnRemoveListener() {
+
+		@Override
+		public void onRemove(int which) {
+
+			removePlaylistItem(which);
+		}
+	};
 
 	public TrackFragment() {
 
@@ -117,32 +227,59 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 	}
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.tracks_browser, container, false);
-		return view;
+	public boolean onContextItemSelected(MenuItem item) {
+
+		if (mCursor == null) return false;
+
+		Intent intent;
+
+		switch (item.getItemId()) {
+			case PLAY_SELECTION:
+				int position = mSelectedPosition;
+
+				if (mPlaylistId == PLAYLIST_QUEUE) {
+					MusicUtils.setQueuePosition(position);
+					return true;
+				}
+				MusicUtils.playAll(getActivity(), mCursor, position);
+				return true;
+			case DELETE_ITEMS:
+				intent = new Intent(INTENT_DELETE_ITEMS);
+				Bundle bundle = new Bundle();
+				bundle.putString(
+						INTENT_KEY_PATH,
+						Uri.withAppendedPath(Audio.Media.EXTERNAL_CONTENT_URI,
+								Uri.encode(String.valueOf(mSelectedId))).toString());
+				intent.putExtras(bundle);
+				startActivity(intent);
+				return true;
+			case SEARCH:
+				doSearch();
+				return true;
+		}
+		return super.onContextItemSelected(item);
 	}
 
 	@Override
-	public void onStart() {
-		super.onStart();
+	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo info) {
 
-		IntentFilter filter = new IntentFilter();
-		filter.addAction(BROADCAST_META_CHANGED);
-		filter.addAction(BROADCAST_QUEUE_CHANGED);
+		if (mCursor == null) return;
 
-		getActivity().registerReceiver(mMediaStatusReceiver, filter);
-	}
+		getActivity().getMenuInflater().inflate(R.menu.music_browser_item, menu);
 
-	@Override
-	public void onStop() {
-		getActivity().unregisterReceiver(mMediaStatusReceiver);
-		super.onStop();
-	}
+		AdapterContextMenuInfo adapterinfo = (AdapterContextMenuInfo) info;
+		mSelectedPosition = adapterinfo.position;
+		mCursor.moveToPosition(mSelectedPosition);
+		try {
+			mSelectedId = mCursor.getLong(mIdIdx);
+		} catch (IllegalArgumentException ex) {
+			mSelectedId = adapterinfo.id;
+		}
 
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		outState.putAll(getArguments() != null ? getArguments() : new Bundle());
-		super.onSaveInstanceState(outState);
+		mCurrentAlbumName = mCursor.getString(mAlbumIdx);
+		mCurrentArtistNameForAlbum = mCursor.getString(mArtistIdx);
+		mCurrentTrackName = mCursor.getString(mTrackIdx);
+		menu.setHeaderTitle(mCurrentTrackName);
 	}
 
 	@Override
@@ -173,9 +310,7 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 					case (int) PLAYLIST_QUEUE:
 						uri = Audio.Media.EXTERNAL_CONTENT_URI;
 						long[] mNowPlaying = MusicUtils.getQueue();
-						if (mNowPlaying.length == 0) {
-							return null;
-						}
+						if (mNowPlaying.length == 0) return null;
 						where = new StringBuilder();
 						where.append(MediaStore.Audio.Media._ID + " IN (");
 						if (mNowPlaying == null || mNowPlaying.length <= 0) return null;
@@ -197,7 +332,7 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 						break;
 					case (int) PLAYLIST_RECENTLY_ADDED:
 						int X = new PreferencesEditor(getActivity()).getIntPref(PREF_KEY_NUMWEEKS,
-								2) * (3600 * 24 * 7);
+								2) * 3600 * 24 * 7;
 						where = new StringBuilder();
 						where.append(Audio.Media.TITLE + " != ''");
 						where.append(" AND " + Audio.Media.IS_MUSIC + "=1");
@@ -254,6 +389,33 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 	}
 
 	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		View view = inflater.inflate(R.layout.tracks_browser, container, false);
+		return view;
+	}
+
+	@Override
+	public void onListItemClick(ListView l, View v, int position, long id) {
+		if (mCursor == null || mCursor.getCount() == 0) return;
+		// When selecting a track from the queue, just jump there instead of
+		// reloading the queue. This is both faster, and prevents accidentally
+		// dropping out of party shuffle.
+
+		if (mPlaylistId == PLAYLIST_QUEUE) {
+			MusicUtils.setQueueId(id);
+			return;
+		}
+		MusicUtils.playAll(getActivity(), mCursor, position);
+
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> loader) {
+		mCursor = null;
+		mAdapter.changeCursor(null);
+	}
+
+	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
 
 		if (data == null) {
@@ -300,80 +462,26 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 	}
 
 	@Override
-	public void onLoaderReset(Loader<Cursor> loader) {
-		mCursor = null;
-		mAdapter.changeCursor(null);
+	public void onSaveInstanceState(Bundle outState) {
+		outState.putAll(getArguments() != null ? getArguments() : new Bundle());
+		super.onSaveInstanceState(outState);
 	}
 
 	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
-		if (mCursor == null || mCursor.getCount() == 0) return;
-		// When selecting a track from the queue, just jump there instead of
-		// reloading the queue. This is both faster, and prevents accidentally
-		// dropping out of party shuffle.
+	public void onStart() {
+		super.onStart();
 
-		if (mPlaylistId == PLAYLIST_QUEUE) {
-			MusicUtils.setQueueId(id);
-			return;
-		}
-		MusicUtils.playAll(getActivity(), mCursor, position);
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(BROADCAST_META_CHANGED);
+		filter.addAction(BROADCAST_QUEUE_CHANGED);
 
+		getActivity().registerReceiver(mMediaStatusReceiver, filter);
 	}
 
 	@Override
-	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo info) {
-
-		if (mCursor == null) return;
-
-		getActivity().getMenuInflater().inflate(R.menu.music_browser_item, menu);
-
-		AdapterContextMenuInfo adapterinfo = (AdapterContextMenuInfo) info;
-		mSelectedPosition = adapterinfo.position;
-		mCursor.moveToPosition(mSelectedPosition);
-		try {
-			mSelectedId = mCursor.getLong(mIdIdx);
-		} catch (IllegalArgumentException ex) {
-			mSelectedId = adapterinfo.id;
-		}
-
-		mCurrentAlbumName = mCursor.getString(mAlbumIdx);
-		mCurrentArtistNameForAlbum = mCursor.getString(mArtistIdx);
-		mCurrentTrackName = mCursor.getString(mTrackIdx);
-		menu.setHeaderTitle(mCurrentTrackName);
-	}
-
-	@Override
-	public boolean onContextItemSelected(MenuItem item) {
-
-		if (mCursor == null) return false;
-
-		Intent intent;
-
-		switch (item.getItemId()) {
-			case PLAY_SELECTION:
-				int position = mSelectedPosition;
-
-				if (mPlaylistId == PLAYLIST_QUEUE) {
-					MusicUtils.setQueuePosition(position);
-					return true;
-				}
-				MusicUtils.playAll(getActivity(), mCursor, position);
-				return true;
-			case DELETE_ITEMS:
-				intent = new Intent(INTENT_DELETE_ITEMS);
-				Bundle bundle = new Bundle();
-				bundle.putString(
-						INTENT_KEY_PATH,
-						Uri.withAppendedPath(Audio.Media.EXTERNAL_CONTENT_URI,
-								Uri.encode(String.valueOf(mSelectedId))).toString());
-				intent.putExtras(bundle);
-				startActivity(intent);
-				return true;
-			case SEARCH:
-				doSearch();
-				return true;
-		}
-		return super.onContextItemSelected(item);
+	public void onStop() {
+		getActivity().unregisterReceiver(mMediaStatusReceiver);
+		super.onStop();
 	}
 
 	private void doSearch() {
@@ -400,68 +508,6 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 		i.putExtra(SearchManager.QUERY, query);
 
 		startActivity(Intent.createChooser(i, title));
-	}
-
-	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (getListView() != null) {
-				getListView().invalidateViews();
-			}
-		}
-
-	};
-
-	// TODO make drag-n-drop move item work.
-	private OnDropListener mDropListener = new OnDropListener() {
-
-		@Override
-		public void onDrop(int from, int to) {
-
-			if (mPlaylistId >= 0) {
-				Playlists.Members.moveItem(getActivity().getContentResolver(), mPlaylistId, from,
-						to);
-			} else if (mPlaylistId == PLAYLIST_QUEUE) {
-				MusicUtils.moveQueueItem(from, to);
-				reloadQueueCursor();
-			} else if (mPlaylistId == PLAYLIST_FAVORITES) {
-				long favorites_id = MusicUtils.getFavoritesId(getActivity());
-				Playlists.Members.moveItem(getActivity().getContentResolver(), favorites_id, from,
-						to);
-			}
-
-			mListView.invalidateViews();
-		}
-	};
-
-	private OnRemoveListener mRemoveListener = new OnRemoveListener() {
-
-		@Override
-		public void onRemove(int which) {
-
-			removePlaylistItem(which);
-		}
-	};
-
-	private void removePlaylistItem(int which) {
-
-		mCursor.moveToPosition(which);
-		long id = mCursor.getLong(mIdIdx);
-
-		if (mPlaylistId >= 0) {
-			Uri uri = Playlists.Members.getContentUri("external", mPlaylistId);
-			getActivity().getContentResolver().delete(uri, Playlists.Members.AUDIO_ID + "=" + id,
-					null);
-		} else if (mPlaylistId == PLAYLIST_QUEUE) {
-			MusicUtils.removeTrack(id);
-			reloadQueueCursor();
-		} else if (mPlaylistId == PLAYLIST_FAVORITES) {
-			MusicUtils.removeFromFavorites(getActivity(), id);
-		}
-
-		mListView.invalidateViews();
-
 	}
 
 	private void reloadQueueCursor() {
@@ -495,70 +541,23 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 		}
 	}
 
-	private class TracksAdapter extends SimpleCursorAdapter {
+	private void removePlaylistItem(int which) {
 
-		private class ViewHolder {
+		mCursor.moveToPosition(which);
+		long id = mCursor.getLong(mIdIdx);
 
-			TextView track_name;
-			TextView artist_name;
-			TextView track_duration;
-
-			public ViewHolder(View view) {
-				track_name = (TextView) view.findViewById(R.id.name);
-				artist_name = (TextView) view.findViewById(R.id.summary);
-				track_duration = (TextView) view.findViewById(R.id.duration);
-			}
-
+		if (mPlaylistId >= 0) {
+			Uri uri = Playlists.Members.getContentUri("external", mPlaylistId);
+			getActivity().getContentResolver().delete(uri, Playlists.Members.AUDIO_ID + "=" + id,
+					null);
+		} else if (mPlaylistId == PLAYLIST_QUEUE) {
+			MusicUtils.removeTrack(id);
+			reloadQueueCursor();
+		} else if (mPlaylistId == PLAYLIST_FAVORITES) {
+			MusicUtils.removeFromFavorites(getActivity(), id);
 		}
 
-		private TracksAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to,
-				int flags) {
-			super(context, layout, cursor, from, to, flags);
-		}
-
-		@Override
-		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-			View view = super.newView(context, cursor, parent);
-			ViewHolder viewholder = new ViewHolder(view);
-			view.setTag(viewholder);
-			return view;
-		}
-
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-
-			ViewHolder viewholder = (ViewHolder) view.getTag();
-
-			String track_name = cursor.getString(mTrackIdx);
-			viewholder.track_name.setText(track_name);
-
-			String artist_name = cursor.getString(mArtistIdx);
-			if (artist_name == null || MediaStore.UNKNOWN_STRING.equals(artist_name)) {
-				viewholder.artist_name.setText(R.string.unknown_artist);
-			} else {
-				viewholder.artist_name.setText(artist_name);
-			}
-
-			long secs = cursor.getLong(mDurationIdx) / 1000;
-
-			if (secs <= 0) {
-				viewholder.track_duration.setText("");
-			} else {
-				viewholder.track_duration.setText(MusicUtils.makeTimeString(context, secs));
-			}
-
-			long audio_id = cursor.getLong(mIdIdx);
-
-			long currentaudioid = MusicUtils.getCurrentAudioId();
-			if (currentaudioid == audio_id) {
-				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
-						R.drawable.ic_indicator_nowplaying_small, 0);
-			} else {
-				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-			}
-
-		}
+		mListView.invalidateViews();
 
 	}
 

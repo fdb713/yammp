@@ -15,52 +15,11 @@ public class PreferencesEditor implements Constants {
 		this.context = context;
 	}
 
-	public short getEqualizerSetting(short band, short def) {
+	public boolean getBooleanPref(String name, boolean def) {
 
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_EQUALIZER,
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_PREFERENCES,
 				Context.MODE_PRIVATE);
-		return Short.valueOf(prefs.getString(String.valueOf(band), String.valueOf(def)));
-	}
-
-	public void setEqualizerSetting(short band, short value) {
-
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_EQUALIZER,
-				Context.MODE_PRIVATE);
-		Editor ed = prefs.edit();
-		ed.putString(String.valueOf(band), String.valueOf(value));
-		ed.commit();
-	}
-
-	public int getIntState(String name, int def) {
-
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
-				Context.MODE_PRIVATE);
-		return prefs.getInt(name, def);
-	}
-
-	public void setIntState(String name, int value) {
-
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
-				Context.MODE_PRIVATE);
-		Editor ed = prefs.edit();
-		ed.putInt(name, value);
-		ed.commit();
-	}
-
-	public long getLongState(String name, long def) {
-
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
-				Context.MODE_PRIVATE);
-		return prefs.getLong(name, def);
-	}
-
-	public void setLongState(String name, long value) {
-
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
-				Context.MODE_PRIVATE);
-		Editor ed = prefs.edit();
-		ed.putLong(name, value);
-		ed.commit();
+		return prefs.getBoolean(name, def);
 	}
 
 	public boolean getBooleanState(String name, boolean def) {
@@ -70,45 +29,11 @@ public class PreferencesEditor implements Constants {
 		return prefs.getBoolean(name, def);
 	}
 
-	public void setBooleanState(String name, boolean value) {
+	public short getEqualizerSetting(short band, short def) {
 
-		SharedPreferences preferences = context.getSharedPreferences(SHAREDPREFS_STATES,
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_EQUALIZER,
 				Context.MODE_PRIVATE);
-		Editor editor = preferences.edit();
-		editor.putBoolean(name, value);
-		editor.commit();
-	}
-
-	public String getStringState(String name, String def) {
-
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
-				Context.MODE_PRIVATE);
-		return prefs.getString(name, def);
-	}
-
-	public void setStringState(String name, String value) {
-
-		SharedPreferences preferences = context.getSharedPreferences(SHAREDPREFS_STATES,
-				Context.MODE_PRIVATE);
-		Editor editor = preferences.edit();
-		editor.putString(name, value);
-		editor.commit();
-	}
-
-	public int getIntPref(String name, int def) {
-
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_PREFERENCES,
-				Context.MODE_PRIVATE);
-		return prefs.getInt(name, def);
-	}
-
-	public void setIntPref(String name, int value) {
-
-		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_PREFERENCES,
-				Context.MODE_PRIVATE);
-		Editor ed = prefs.edit();
-		ed.putInt(name, value);
-		ed.commit();
+		return Short.valueOf(prefs.getString(String.valueOf(band), String.valueOf(def)));
 	}
 
 	public float getFloatPref(String name, float def) {
@@ -118,20 +43,39 @@ public class PreferencesEditor implements Constants {
 		return prefs.getFloat(name, def);
 	}
 
-	public void setFloatPref(String name, float value) {
+	public int getIntPref(String name, int def) {
 
 		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_PREFERENCES,
 				Context.MODE_PRIVATE);
-		Editor ed = prefs.edit();
-		ed.putFloat(name, value);
-		ed.commit();
+		return prefs.getInt(name, def);
 	}
 
-	public boolean getBooleanPref(String name, boolean def) {
+	public int getIntState(String name, int def) {
+
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
+				Context.MODE_PRIVATE);
+		return prefs.getInt(name, def);
+	}
+
+	public long getLongState(String name, long def) {
+
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
+				Context.MODE_PRIVATE);
+		return prefs.getLong(name, def);
+	}
+
+	public String getStringPref(String name, String def) {
 
 		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_PREFERENCES,
 				Context.MODE_PRIVATE);
-		return prefs.getBoolean(name, def);
+		return prefs.getString(name, def);
+	}
+
+	public String getStringState(String name, String def) {
+
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
+				Context.MODE_PRIVATE);
+		return prefs.getString(name, def);
 	}
 
 	public void setBooleanPref(String name, boolean value) {
@@ -143,16 +87,72 @@ public class PreferencesEditor implements Constants {
 		editor.commit();
 	}
 
-	public String getStringPref(String name, String def) {
+	public void setBooleanState(String name, boolean value) {
+
+		SharedPreferences preferences = context.getSharedPreferences(SHAREDPREFS_STATES,
+				Context.MODE_PRIVATE);
+		Editor editor = preferences.edit();
+		editor.putBoolean(name, value);
+		editor.commit();
+	}
+
+	public void setEqualizerSetting(short band, short value) {
+
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_EQUALIZER,
+				Context.MODE_PRIVATE);
+		Editor ed = prefs.edit();
+		ed.putString(String.valueOf(band), String.valueOf(value));
+		ed.commit();
+	}
+
+	public void setFloatPref(String name, float value) {
 
 		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_PREFERENCES,
 				Context.MODE_PRIVATE);
-		return prefs.getString(name, def);
+		Editor ed = prefs.edit();
+		ed.putFloat(name, value);
+		ed.commit();
+	}
+
+	public void setIntPref(String name, int value) {
+
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_PREFERENCES,
+				Context.MODE_PRIVATE);
+		Editor ed = prefs.edit();
+		ed.putInt(name, value);
+		ed.commit();
+	}
+
+	public void setIntState(String name, int value) {
+
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
+				Context.MODE_PRIVATE);
+		Editor ed = prefs.edit();
+		ed.putInt(name, value);
+		ed.commit();
+	}
+
+	public void setLongState(String name, long value) {
+
+		SharedPreferences prefs = context.getSharedPreferences(SHAREDPREFS_STATES,
+				Context.MODE_PRIVATE);
+		Editor ed = prefs.edit();
+		ed.putLong(name, value);
+		ed.commit();
 	}
 
 	public void setStringPref(String name, String value) {
 
 		SharedPreferences preferences = context.getSharedPreferences(SHAREDPREFS_PREFERENCES,
+				Context.MODE_PRIVATE);
+		Editor editor = preferences.edit();
+		editor.putString(name, value);
+		editor.commit();
+	}
+
+	public void setStringState(String name, String value) {
+
+		SharedPreferences preferences = context.getSharedPreferences(SHAREDPREFS_STATES,
 				Context.MODE_PRIVATE);
 		Editor editor = preferences.edit();
 		editor.putString(name, value);

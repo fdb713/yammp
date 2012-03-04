@@ -41,50 +41,22 @@ import android.widget.TextView;
 
 public class PluginFragment extends ListFragment implements LoaderCallbacks<List<ApplicationInfo>> {
 
-	private static PackageManager mPackageManager;
-	private PluginAdapter mAdapter;
-	private List<ApplicationInfo> mPluginsList;
+	public static class AppListLoader extends AsyncTaskLoader<List<ApplicationInfo>> {
 
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
+		public AppListLoader(Context context) {
+			super(context);
+			mPackageManager = context.getPackageManager();
+		}
 
-		setHasOptionsMenu(true);
-
-		getLoaderManager().initLoader(0, null, this);
-	}
-
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.plugins_manager, container, false);
-		return view;
-	}
-
-	@Override
-	public Loader<List<ApplicationInfo>> onCreateLoader(int id, Bundle args) {
-		return new AppListLoader(getActivity());
-	}
-
-	@Override
-	public void onLoadFinished(Loader<List<ApplicationInfo>> loader, List<ApplicationInfo> data) {
-		mAdapter = new PluginAdapter(getActivity(), R.layout.playlist_list_item, data);
-		setListAdapter(mAdapter);
-
-	}
-
-	@Override
-	public void onLoaderReset(Loader<List<ApplicationInfo>> loader) {
+		@Override
+		public List<ApplicationInfo> loadInBackground() {
+			return mPackageManager.getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES
+					| PackageManager.GET_DISABLED_COMPONENTS);
+		}
 
 	}
 
 	private class PluginAdapter extends ArrayAdapter<ApplicationInfo> {
-
-		private List<ApplicationInfo> mList;
-
-		public PluginAdapter(Context context, int resource, List<ApplicationInfo> objects) {
-			super(context, resource, objects);
-			mList = objects;
-		}
 
 		private class ViewHolder {
 
@@ -98,6 +70,13 @@ public class PluginFragment extends ListFragment implements LoaderCallbacks<List
 				plugin_name = (TextView) view.findViewById(R.id.plugin_name);
 				plugin_description = (TextView) view.findViewById(R.id.plugin_description);
 			}
+		}
+
+		private List<ApplicationInfo> mList;
+
+		public PluginAdapter(Context context, int resource, List<ApplicationInfo> objects) {
+			super(context, resource, objects);
+			mList = objects;
 		}
 
 		@Override
@@ -121,18 +100,41 @@ public class PluginFragment extends ListFragment implements LoaderCallbacks<List
 
 	}
 
-	public static class AppListLoader extends AsyncTaskLoader<List<ApplicationInfo>> {
+	private static PackageManager mPackageManager;
 
-		public AppListLoader(Context context) {
-			super(context);
-			mPackageManager = context.getPackageManager();
-		}
+	private PluginAdapter mAdapter;
 
-		@Override
-		public List<ApplicationInfo> loadInBackground() {
-			return mPackageManager.getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES
-					| PackageManager.GET_DISABLED_COMPONENTS);
-		}
+	private List<ApplicationInfo> mPluginsList;
+
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+
+		setHasOptionsMenu(true);
+
+		getLoaderManager().initLoader(0, null, this);
+	}
+
+	@Override
+	public Loader<List<ApplicationInfo>> onCreateLoader(int id, Bundle args) {
+		return new AppListLoader(getActivity());
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		View view = inflater.inflate(R.layout.plugins_manager, container, false);
+		return view;
+	}
+
+	@Override
+	public void onLoaderReset(Loader<List<ApplicationInfo>> loader) {
+
+	}
+
+	@Override
+	public void onLoadFinished(Loader<List<ApplicationInfo>> loader, List<ApplicationInfo> data) {
+		mAdapter = new PluginAdapter(getActivity(), R.layout.playlist_list_item, data);
+		setListAdapter(mAdapter);
 
 	}
 }

@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:id="@+id/equalizer_presets" android:title="@string/equalizer_presets" android:icon="@drawable/ic_menu_equalizer"/>
-	<item android:id="@+id/equalizer_reset" android:title="@string/equalizer_reset" android:icon="@drawable/ic_menu_clear_playlist"/>
+
+	<item
+		android:id="@+id/equalizer_presets"
+		android:icon="@drawable/ic_menu_equalizer"
+		android:showAsAction="always"
+		android:title="@string/equalizer_presets"/>
+	<item
+		android:id="@+id/equalizer_reset"
+		android:icon="@drawable/ic_menu_clear_playlist"
+		android:showAsAction="always"
+		android:title="@string/equalizer_reset"/>
+
 </menu>

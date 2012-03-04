@@ -70,12 +70,6 @@ public class VisualizerViewWaveForm extends View {
 		setColor(mColor);
 	}
 
-	public void updateVisualizer(byte[] data, boolean scoop) {
-		mData = data;
-		mScoop = scoop;
-		invalidate();
-	}
-
 	public void setAntiAlias(boolean antialias) {
 		mForePaint.setAntiAlias(antialias);
 	}
@@ -85,18 +79,17 @@ public class VisualizerViewWaveForm extends View {
 				Color.blue(color)));
 	}
 
-	@Override
-	protected void onSizeChanged(int width, int height, int old_width, int old_height) {
-		mForePaint.setStrokeWidth(1.0f);
+	public void updateVisualizer(byte[] data, boolean scoop) {
+		mData = data;
+		mScoop = scoop;
+		invalidate();
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 
-		if (mData == null) {
-			return;
-		}
+		if (mData == null) return;
 
 		mRect.setEmpty();
 
@@ -108,13 +101,18 @@ public class VisualizerViewWaveForm extends View {
 
 		for (int i = 0; i < mData.length - 1; i++) {
 			mPoints[i * 4] = mRect.width() * i / (mData.length - 1);
-			mPoints[i * 4 + 1] = (mScoop ? (mData[i] + 128) : ((byte) (mData[i] + 128)))
+			mPoints[i * 4 + 1] = (mScoop ? mData[i] + 128 : (byte) (mData[i] + 128))
 					* (mRect.height() / 2) / 128 + (mScoop ? 0 : mRect.height() / 2);
 			mPoints[i * 4 + 2] = mRect.width() * (i + 1) / (mData.length - 1);
-			mPoints[i * 4 + 3] = (mScoop ? (mData[i + 1] + 128) : ((byte) (mData[i + 1] + 128)))
+			mPoints[i * 4 + 3] = (mScoop ? mData[i + 1] + 128 : (byte) (mData[i + 1] + 128))
 					* (mRect.height() / 2) / 128 + (mScoop ? 0 : mRect.height() / 2);
 		}
 		canvas.drawLines(mPoints, mForePaint);
 
+	}
+
+	@Override
+	protected void onSizeChanged(int width, int height, int old_width, int old_height) {
+		mForePaint.setStrokeWidth(1.0f);
 	}
 }

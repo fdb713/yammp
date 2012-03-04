@@ -59,6 +59,44 @@ public class LyricsFragment extends Fragment implements Constants, OnLineSelecte
 	private TextView mLyricsInfoMessage;
 	private boolean mIntentDeRegistered = false;
 
+	private BroadcastReceiver mStatusListener = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if (BROADCAST_NEW_LYRICS_LOADED.equals(action)) {
+				loadLyricsToView();
+			} else if (BROADCAST_LYRICS_REFRESHED.equals(action)) {
+				scrollLyrics(false);
+			}
+		}
+
+	};
+
+	private BroadcastReceiver mScreenTimeoutListener = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+
+			if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+				if (mIntentDeRegistered) {
+					IntentFilter f = new IntentFilter();
+					f.addAction(BROADCAST_NEW_LYRICS_LOADED);
+					f.addAction(BROADCAST_LYRICS_REFRESHED);
+					getActivity().registerReceiver(mStatusListener, new IntentFilter(f));
+					mIntentDeRegistered = false;
+				}
+				loadLyricsToView();
+				scrollLyrics(true);
+			} else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+				if (!mIntentDeRegistered) {
+					getActivity().unregisterReceiver(mStatusListener);
+					mIntentDeRegistered = true;
+				}
+			}
+		}
+	};
+
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
@@ -74,6 +112,46 @@ public class LyricsFragment extends Fragment implements Constants, OnLineSelecte
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.lyrics_view, container, false);
+	}
+
+	@Override
+	public void onLineSelected(int id) {
+
+		try {
+			mService.seek(mService.getPositionByLyricsId(id));
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	@Override
+	public boolean onLongClick(View v) {
+
+		searchLyrics();
+		return true;
+	}
+
+	@Override
+	public void onServiceConnected(ComponentName classname, IBinder obj) {
+		mService = IMusicPlaybackService.Stub.asInterface(obj);
+		try {
+			if (mService.getAudioId() >= 0 || mService.isPlaying() || mService.getPath() != null) {
+				loadLyricsToView();
+				scrollLyrics(true);
+			} else {
+				getActivity().finish();
+			}
+
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onServiceDisconnected(ComponentName paramComponentName) {
+		mService = null;
+		getActivity().finish();
 	}
 
 	@Override
@@ -114,84 +192,6 @@ public class LyricsFragment extends Fragment implements Constants, OnLineSelecte
 		mService = null;
 		super.onStop();
 	}
-
-	@Override
-	public void onServiceConnected(ComponentName classname, IBinder obj) {
-		mService = IMusicPlaybackService.Stub.asInterface(obj);
-		try {
-			if (mService.getAudioId() >= 0 || mService.isPlaying() || mService.getPath() != null) {
-				loadLyricsToView();
-				scrollLyrics(true);
-			} else {
-				getActivity().finish();
-			}
-
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void onServiceDisconnected(ComponentName paramComponentName) {
-		mService = null;
-		getActivity().finish();
-	}
-
-	@Override
-	public void onLineSelected(int id) {
-
-		try {
-			mService.seek(mService.getPositionByLyricsId(id));
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	@Override
-	public boolean onLongClick(View v) {
-
-		searchLyrics();
-		return true;
-	}
-
-	private BroadcastReceiver mStatusListener = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			String action = intent.getAction();
-			if (BROADCAST_NEW_LYRICS_LOADED.equals(action)) {
-				loadLyricsToView();
-			} else if (BROADCAST_LYRICS_REFRESHED.equals(action)) {
-				scrollLyrics(false);
-			}
-		}
-
-	};
-
-	private BroadcastReceiver mScreenTimeoutListener = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-
-			if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-				if (mIntentDeRegistered) {
-					IntentFilter f = new IntentFilter();
-					f.addAction(BROADCAST_NEW_LYRICS_LOADED);
-					f.addAction(BROADCAST_LYRICS_REFRESHED);
-					getActivity().registerReceiver(mStatusListener, new IntentFilter(f));
-					mIntentDeRegistered = false;
-				}
-				loadLyricsToView();
-				scrollLyrics(true);
-			} else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-				if (!mIntentDeRegistered) {
-					getActivity().unregisterReceiver(mStatusListener);
-					mIntentDeRegistered = true;
-				}
-			}
-		}
-	};
 
 	// TODO lyrics load animation
 	private void loadLyricsToView() {

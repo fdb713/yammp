@@ -11,91 +11,6 @@ import android.os.Message;
 
 public class VisualizerCompatScoop extends VisualizerCompat {
 
-	private OnDataChangedListener mListener;
-	private boolean mWaveEnabled, mFftEnabled;
-	private boolean mVisualizerEnabled;
-	private Timer mTimer;
-
-	public VisualizerCompatScoop(int audioSessionId, int fps) {
-		super(audioSessionId, fps);
-		duration = 1000 / fps;
-		mTimer = new Timer();
-
-	}
-
-	@Override
-	public void setFftEnabled(boolean fft) {
-		mFftEnabled = fft;
-
-	}
-
-	@Override
-	public void setWaveFormEnabled(boolean wave) {
-		mWaveEnabled = wave;
-
-	}
-
-	@Override
-	public void setOnDataChangedListener(OnDataChangedListener listener) {
-
-		mListener = listener;
-	}
-
-	@Override
-	public void setEnabled(boolean enabled) {
-		if (mTimer != null) {
-			if (enabled) {
-				mTimer = new Timer();
-				mTimer.scheduleAtFixedRate(new VisualizerTimer(), 0, duration);
-			} else {
-				mTimer.cancel();
-			}
-		}
-		mVisualizerEnabled = enabled;
-	}
-
-	@Override
-	public boolean getEnabled() {
-		return mVisualizerEnabled;
-	}
-
-	private int snoop(short[] outData, int kind) {
-
-		try {
-			Method m = Class.forName("android.media.MediaPlayer").getMethod("snoop",
-					outData.getClass(), Integer.TYPE);
-			m.setAccessible(true);
-			return (Integer) m.invoke(Class.forName("android.media.MediaPlayer"), outData, kind);
-		} catch (Exception e) {
-			return 0;
-		}
-	}
-
-	private byte[] transform(short[] orig, int divider) {
-		byte[] result = new byte[orig.length];
-		for (int i = 0; i < orig.length; i++) {
-			short temp = (short) (orig[i] / divider);
-			if (temp > Byte.MAX_VALUE) temp = Byte.MAX_VALUE;
-			if (temp < Byte.MIN_VALUE) temp = Byte.MIN_VALUE;
-			result[i] = (byte) temp;
-		}
-		return result;
-	}
-
-	@Override
-	public void release() {
-
-	}
-
-	@Override
-	public void setAccuracy(float accuracy) {
-		if (accuracy > 1.0f || accuracy <= 0.0f)
-			throw new IllegalArgumentException(
-					"Invalid accuracy value! Allowed value range is \"0 < accuracy <= 1.0\"!");
-		this.accuracy = accuracy;
-
-	}
-
 	private class VisualizerTimer extends TimerTask {
 
 		@Override
@@ -125,6 +40,12 @@ public class VisualizerCompatScoop extends VisualizerCompat {
 
 	}
 
+	private OnDataChangedListener mListener;
+	private boolean mWaveEnabled, mFftEnabled;
+	private boolean mVisualizerEnabled;
+
+	private Timer mTimer;
+
 	private Handler mVisualizerHandler = new Handler() {
 
 		@Override
@@ -148,5 +69,89 @@ public class VisualizerCompatScoop extends VisualizerCompat {
 			}
 		}
 	};
+
+	public VisualizerCompatScoop(int audioSessionId, int fps) {
+		super(audioSessionId, fps);
+		duration = 1000 / fps;
+		mTimer = new Timer();
+
+	}
+
+	@Override
+	public boolean getEnabled() {
+		return mVisualizerEnabled;
+	}
+
+	@Override
+	public void release() {
+
+	}
+
+	@Override
+	public void setAccuracy(float accuracy) {
+		if (accuracy > 1.0f || accuracy <= 0.0f)
+			throw new IllegalArgumentException(
+					"Invalid accuracy value! Allowed value range is \"0 < accuracy <= 1.0\"!");
+		this.accuracy = accuracy;
+
+	}
+
+	@Override
+	public void setEnabled(boolean enabled) {
+		if (mTimer != null) {
+			if (enabled) {
+				mTimer = new Timer();
+				mTimer.scheduleAtFixedRate(new VisualizerTimer(), 0, duration);
+			} else {
+				mTimer.cancel();
+			}
+		}
+		mVisualizerEnabled = enabled;
+	}
+
+	@Override
+	public void setFftEnabled(boolean fft) {
+		mFftEnabled = fft;
+
+	}
+
+	@Override
+	public void setOnDataChangedListener(OnDataChangedListener listener) {
+
+		mListener = listener;
+	}
+
+	@Override
+	public void setWaveFormEnabled(boolean wave) {
+		mWaveEnabled = wave;
+
+	}
+
+	private int snoop(short[] outData, int kind) {
+
+		try {
+			Method m = Class.forName("android.media.MediaPlayer").getMethod("snoop",
+					outData.getClass(), Integer.TYPE);
+			m.setAccessible(true);
+			return (Integer) m.invoke(Class.forName("android.media.MediaPlayer"), outData, kind);
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+
+	private byte[] transform(short[] orig, int divider) {
+		byte[] result = new byte[orig.length];
+		for (int i = 0; i < orig.length; i++) {
+			short temp = (short) (orig[i] / divider);
+			if (temp > Byte.MAX_VALUE) {
+				temp = Byte.MAX_VALUE;
+			}
+			if (temp < Byte.MIN_VALUE) {
+				temp = Byte.MIN_VALUE;
+			}
+			result[i] = (byte) temp;
+		}
+		return result;
+	}
 
 }

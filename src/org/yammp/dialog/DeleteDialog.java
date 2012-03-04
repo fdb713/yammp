@@ -52,139 +52,24 @@ public class DeleteDialog extends FragmentActivity implements Constants,
 	String mime_type, name, path = null;
 	long[] items;
 
+	public void confirmDelete(String desc, final long[] list) {
+
+		mDeleteConfirm = new AlertDialog.Builder(this).setIcon(android.R.drawable.ic_dialog_alert)
+				.setTitle(R.string.delete).setMessage(getString(R.string.delete_confirm, desc))
+				.setPositiveButton(android.R.string.ok, this)
+				.setNegativeButton(android.R.string.cancel, this).setOnCancelListener(this).show();
+		restore_confirm = true;
+	}
+
 	@Override
-	public void onCreate(Bundle icicle) {
+	public void onCancel(DialogInterface dialog) {
 
-		super.onCreate(icicle);
-
-		setContentView(new LinearLayout(this));
-
-		icicle = icicle != null ? icicle : getIntent().getExtras();
-
-		action = getIntent().getAction();
-
-		if (INTENT_DELETE_ITEMS.equals(action)) {
-			restore_confirm = icicle != null ? icicle.getBoolean(KEY_RESTORE_CONFIRM) : getIntent()
-					.getBooleanExtra(KEY_RESTORE_CONFIRM, false);
-			delete_lyrics = icicle != null ? icicle.getBoolean(KEY_DELETE_LYRICS) : getIntent()
-					.getBooleanExtra(KEY_DELETE_LYRICS, false);
-			delete_music = icicle != null ? icicle.getBoolean(KEY_DELETE_MUSIC) : getIntent()
-					.getBooleanExtra(KEY_DELETE_MUSIC, false);
-
-			path = icicle != null ? icicle.getString(INTENT_KEY_PATH) : getIntent().getDataString();
-
-			if (path == null) path = "";
-
-			if (path.startsWith(Audio.Media.EXTERNAL_CONTENT_URI.toString())) {
-				long id = Long.valueOf(Uri.parse(path).getLastPathSegment());
-				items = new long[] { id };
-				mime_type = Audio.Media.CONTENT_TYPE;
-				name = MusicUtils.getTrackName(getApplicationContext(), id);
-			} else if (path.startsWith(Audio.Albums.EXTERNAL_CONTENT_URI.toString())) {
-				long id = Long.valueOf(Uri.parse(path).getLastPathSegment());
-				items = MusicUtils.getSongListForAlbum(getApplicationContext(), Long.valueOf(id));
-				mime_type = Audio.Albums.CONTENT_TYPE;
-				name = MusicUtils.getAlbumName(getApplicationContext(), id, true);
-			} else if (path.startsWith(Audio.Artists.EXTERNAL_CONTENT_URI.toString())) {
-				long id = Long.valueOf(Uri.parse(path).getLastPathSegment());
-				items = MusicUtils.getSongListForArtist(getApplicationContext(), Long.valueOf(id));
-				mime_type = Audio.Artists.CONTENT_TYPE;
-				name = MusicUtils.getArtistName(getApplicationContext(), id, true);
-			}
-
-		} else {
-			Toast.makeText(this, R.string.error_bad_parameters, Toast.LENGTH_SHORT).show();
+		if (dialog == mDeleteMultiSelect) {
 			finish();
 		}
-	}
-
-	@Override
-	public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-
-		switch (which) {
-			case DELETE_LYRICS_ID:
-				delete_lyrics = isChecked;
-				break;
-			case DELETE_MUSIC_ID:
-				delete_music = isChecked;
-				break;
+		if (dialog == mDeleteConfirm) {
+			restore_confirm = false;
 		}
-		if (mDeleteMultiSelect != null) {
-			mDeleteMultiSelect.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(
-					delete_lyrics || delete_music);
-		}
-	}
-
-	@Override
-	protected void onResume() {
-
-		super.onResume();
-		mDeleteMultiSelect = new AlertDialog.Builder(this)
-				.setMultiChoiceItems(
-						new CharSequence[] { getString(R.string.delete_lyrics),
-								getString(R.string.delete_music) },
-						new boolean[] { delete_lyrics, delete_music }, this)
-				.setIcon(android.R.drawable.ic_dialog_alert).setTitle(R.string.delete)
-				.setPositiveButton(android.R.string.ok, this)
-				.setNegativeButton(android.R.string.cancel, this).setOnCancelListener(this)
-				.create();
-		mDeleteMultiSelect.setOnShowListener(this);
-		mDeleteMultiSelect.show();
-		if (mDeleteConfirm != null && restore_confirm) {
-			mDeleteConfirm.show();
-		}
-	}
-
-	@Override
-	public void onPause() {
-
-		if (mDeleteMultiSelect != null && mDeleteMultiSelect.isShowing()) {
-			mDeleteMultiSelect.dismiss();
-		}
-		if (mDeleteConfirm != null && mDeleteConfirm.isShowing()) {
-			mDeleteConfirm.dismiss();
-		}
-		super.onPause();
-	}
-
-	@Override
-	public void onShow(DialogInterface dialog) {
-
-		Button mButton = mDeleteMultiSelect.getButton(AlertDialog.BUTTON_POSITIVE);
-		mButton.setEnabled(delete_lyrics || delete_music);
-		mButton.setOnClickListener(this);
-	}
-
-	@Override
-	public void onClick(View v) {
-
-		String desc = "";
-		if (Audio.Artists.CONTENT_TYPE.equals(mime_type)) {
-			if (delete_lyrics) {
-				desc += "\n" + getString(R.string.delete_artist_lyrics, name);
-			}
-			if (delete_music) {
-				desc += "\n" + getString(R.string.delete_artist_tracks, name);
-			}
-		} else if (Audio.Albums.CONTENT_TYPE.equals(mime_type)) {
-			if (delete_lyrics) {
-				desc += "\n" + getString(R.string.delete_album_lyrics, name);
-			}
-			if (delete_music) {
-				desc += "\n" + getString(R.string.delete_album_tracks, name);
-			}
-		} else if (Audio.Media.CONTENT_TYPE.equals(mime_type)) {
-			if (delete_lyrics) {
-				desc += "\n" + getString(R.string.delete_song_lyrics, name);
-			}
-			if (delete_music) {
-				desc += "\n" + getString(R.string.delete_song_track, name);
-			}
-		} else {
-			return;
-		}
-
-		confirmDelete(desc, items);
 	}
 
 	@Override
@@ -218,14 +103,111 @@ public class DeleteDialog extends FragmentActivity implements Constants,
 	}
 
 	@Override
-	public void onCancel(DialogInterface dialog) {
+	public void onClick(DialogInterface dialog, int which, boolean isChecked) {
 
-		if (dialog == mDeleteMultiSelect) {
+		switch (which) {
+			case DELETE_LYRICS_ID:
+				delete_lyrics = isChecked;
+				break;
+			case DELETE_MUSIC_ID:
+				delete_music = isChecked;
+				break;
+		}
+		if (mDeleteMultiSelect != null) {
+			mDeleteMultiSelect.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(
+					delete_lyrics || delete_music);
+		}
+	}
+
+	@Override
+	public void onClick(View v) {
+
+		String desc = "";
+		if (Audio.Artists.CONTENT_TYPE.equals(mime_type)) {
+			if (delete_lyrics) {
+				desc += "\n" + getString(R.string.delete_artist_lyrics, name);
+			}
+			if (delete_music) {
+				desc += "\n" + getString(R.string.delete_artist_tracks, name);
+			}
+		} else if (Audio.Albums.CONTENT_TYPE.equals(mime_type)) {
+			if (delete_lyrics) {
+				desc += "\n" + getString(R.string.delete_album_lyrics, name);
+			}
+			if (delete_music) {
+				desc += "\n" + getString(R.string.delete_album_tracks, name);
+			}
+		} else if (Audio.Media.CONTENT_TYPE.equals(mime_type)) {
+			if (delete_lyrics) {
+				desc += "\n" + getString(R.string.delete_song_lyrics, name);
+			}
+			if (delete_music) {
+				desc += "\n" + getString(R.string.delete_song_track, name);
+			}
+		} else
+			return;
+
+		confirmDelete(desc, items);
+	}
+
+	@Override
+	public void onCreate(Bundle icicle) {
+
+		super.onCreate(icicle);
+
+		setContentView(new LinearLayout(this));
+
+		icicle = icicle != null ? icicle : getIntent().getExtras();
+
+		action = getIntent().getAction();
+
+		if (INTENT_DELETE_ITEMS.equals(action)) {
+			restore_confirm = icicle != null ? icicle.getBoolean(KEY_RESTORE_CONFIRM) : getIntent()
+					.getBooleanExtra(KEY_RESTORE_CONFIRM, false);
+			delete_lyrics = icicle != null ? icicle.getBoolean(KEY_DELETE_LYRICS) : getIntent()
+					.getBooleanExtra(KEY_DELETE_LYRICS, false);
+			delete_music = icicle != null ? icicle.getBoolean(KEY_DELETE_MUSIC) : getIntent()
+					.getBooleanExtra(KEY_DELETE_MUSIC, false);
+
+			path = icicle != null ? icicle.getString(INTENT_KEY_PATH) : getIntent().getDataString();
+
+			if (path == null) {
+				path = "";
+			}
+
+			if (path.startsWith(Audio.Media.EXTERNAL_CONTENT_URI.toString())) {
+				long id = Long.valueOf(Uri.parse(path).getLastPathSegment());
+				items = new long[] { id };
+				mime_type = Audio.Media.CONTENT_TYPE;
+				name = MusicUtils.getTrackName(getApplicationContext(), id);
+			} else if (path.startsWith(Audio.Albums.EXTERNAL_CONTENT_URI.toString())) {
+				long id = Long.valueOf(Uri.parse(path).getLastPathSegment());
+				items = MusicUtils.getSongListForAlbum(getApplicationContext(), Long.valueOf(id));
+				mime_type = Audio.Albums.CONTENT_TYPE;
+				name = MusicUtils.getAlbumName(getApplicationContext(), id, true);
+			} else if (path.startsWith(Audio.Artists.EXTERNAL_CONTENT_URI.toString())) {
+				long id = Long.valueOf(Uri.parse(path).getLastPathSegment());
+				items = MusicUtils.getSongListForArtist(getApplicationContext(), Long.valueOf(id));
+				mime_type = Audio.Artists.CONTENT_TYPE;
+				name = MusicUtils.getArtistName(getApplicationContext(), id, true);
+			}
+
+		} else {
+			Toast.makeText(this, R.string.error_bad_parameters, Toast.LENGTH_SHORT).show();
 			finish();
 		}
-		if (dialog == mDeleteConfirm) {
-			restore_confirm = false;
+	}
+
+	@Override
+	public void onPause() {
+
+		if (mDeleteMultiSelect != null && mDeleteMultiSelect.isShowing()) {
+			mDeleteMultiSelect.dismiss();
 		}
+		if (mDeleteConfirm != null && mDeleteConfirm.isShowing()) {
+			mDeleteConfirm.dismiss();
+		}
+		super.onPause();
 	}
 
 	@Override
@@ -236,13 +218,32 @@ public class DeleteDialog extends FragmentActivity implements Constants,
 		outcicle.putBoolean(KEY_DELETE_MUSIC, delete_music);
 	}
 
-	public void confirmDelete(String desc, final long[] list) {
+	@Override
+	public void onShow(DialogInterface dialog) {
 
-		mDeleteConfirm = new AlertDialog.Builder(this).setIcon(android.R.drawable.ic_dialog_alert)
-				.setTitle(R.string.delete).setMessage(getString(R.string.delete_confirm, desc))
+		Button mButton = mDeleteMultiSelect.getButton(AlertDialog.BUTTON_POSITIVE);
+		mButton.setEnabled(delete_lyrics || delete_music);
+		mButton.setOnClickListener(this);
+	}
+
+	@Override
+	protected void onResume() {
+
+		super.onResume();
+		mDeleteMultiSelect = new AlertDialog.Builder(this)
+				.setMultiChoiceItems(
+						new CharSequence[] { getString(R.string.delete_lyrics),
+								getString(R.string.delete_music) },
+						new boolean[] { delete_lyrics, delete_music }, this)
+				.setIcon(android.R.drawable.ic_dialog_alert).setTitle(R.string.delete)
 				.setPositiveButton(android.R.string.ok, this)
-				.setNegativeButton(android.R.string.cancel, this).setOnCancelListener(this).show();
-		restore_confirm = true;
+				.setNegativeButton(android.R.string.cancel, this).setOnCancelListener(this)
+				.create();
+		mDeleteMultiSelect.setOnShowListener(this);
+		mDeleteMultiSelect.show();
+		if (mDeleteConfirm != null && restore_confirm) {
+			mDeleteConfirm.show();
+		}
 	}
 
 }

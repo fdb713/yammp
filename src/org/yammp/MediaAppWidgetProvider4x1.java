@@ -46,7 +46,7 @@ public class MediaAppWidgetProvider4x1 extends AppWidgetProvider implements Cons
 	private static String mTrackName, mTrackDetail;
 	private static long mAlbumId, mAudioId;
 	private static boolean mIsPlaying;
-	private static String[] mLyrics = new String[]{};
+	private static String[] mLyrics = new String[] {};
 	private static int mLyricsStat;
 
 	@Override
@@ -81,16 +81,38 @@ public class MediaAppWidgetProvider4x1 extends AppWidgetProvider implements Cons
 		pushUpdate(context, appWidgetIds, views);
 	}
 
-	private void pushUpdate(Context context, int[] appWidgetIds, RemoteViews views) {
+	/**
+	 * Link up various button actions using {@link PendingIntents}.
+	 * 
+	 * @param isPlaying
+	 *            True if player is active in background, which means widget
+	 *            click will launch {@link MusicPlaybackActivity}, otherwise we
+	 *            launch {@link MusicBrowserActivity}.
+	 */
+	private void linkButtons(Context context, RemoteViews views, boolean isPlaying) {
 
-		// Update specific list of appWidgetIds if given, otherwise default to
-		// all
-		final AppWidgetManager gm = AppWidgetManager.getInstance(context);
-		if (appWidgetIds != null) {
-			gm.updateAppWidget(appWidgetIds, views);
+		// Connect up various buttons and touch events
+		PendingIntent pendingIntent;
+
+		if (isPlaying) {
+			pendingIntent = PendingIntent.getActivity(context, 0,
+					new Intent(INTENT_PLAYBACK_VIEWER), 0);
+			views.setOnClickPendingIntent(R.id.album_appwidget, pendingIntent);
 		} else {
-			gm.updateAppWidget(new ComponentName(context, this.getClass()), views);
+			pendingIntent = PendingIntent.getActivity(context, 0, new Intent(INTENT_MUSIC_BROWSER),
+					0);
+			views.setOnClickPendingIntent(R.id.album_appwidget, pendingIntent);
 		}
+
+		final ComponentName serviceName = new ComponentName(context, MusicPlaybackService.class);
+
+		pendingIntent = PendingIntent.getService(context, 0,
+				new Intent(TOGGLEPAUSE_ACTION).setComponent(serviceName), 0);
+		views.setOnClickPendingIntent(R.id.control_play, pendingIntent);
+
+		pendingIntent = PendingIntent.getService(context, 0,
+				new Intent(NEXT_ACTION).setComponent(serviceName), 0);
+		views.setOnClickPendingIntent(R.id.control_next, pendingIntent);
 	}
 
 	/**
@@ -153,7 +175,9 @@ public class MediaAppWidgetProvider4x1 extends AppWidgetProvider implements Cons
 			views.setViewVisibility(R.id.lyrics_line, View.VISIBLE);
 			views.setTextViewText(R.id.track_name, mTrackName);
 			views.setViewVisibility(R.id.album_art, mTrackDetail != null ? View.VISIBLE : View.GONE);
-			if (mTrackDetail != null) views.setTextViewText(R.id.track_detail, mTrackDetail);
+			if (mTrackDetail != null) {
+				views.setTextViewText(R.id.track_detail, mTrackDetail);
+			}
 			// Set album art
 			Uri uri = null;
 			if (mAudioId >= 0 && mAlbumId >= 0) {
@@ -190,35 +214,15 @@ public class MediaAppWidgetProvider4x1 extends AppWidgetProvider implements Cons
 		pushUpdate(context, appWidgetIds, views);
 	}
 
-	/**
-	 * Link up various button actions using {@link PendingIntents}.
-	 * 
-	 * @param isPlaying
-	 *            True if player is active in background, which means widget
-	 *            click will launch {@link MusicPlaybackActivity}, otherwise we
-	 *            launch {@link MusicBrowserActivity}.
-	 */
-	private void linkButtons(Context context, RemoteViews views, boolean isPlaying) {
+	private void pushUpdate(Context context, int[] appWidgetIds, RemoteViews views) {
 
-		// Connect up various buttons and touch events
-		PendingIntent pendingIntent;
-
-		if (isPlaying) {
-			pendingIntent = PendingIntent.getActivity(context, 0,
-					new Intent(INTENT_PLAYBACK_VIEWER), 0);
-			views.setOnClickPendingIntent(R.id.album_appwidget, pendingIntent);
+		// Update specific list of appWidgetIds if given, otherwise default to
+		// all
+		final AppWidgetManager gm = AppWidgetManager.getInstance(context);
+		if (appWidgetIds != null) {
+			gm.updateAppWidget(appWidgetIds, views);
 		} else {
-			pendingIntent = PendingIntent.getActivity(context, 0, new Intent(INTENT_MUSIC_BROWSER),
-					0);
-			views.setOnClickPendingIntent(R.id.album_appwidget, pendingIntent);
+			gm.updateAppWidget(new ComponentName(context, this.getClass()), views);
 		}
-		
-		final ComponentName serviceName = new ComponentName(context, MusicPlaybackService.class);
-
-		pendingIntent = PendingIntent.getService(context, 0, new Intent(TOGGLEPAUSE_ACTION).setComponent(serviceName), 0);
-		views.setOnClickPendingIntent(R.id.control_play, pendingIntent);
-
-		pendingIntent = PendingIntent.getService(context, 0, new Intent(NEXT_ACTION).setComponent(serviceName), 0);
-		views.setOnClickPendingIntent(R.id.control_next, pendingIntent);
 	}
 }

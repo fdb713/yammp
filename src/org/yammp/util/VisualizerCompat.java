@@ -13,18 +13,18 @@ public abstract class VisualizerCompat {
 
 	}
 
-	public abstract void setFftEnabled(boolean fft);
-
-	public abstract void setWaveFormEnabled(boolean wave);
-
-	public abstract void setOnDataChangedListener(OnDataChangedListener listener);
-
-	public abstract void setEnabled(boolean enabled);
-
 	public abstract boolean getEnabled();
 
 	public abstract void release();
 
 	public abstract void setAccuracy(float accuracy);
+
+	public abstract void setEnabled(boolean enabled);
+
+	public abstract void setFftEnabled(boolean fft);
+
+	public abstract void setOnDataChangedListener(OnDataChangedListener listener);
+
+	public abstract void setWaveFormEnabled(boolean wave);
 
 }

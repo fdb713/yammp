@@ -29,26 +29,22 @@ import android.util.FloatMath;
 
 public class ShakeListener implements SensorEventListener, Constants {
 
+	public interface OnShakeListener {
+
+		void onShake();
+	}
+
 	private boolean mFirstSensorUpdate, mFirstDeltaUpdate = true;
 	private long mCurrentTimeStamp, mLastShakeTimeStamp;
 	private long mShakeInterval = 250;
 	private long mLastUpdateTime;
 	private float mLastX, mLastY, mLastZ;
-	private float mCurrentSpeed, mLastSpeed;
 
+	private float mCurrentSpeed, mLastSpeed;
 	private SensorManager mSensorManager;
 	private ArrayList<OnShakeListener> mListeners;
+
 	private float mShakeThreshold = DEFAULT_SHAKING_THRESHOLD;
-
-	public float getShakeThreshold() {
-
-		return mShakeThreshold;
-	}
-
-	public void setShakeThreshold(float threshold) {
-
-		mShakeThreshold = threshold;
-	}
 
 	public ShakeListener(Context context) {
 
@@ -56,38 +52,9 @@ public class ShakeListener implements SensorEventListener, Constants {
 		mListeners = new ArrayList<OnShakeListener>();
 	}
 
-	public interface OnShakeListener {
+	public float getShakeThreshold() {
 
-		void onShake();
-	}
-
-	public void registerOnShakeListener(OnShakeListener listener) {
-
-		if (!mListeners.contains(listener)) mListeners.add(listener);
-	}
-
-	public void unregisterOnShakeListener(OnShakeListener listener) {
-
-		mListeners.remove(listener);
-	}
-
-	public void start() throws UnsupportedOperationException {
-
-		Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-		if (sensor == null) {
-			throw new UnsupportedOperationException();
-		}
-		boolean success = mSensorManager.registerListener(this, sensor,
-				SensorManager.SENSOR_DELAY_UI);
-		if (!success) {
-			throw new UnsupportedOperationException();
-		}
-		mFirstSensorUpdate = true;
-	}
-
-	public void stop() {
-
-		if (mSensorManager != null) mSensorManager.unregisterListener(this);
+		return mShakeThreshold;
 	}
 
 	@Override
@@ -142,6 +109,40 @@ public class ShakeListener implements SensorEventListener, Constants {
 				notifyListeners();
 			}
 		}
+	}
+
+	public void registerOnShakeListener(OnShakeListener listener) {
+
+		if (!mListeners.contains(listener)) {
+			mListeners.add(listener);
+		}
+	}
+
+	public void setShakeThreshold(float threshold) {
+
+		mShakeThreshold = threshold;
+	}
+
+	public void start() throws UnsupportedOperationException {
+
+		Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+		if (sensor == null) throw new UnsupportedOperationException();
+		boolean success = mSensorManager.registerListener(this, sensor,
+				SensorManager.SENSOR_DELAY_UI);
+		if (!success) throw new UnsupportedOperationException();
+		mFirstSensorUpdate = true;
+	}
+
+	public void stop() {
+
+		if (mSensorManager != null) {
+			mSensorManager.unregisterListener(this);
+		}
+	}
+
+	public void unregisterOnShakeListener(OnShakeListener listener) {
+
+		mListeners.remove(listener);
 	}
 
 	private void notifyListeners() {

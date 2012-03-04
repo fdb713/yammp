@@ -39,7 +39,7 @@
 	<LinearLayout
 		android:id="@+id/controls"
 		android:layout_width="match_parent"
-		android:layout_height="60dip"
+		android:layout_height="48dip"
 		android:layout_alignParentBottom="true"
 		android:layout_toRightOf="@+id/album_art_info_divider"
 		android:orientation="horizontal">
@@ -114,46 +114,39 @@
 		android:textSize="16sp"/>
 
 	<TextView
+		android:id="@+id/artist_name"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_alignLeft="@+id/control_repeat"
+		android:layout_alignRight="@+id/control_shuffle"
+		android:layout_below="@+id/control_repeat"
+		android:ellipsize="marquee"
+		android:singleLine="true"
+		android:textColor="#FFFFFFFF"
+		android:textSize="13sp"/>
+
+	<TextView
+		android:id="@+id/album_name"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_alignLeft="@+id/artist_name"
+		android:layout_alignRight="@+id/control_shuffle"
+		android:layout_below="@+id/artist_name"
+		android:ellipsize="marquee"
+		android:singleLine="true"
+		android:textColor="#FFFFFFFF"
+		android:textSize="13sp"/>
+
+	<TextView
 		android:id="@+id/lyrics_line"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_alignLeft="@+id/controls_info_divider"
-		android:layout_below="@+id/artist_name"
-		android:layout_toRightOf="@+id/album_art"
+		android:layout_alignLeft="@+id/album_name"
+		android:layout_alignRight="@+id/control_shuffle"
+		android:layout_below="@+id/album_name"
 		android:ellipsize="marquee"
 		android:singleLine="true"
 		android:textColor="#FFFFFFFF"
 		android:textSize="12sp"/>
-
-	<LinearLayout
-		android:id="@+id/info"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:layout_alignBottom="@+id/album_art"
-		android:layout_alignLeft="@+id/album_art"
-		android:layout_alignRight="@+id/album_art"
-		android:background="#80000000"
-		android:orientation="vertical">
-
-		<TextView
-			android:id="@+id/artist_name"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:ellipsize="marquee"
-			android:singleLine="true"
-			android:text="artist"
-			android:textColor="#FFFFFFFF"
-			android:textSize="13sp"/>
-
-		<TextView
-			android:id="@+id/album_name"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:ellipsize="marquee"
-			android:singleLine="true"
-			android:text="album"
-			android:textColor="#FFFFFFFF"
-			android:textSize="13sp"/>
-	</LinearLayout>
 
 </RelativeLayout>

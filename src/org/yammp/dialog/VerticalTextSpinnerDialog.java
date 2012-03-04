@@ -17,6 +17,11 @@ public class VerticalTextSpinnerDialog extends AlertDialog {
 		init(context, items, position);
 	}
 
+	public int getCurrentSelectedPos() {
+		if (mVerticalTextSpinner != null) return mVerticalTextSpinner.getCurrentSelectedPos();
+		return 0;
+	}
+
 	private void init(Context context, String[] items, int position) {
 		DisplayMetrics dm = new DisplayMetrics();
 		dm = context.getResources().getDisplayMetrics();
@@ -33,13 +38,6 @@ public class VerticalTextSpinnerDialog extends AlertDialog {
 				.addView(mVerticalTextSpinner, (int) (120 * dm.density), (int) (100 * dm.density));
 
 		setView(mContainer);
-	}
-
-	public int getCurrentSelectedPos() {
-		if (mVerticalTextSpinner != null) {
-			return mVerticalTextSpinner.getCurrentSelectedPos();
-		}
-		return 0;
 	}
 
 }

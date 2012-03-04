@@ -32,9 +32,9 @@ import android.support.v4.app.FragmentActivity;
 import android.util.DisplayMetrics;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 
 public class SleepTimerDialog extends FragmentActivity implements OnSeekBarChangeListener,
 		Constants {
@@ -137,15 +137,6 @@ public class SleepTimerDialog extends FragmentActivity implements OnSeekBarChang
 	}
 
 	@Override
-	protected void onResume() {
-
-		super.onResume();
-		if (mSleepTimerDialog != null && !mSleepTimerDialog.isShowing()) {
-			mSleepTimerDialog.show();
-		}
-	}
-
-	@Override
 	public void onPause() {
 
 		if (mSleepTimerDialog != null && mSleepTimerDialog.isShowing()) {
@@ -175,6 +166,15 @@ public class SleepTimerDialog extends FragmentActivity implements OnSeekBarChang
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
 
+	}
+
+	@Override
+	protected void onResume() {
+
+		super.onResume();
+		if (mSleepTimerDialog != null && !mSleepTimerDialog.isShowing()) {
+			mSleepTimerDialog.show();
+		}
 	}
 
 }

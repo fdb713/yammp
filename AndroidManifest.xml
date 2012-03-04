@@ -136,7 +136,7 @@
 		<activity
 			android:name=".dialog.EqualizerDialog"
 			android:label="@string/equalizer"
-			android:theme="@android:style/Theme.Dialog">
+			android:theme="@style/Theme.Holo.DialogWhenLarge">
 			<intent-filter>
 				<action android:name="org.yammp.EQUALIZER"/>
 

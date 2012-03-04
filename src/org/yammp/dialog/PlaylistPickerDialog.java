@@ -26,6 +26,45 @@ public class PlaylistPickerDialog extends FragmentActivity implements
 	long[] mList = new long[] {};
 
 	@Override
+	public void onCancel(DialogInterface dialog) {
+
+		finish();
+	}
+
+	@Override
+	public void onClick(DialogInterface dialog, int which) {
+
+		long listId = Long.valueOf(mAllPlayLists.get(which).get(MAP_KEY_ID));
+		String listName = mAllPlayLists.get(which).get(MAP_KEY_NAME);
+		Intent intent;
+		boolean mCreateShortcut = getIntent().getAction().equals(Intent.ACTION_CREATE_SHORTCUT);
+
+		if (mCreateShortcut) {
+			final Intent shortcut = new Intent();
+			shortcut.setAction(INTENT_PLAY_SHORTCUT);
+			shortcut.putExtra(MAP_KEY_ID, listId);
+
+			intent = new Intent();
+			intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcut);
+			intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, listName);
+			intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource
+					.fromContext(this, R.drawable.ic_launcher_shortcut_playlist));
+			setResult(RESULT_OK, intent);
+		} else {
+			if (listId >= 0) {
+				MusicUtils.addToPlaylist(this, mList, listId);
+			} else if (listId == PLAYLIST_QUEUE) {
+				MusicUtils.addToCurrentPlaylist(this, mList);
+			} else if (listId == PLAYLIST_NEW) {
+				intent = new Intent(INTENT_CREATE_PLAYLIST);
+				intent.putExtra(INTENT_KEY_LIST, mList);
+				startActivity(intent);
+			}
+		}
+		finish();
+	}
+
+	@Override
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
@@ -63,42 +102,12 @@ public class PlaylistPickerDialog extends FragmentActivity implements
 	}
 
 	@Override
-	public void onClick(DialogInterface dialog, int which) {
+	public void onPause() {
 
-		long listId = Long.valueOf(mAllPlayLists.get(which).get(MAP_KEY_ID));
-		String listName = mAllPlayLists.get(which).get(MAP_KEY_NAME);
-		Intent intent;
-		boolean mCreateShortcut = getIntent().getAction().equals(Intent.ACTION_CREATE_SHORTCUT);
-
-		if (mCreateShortcut) {
-			final Intent shortcut = new Intent();
-			shortcut.setAction(INTENT_PLAY_SHORTCUT);
-			shortcut.putExtra(MAP_KEY_ID, listId);
-
-			intent = new Intent();
-			intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcut);
-			intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, listName);
-			intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource
-					.fromContext(this, R.drawable.ic_launcher_shortcut_playlist));
-			setResult(RESULT_OK, intent);
-		} else {
-			if (listId >= 0) {
-				MusicUtils.addToPlaylist(this, mList, listId);
-			} else if (listId == PLAYLIST_QUEUE) {
-				MusicUtils.addToCurrentPlaylist(this, mList);
-			} else if (listId == PLAYLIST_NEW) {
-				intent = new Intent(INTENT_CREATE_PLAYLIST);
-				intent.putExtra(INTENT_KEY_LIST, mList);
-				startActivity(intent);
-			}
+		if (mPlayListPickerDialog != null && mPlayListPickerDialog.isShowing()) {
+			mPlayListPickerDialog.dismiss();
 		}
-		finish();
-	}
-
-	@Override
-	public void onCancel(DialogInterface dialog) {
-
-		finish();
+		super.onPause();
 	}
 
 	@Override
@@ -108,15 +117,6 @@ public class PlaylistPickerDialog extends FragmentActivity implements
 		if (mPlayListPickerDialog != null && !mPlayListPickerDialog.isShowing()) {
 			mPlayListPickerDialog.show();
 		}
-	}
-
-	@Override
-	public void onPause() {
-
-		if (mPlayListPickerDialog != null && mPlayListPickerDialog.isShowing()) {
-			mPlayListPickerDialog.dismiss();
-		}
-		super.onPause();
 	}
 
 }

@@ -14,8 +14,8 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/widget"
 	android:layout_width="match_parent"
 	android:layout_height="180dip"
 	android:background="@drawable/appwidget_bg"
@@ -91,47 +91,6 @@
 		android:background="@drawable/appwidget_button_center"
 		android:src="@drawable/ic_mp_shuffle_off_btn"/>
 
-	<LinearLayout
-		android:id="@+id/info"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:layout_above="@id/controls_info_divider"
-		android:layout_below="@id/control_repeat"
-		android:layout_marginRight="6dip"
-		android:layout_toRightOf="@id/album_art"
-		android:gravity="center"
-		android:orientation="vertical"
-		android:paddingBottom="10dip">
-
-		<TextView
-			android:id="@+id/artist_name"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:ellipsize="end"
-			android:singleLine="true"
-			android:textColor="#FFFFFFFF"
-			android:textSize="16sp"
-			android:textStyle="bold"/>
-
-		<TextView
-			android:id="@+id/album_name"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:ellipsize="end"
-			android:singleLine="true"
-			android:textColor="#FFFFFFFF"
-			android:textSize="13sp"/>
-
-		<TextView
-			android:id="@+id/lyrics_line"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:ellipsize="end"
-			android:singleLine="true"
-			android:textColor="#FFFFFFFF"
-			android:textSize="12sp"/>
-	</LinearLayout>
-
 	<TextView
 		android:id="@+id/track_name"
 		android:layout_width="wrap_content"
@@ -145,5 +104,44 @@
 		android:singleLine="true"
 		android:textColor="#FFFFFFFF"
 		android:textSize="16sp"/>
+
+	<TextView
+		android:id="@+id/artist_name"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignLeft="@+id/control_repeat"
+		android:layout_alignRight="@+id/control_shuffle"
+		android:layout_below="@+id/control_repeat"
+		android:ellipsize="marquee"
+		android:gravity="center"
+		android:singleLine="true"
+		android:textColor="#FFFFFFFF"
+		android:textSize="13sp"/>
+
+	<TextView
+		android:id="@+id/album_name"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignLeft="@+id/control_repeat"
+		android:layout_alignRight="@+id/control_shuffle"
+		android:layout_below="@+id/artist_name"
+		android:ellipsize="marquee"
+		android:gravity="center"
+		android:singleLine="true"
+		android:textColor="#FFFFFFFF"
+		android:textSize="13sp"/>
+
+	<TextView
+		android:id="@+id/lyrics_line"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignLeft="@+id/control_repeat"
+		android:layout_alignRight="@+id/control_shuffle"
+		android:layout_below="@+id/album_name"
+		android:gravity="center"
+		android:maxLines="2"
+		android:singleLine="false"
+		android:textColor="#FFFFFFFF"
+		android:textSize="12sp"/>
 
 </RelativeLayout>

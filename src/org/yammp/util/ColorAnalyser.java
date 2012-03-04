@@ -46,9 +46,7 @@ public class ColorAnalyser {
 	 */
 	public static int analyse(Bitmap bitmap, int width, int height) {
 
-		if (bitmap == null) {
-			return Color.WHITE;
-		}
+		if (bitmap == null) return Color.WHITE;
 
 		int color = 0;
 
@@ -65,7 +63,7 @@ public class ColorAnalyser {
 				float[] hsv = new float[3];
 				Color.colorToHSV(color, hsv);
 
-				float score = ((hsv[1] * hsv[1]) + 0.001f) * (hsv[2] * hsv[2]);
+				float score = (hsv[1] * hsv[1] + 0.001f) * (hsv[2] * hsv[2]);
 
 				colorsMap.put(score, color);
 				colorsScore.add(score);
@@ -95,9 +93,7 @@ public class ColorAnalyser {
 	 */
 	public static int analyse(Bitmap bitmap, int width, int height, int def) {
 
-		if (bitmap == null) {
-			return def;
-		}
+		if (bitmap == null) return def;
 
 		int color = 0;
 
@@ -114,7 +110,7 @@ public class ColorAnalyser {
 				float[] hsv = new float[3];
 				Color.colorToHSV(color, hsv);
 
-				float score = ((hsv[1] * hsv[1]) + 0.001f) * (hsv[2] * hsv[2]);
+				float score = (hsv[1] * hsv[1] + 0.001f) * (hsv[2] * hsv[2]);
 
 				colorsMap.put(score, color);
 				colorsScore.add(score);

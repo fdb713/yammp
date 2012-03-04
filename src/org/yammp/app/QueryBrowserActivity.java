@@ -20,11 +20,16 @@
 
 package org.yammp.app;
 
+import org.mariotaku.actionbarcompat.app.FragmentActivity;
+import org.yammp.Constants;
+import org.yammp.R;
+import org.yammp.util.MusicUtils;
+import org.yammp.util.ServiceToken;
+
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
-
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -36,19 +41,25 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 
-import org.mariotaku.actionbarcompat.app.ActionBarActivity;
-import org.yammp.Constants;
-import org.yammp.R;
-import org.yammp.util.MusicUtils;
-import org.yammp.util.ServiceToken;
-
-public class QueryBrowserActivity extends ActionBarActivity implements Constants,
-		ServiceConnection, TextWatcher {
+public class QueryBrowserActivity extends FragmentActivity implements Constants, ServiceConnection,
+		TextWatcher {
 
 	private ServiceToken mToken;
 	private Intent intent;
 	private Bundle bundle;
 	private QueryFragment fragment;
+
+	@Override
+	public void afterTextChanged(Editable s) {
+
+		// don't care about this one
+	}
+
+	@Override
+	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+		// don't care about this one
+	}
 
 	@Override
 	public void onCreate(Bundle icicle) {
@@ -66,48 +77,37 @@ public class QueryBrowserActivity extends ActionBarActivity implements Constants
 			bundle = new Bundle();
 		}
 
-		if (bundle.getString(INTENT_KEY_ACTION) == null)
+		if (bundle.getString(INTENT_KEY_ACTION) == null) {
 			bundle.putString(INTENT_KEY_ACTION, intent.getAction());
-		if (bundle.getString(INTENT_KEY_DATA) == null)
+		}
+		if (bundle.getString(INTENT_KEY_DATA) == null) {
 			bundle.putString(INTENT_KEY_DATA, intent.getDataString());
-		if (bundle.getString(SearchManager.QUERY) == null)
+		}
+		if (bundle.getString(SearchManager.QUERY) == null) {
 			bundle.putString(SearchManager.QUERY, intent.getStringExtra(SearchManager.QUERY));
-		if (bundle.getString(MediaStore.EXTRA_MEDIA_FOCUS) == null)
+		}
+		if (bundle.getString(MediaStore.EXTRA_MEDIA_FOCUS) == null) {
 			bundle.putString(MediaStore.EXTRA_MEDIA_FOCUS,
 					intent.getStringExtra(MediaStore.EXTRA_MEDIA_FOCUS));
-		if (bundle.getString(MediaStore.EXTRA_MEDIA_ARTIST) == null)
+		}
+		if (bundle.getString(MediaStore.EXTRA_MEDIA_ARTIST) == null) {
 			bundle.putString(MediaStore.EXTRA_MEDIA_ARTIST,
 					intent.getStringExtra(MediaStore.EXTRA_MEDIA_ARTIST));
-		if (bundle.getString(MediaStore.EXTRA_MEDIA_ALBUM) == null)
+		}
+		if (bundle.getString(MediaStore.EXTRA_MEDIA_ALBUM) == null) {
 			bundle.putString(MediaStore.EXTRA_MEDIA_ALBUM,
 					intent.getStringExtra(MediaStore.EXTRA_MEDIA_ALBUM));
-		if (bundle.getString(MediaStore.EXTRA_MEDIA_TITLE) == null)
+		}
+		if (bundle.getString(MediaStore.EXTRA_MEDIA_TITLE) == null) {
 			bundle.putString(MediaStore.EXTRA_MEDIA_TITLE,
 					intent.getStringExtra(MediaStore.EXTRA_MEDIA_TITLE));
+		}
 
 		fragment = new QueryFragment(bundle);
 
 		getSupportFragmentManager().beginTransaction().replace(android.R.id.content, fragment)
 				.commit();
 
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle outcicle) {
-		outcicle.putAll(bundle);
-		super.onSaveInstanceState(outcicle);
-	}
-
-	@Override
-	public void onStart() {
-		super.onStart();
-		mToken = MusicUtils.bindToService(this, this);
-	}
-
-	@Override
-	public void onStop() {
-		MusicUtils.unbindFromService(mToken);
-		super.onStop();
 	}
 
 	@Override
@@ -126,6 +126,12 @@ public class QueryBrowserActivity extends ActionBarActivity implements Constants
 	}
 
 	@Override
+	public void onSaveInstanceState(Bundle outcicle) {
+		outcicle.putAll(bundle);
+		super.onSaveInstanceState(outcicle);
+	}
+
+	@Override
 	public void onServiceConnected(ComponentName name, IBinder service) {
 
 	}
@@ -136,25 +142,27 @@ public class QueryBrowserActivity extends ActionBarActivity implements Constants
 	}
 
 	@Override
-	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-		// don't care about this one
+	public void onStart() {
+		super.onStart();
+		mToken = MusicUtils.bindToService(this, this);
 	}
+
+	@Override
+	public void onStop() {
+		MusicUtils.unbindFromService(mToken);
+		super.onStop();
+	};
 
 	@Override
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
 
 		Bundle args = fragment.getArguments();
-		if (args == null) args = new Bundle();
+		if (args == null) {
+			args = new Bundle();
+		}
 		args.putString(INTENT_KEY_FILTER, s.toString());
 
 		fragment.getLoaderManager().restartLoader(0, args, fragment);
-	};
-
-	@Override
-	public void afterTextChanged(Editable s) {
-
-		// don't care about this one
 	}
 
 	private void configureActivity() {

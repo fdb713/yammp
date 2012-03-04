@@ -22,12 +22,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 
+import org.xmlpull.v1.XmlPullParserException;
 import org.yammp.Constants;
 import org.yammp.R;
 import org.yammp.util.ImageDownloader;
 import org.yammp.util.LyricsDownloader;
 import org.yammp.util.MusicUtils;
-import org.xmlpull.v1.XmlPullParserException;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -44,38 +44,361 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.view.View;
 
 public class SearchDialog extends Activity implements Constants, TextWatcher, OnCancelListener {
+
+	private class AlbumArtDownloadTask extends AsyncTask<String, Void, Bitmap> {
+
+		String albumArtPath;
+
+		private void writeAlbumArt(Bitmap bitmap, String path) {
+
+			try {
+				FileOutputStream fos = new FileOutputStream(path);
+				bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+				fos.flush();
+				fos.close();
+				MusicUtils.clearAlbumArtCache();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		@Override
+		protected Bitmap doInBackground(String... params) {
+
+			albumArtPath = params[1];
+			return ImageDownloader.getCoverBitmap(params[0]);
+		}
+
+		@Override
+		protected void onPostExecute(Bitmap result) {
+
+			File art = new File(albumArtPath);
+			art.delete();
+			writeAlbumArt(result, albumArtPath);
+			if (mProgress != null) {
+				mProgress.dismiss();
+			}
+			if (mSearchDialog != null && mSearchDialog.isShowing()) {
+				mSearchDialog.dismiss();
+			}
+			finish();
+		}
+
+		@Override
+		protected void onPreExecute() {
+
+			mProgress.setMessage(getString(R.string.downloading_please_wait));
+			mProgress.show();
+		}
+	}
+
+	private class AlbumArtSearchTask extends AsyncTask<String, Void, String> implements
+			OnClickListener {
+
+		String mUrl, mPath;
+
+		@Override
+		public void onClick(DialogInterface dialog, int which) {
+
+			restore_albumart_confirm = false;
+			if (dialog == mAlbumArtConfirm) {
+				switch (which) {
+					case DialogInterface.BUTTON_POSITIVE:
+						mAlbumArtDownloadTask = new AlbumArtDownloadTask();
+						mAlbumArtDownloadTask.execute(mUrl, mPath);
+				}
+			}
+
+		}
+
+		private void confirmOverwrite(final String url, final String path) {
+
+			mUrl = url;
+			mPath = path;
+
+			if (new File(path).exists()) {
+				mAlbumArtConfirm = new AlertDialog.Builder(SearchDialog.this)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setTitle(R.string.confirm_overwrite)
+						.setMessage(getString(R.string.albumart_already_exist))
+						.setPositiveButton(android.R.string.ok, this)
+						.setNegativeButton(android.R.string.cancel, this).show();
+			} else {
+				mAlbumArtDownloadTask = new AlbumArtDownloadTask();
+				mAlbumArtDownloadTask.execute(url, path);
+			}
+		}
+
+		@Override
+		protected String doInBackground(String... params) {
+
+			mPath = params[2];
+			try {
+				return ImageDownloader.getCoverUrl(params[0], params[1]);
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result) {
+
+			if (mProgress != null) {
+				mProgress.dismiss();
+			}
+			if (result != null) {
+				confirmOverwrite(result, mPath);
+			} else {
+				Toast.makeText(SearchDialog.this, R.string.search_noresult, Toast.LENGTH_SHORT)
+						.show();
+			}
+
+		}
+
+		@Override
+		protected void onPreExecute() {
+
+			mProgress.setMessage(getString(R.string.searching_please_wait));
+			mProgress.show();
+		}
+
+	}
+
+	private class LyricsDownloadTask extends AsyncTask<String, Integer, Void> {
+
+		@Override
+		protected Void doInBackground(String... params) {
+
+			try {
+				mDownloader.download(Integer.valueOf(params[0]), params[1]);
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+
+			if (mProgress != null) {
+				mProgress.dismiss();
+			}
+			if (mSearchDialog != null && mSearchDialog.isShowing()) {
+				mSearchDialog.dismiss();
+			}
+			MusicUtils.reloadLyrics();
+			finish();
+		}
+
+		@Override
+		protected void onPreExecute() {
+
+			mProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+			mProgress.setMessage(getString(R.string.downloading_please_wait));
+			mProgress.show();
+		}
+	}
+
+	private class LyricsSearchTask extends AsyncTask<String, Void, String[]> implements
+			OnCancelListener, OnClickListener {
+
+		private int mItem = 0;
+
+		@Override
+		public void onCancel(DialogInterface dialog) {
+
+			if (dialog == mLyricsChooser) {
+				restore_lyrics_chooser = false;
+			}
+			if (dialog == mLyricsConfirm) {
+				restore_lyrics_confirm = false;
+			}
+
+		}
+
+		@Override
+		public void onClick(DialogInterface dialog, int item) {
+
+			if (dialog == mLyricsChooser) {
+				restore_lyrics_chooser = false;
+				confirmOverwrite(item, mPath);
+			}
+			if (dialog == mLyricsConfirm) {
+				restore_lyrics_confirm = false;
+				switch (item) {
+					case DialogInterface.BUTTON_POSITIVE:
+						mLyricsDownloadTask = new LyricsDownloadTask();
+						mLyricsDownloadTask.execute(String.valueOf(mItem), mPath);
+						break;
+				}
+			}
+		}
+
+		private void chooseLyrics(final String[] result) {
+
+			mLyricsChooser = new AlertDialog.Builder(SearchDialog.this)
+					.setTitle(R.string.search_lyrics).setItems(result, this)
+					.setOnCancelListener(this).show();
+		}
+
+		private void confirmOverwrite(int item, String path) {
+
+			mItem = item;
+
+			if (new File(mPath).exists()) {
+				mLyricsConfirm = new AlertDialog.Builder(SearchDialog.this)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setTitle(R.string.confirm_overwrite)
+						.setMessage(getString(R.string.lyrics_already_exist))
+						.setPositiveButton(android.R.string.ok, this)
+						.setNegativeButton(android.R.string.cancel, this).setOnCancelListener(this)
+						.show();
+			} else {
+				mLyricsDownloadTask = new LyricsDownloadTask();
+				mLyricsDownloadTask.execute(String.valueOf(item), mPath);
+			}
+		}
+
+		@Override
+		protected String[] doInBackground(String... params) {
+
+			mPath = params[2];
+			try {
+				return mDownloader.search(params[0], params[1]);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			} catch (XmlPullParserException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(String[] result) {
+
+			if (mProgress != null) {
+				mProgress.dismiss();
+			}
+			if (result.length > 0) {
+				chooseLyrics(result);
+			} else {
+				Toast.makeText(SearchDialog.this, R.string.search_noresult, Toast.LENGTH_SHORT)
+						.show();
+			}
+		}
+
+		@Override
+		protected void onPreExecute() {
+
+			mDownloader = new LyricsDownloader();
+			mProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+			mProgress.setMessage(getString(R.string.searching_please_wait));
+			mProgress.show();
+		}
+
+	}
 
 	private ProgressDialog mProgress = null;
 
 	private LinearLayout mLinearLayout;
+
 	private AlertDialog mSearchDialog, mLyricsChooser, mLyricsConfirm, mAlbumArtConfirm;
 	private ProgressDialog mSearchProgress, mDownloadProgress;
 
 	private boolean restore_lyrics_chooser, restore_lyrics_confirm,
 			restore_albumart_confirm = false;
-
 	LyricsDownloader mDownloader;
 
 	LyricsSearchTask mLyricsSearchTask;
 	LyricsDownloadTask mLyricsDownloadTask;
-
 	AlbumArtSearchTask mAlbumArtSearchTask;
 	AlbumArtDownloadTask mAlbumArtDownloadTask;
-
 	private String action;
 	private LinearLayout mContainer;
+
 	private TextView mKeywordSummary1, mKeywordSummary2;
+
 	private EditText mSearchKeyword1, mSearchKeyword2;
+
 	private String mKeyword1, mKeyword2 = "";
+
 	private String mPath = null;
+
+	private View.OnClickListener mSearchLyricsOnClickListener = new View.OnClickListener() {
+
+		@Override
+		public void onClick(View view) {
+
+			String mTypedKeyword1 = mSearchKeyword1.getText().toString();
+			String mTypedKeyword2 = mSearchKeyword2.getText().toString();
+			mLyricsSearchTask = new LyricsSearchTask();
+			mLyricsSearchTask.execute(mTypedKeyword1, mTypedKeyword2, mPath);
+		}
+	};
+
+	private View.OnClickListener mSearchAlbumArtOnClickListener = new View.OnClickListener() {
+
+		@Override
+		public void onClick(View view) {
+
+			String mTypedKeyword1 = mSearchKeyword1.getText().toString();
+			String mTypedKeyword2 = mSearchKeyword2.getText().toString();
+			mAlbumArtSearchTask = new AlbumArtSearchTask();
+			mAlbumArtSearchTask.execute(mTypedKeyword1, mTypedKeyword2, mPath);
+		}
+	};
+
+	@Override
+	public void afterTextChanged(Editable s) {
+
+		// don't care about this one
+	};
+
+	@Override
+	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+		// don't care about this one
+	}
+
+	@Override
+	public void onCancel(DialogInterface dialog) {
+
+		if (dialog == mSearchDialog) {
+			finish();
+		}
+		if (dialog == mSearchProgress) {
+			if (mLyricsSearchTask != null) {
+				mLyricsSearchTask.cancel(true);
+			}
+			if (mAlbumArtSearchTask != null) {
+				mAlbumArtSearchTask.cancel(true);
+			}
+		}
+		if (dialog == mDownloadProgress) {
+			if (mLyricsDownloadTask != null) {
+				mLyricsDownloadTask.cancel(true);
+			}
+			if (mAlbumArtDownloadTask != null) {
+				mAlbumArtDownloadTask.cancel(true);
+			}
+		}
+
+		return;
+	}
 
 	@Override
 	public void onCreate(Bundle icicle) {
@@ -95,7 +418,7 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 		mSearchDialog = new AlertDialog.Builder(this).create();
 		mSearchDialog.setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-		if ((INTENT_SEARCH_ALBUMART.equals(action) || INTENT_SEARCH_LYRICS.equals(action))) {
+		if (INTENT_SEARCH_ALBUMART.equals(action) || INTENT_SEARCH_LYRICS.equals(action)) {
 
 			mPath = icicle != null ? icicle.getString(INTENT_KEY_PATH) : getIntent()
 					.getStringExtra(INTENT_KEY_PATH);
@@ -192,36 +515,6 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 	}
 
 	@Override
-	protected void onResume() {
-
-		super.onResume();
-		if (mSearchDialog != null && !mSearchDialog.isShowing()) {
-			mSearchDialog.show();
-		}
-		if (mLyricsChooser != null && restore_lyrics_chooser) {
-			mLyricsChooser.show();
-		}
-		if (mLyricsConfirm != null && restore_lyrics_confirm) {
-			mLyricsConfirm.show();
-		}
-		if (mAlbumArtConfirm != null && restore_albumart_confirm) {
-			mAlbumArtConfirm.show();
-		}
-		if ((mLyricsSearchTask != null && mLyricsSearchTask.getStatus().equals(Status.RUNNING))
-				|| (mAlbumArtSearchTask != null && !mAlbumArtSearchTask.getStatus().equals(
-						Status.RUNNING))) {
-			mProgress.setMessage(getString(R.string.searching_please_wait));
-			mProgress.show();
-		}
-		if ((mLyricsDownloadTask != null && mLyricsDownloadTask.getStatus().equals(Status.RUNNING))
-				|| (mAlbumArtDownloadTask != null && !mAlbumArtDownloadTask.getStatus().equals(
-						Status.RUNNING))) {
-			mProgress.setMessage(getString(R.string.downloading_please_wait));
-			mProgress.show();
-		}
-	}
-
-	@Override
 	public void onPause() {
 
 		if (mSearchDialog != null && mSearchDialog.isShowing()) {
@@ -259,6 +552,12 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 		outcicle.putString(INTENT_KEY_ARTIST, mSearchKeyword1.getText().toString());
 	}
 
+	@Override
+	public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+		setSaveButton();
+	}
+
 	private void setSaveButton() {
 
 		String mTypedKeyword1 = mSearchKeyword1.getText().toString();
@@ -273,329 +572,32 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 	}
 
 	@Override
-	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+	protected void onResume() {
 
-		// don't care about this one
-	}
-
-	@Override
-	public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-		setSaveButton();
-	};
-
-	@Override
-	public void afterTextChanged(Editable s) {
-
-		// don't care about this one
-	}
-
-	private View.OnClickListener mSearchLyricsOnClickListener = new View.OnClickListener() {
-
-		@Override
-		public void onClick(View view) {
-
-			String mTypedKeyword1 = mSearchKeyword1.getText().toString();
-			String mTypedKeyword2 = mSearchKeyword2.getText().toString();
-			mLyricsSearchTask = new LyricsSearchTask();
-			mLyricsSearchTask.execute(mTypedKeyword1, mTypedKeyword2, mPath);
+		super.onResume();
+		if (mSearchDialog != null && !mSearchDialog.isShowing()) {
+			mSearchDialog.show();
 		}
-	};
-
-	private View.OnClickListener mSearchAlbumArtOnClickListener = new View.OnClickListener() {
-
-		@Override
-		public void onClick(View view) {
-
-			String mTypedKeyword1 = mSearchKeyword1.getText().toString();
-			String mTypedKeyword2 = mSearchKeyword2.getText().toString();
-			mAlbumArtSearchTask = new AlbumArtSearchTask();
-			mAlbumArtSearchTask.execute(mTypedKeyword1, mTypedKeyword2, mPath);
+		if (mLyricsChooser != null && restore_lyrics_chooser) {
+			mLyricsChooser.show();
 		}
-	};
-
-	@Override
-	public void onCancel(DialogInterface dialog) {
-
-		if (dialog == mSearchDialog) {
-			finish();
+		if (mLyricsConfirm != null && restore_lyrics_confirm) {
+			mLyricsConfirm.show();
 		}
-		if (dialog == mSearchProgress) {
-			if (mLyricsSearchTask != null) {
-				mLyricsSearchTask.cancel(true);
-			}
-			if (mAlbumArtSearchTask != null) {
-				mAlbumArtSearchTask.cancel(true);
-			}
+		if (mAlbumArtConfirm != null && restore_albumart_confirm) {
+			mAlbumArtConfirm.show();
 		}
-		if (dialog == mDownloadProgress) {
-			if (mLyricsDownloadTask != null) {
-				mLyricsDownloadTask.cancel(true);
-			}
-			if (mAlbumArtDownloadTask != null) {
-				mAlbumArtDownloadTask.cancel(true);
-			}
-		}
-
-		return;
-	}
-
-	private class LyricsSearchTask extends AsyncTask<String, Void, String[]> implements
-			OnCancelListener, OnClickListener {
-
-		private int mItem = 0;
-
-		@Override
-		protected String[] doInBackground(String... params) {
-
-			mPath = params[2];
-			try {
-				return mDownloader.search(params[0], params[1]);
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			} catch (XmlPullParserException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return null;
-		}
-
-		@Override
-		protected void onPreExecute() {
-
-			mDownloader = new LyricsDownloader();
-			mProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+		if (mLyricsSearchTask != null && mLyricsSearchTask.getStatus().equals(Status.RUNNING)
+				|| mAlbumArtSearchTask != null
+				&& !mAlbumArtSearchTask.getStatus().equals(Status.RUNNING)) {
 			mProgress.setMessage(getString(R.string.searching_please_wait));
 			mProgress.show();
 		}
-
-		@Override
-		protected void onPostExecute(String[] result) {
-
-			if (mProgress != null) {
-				mProgress.dismiss();
-			}
-			if (result.length > 0) {
-				chooseLyrics(result);
-			} else {
-				Toast.makeText(SearchDialog.this, R.string.search_noresult, Toast.LENGTH_SHORT)
-						.show();
-			}
-		}
-
-		@Override
-		public void onCancel(DialogInterface dialog) {
-
-			if (dialog == mLyricsChooser) {
-				restore_lyrics_chooser = false;
-			}
-			if (dialog == mLyricsConfirm) {
-				restore_lyrics_confirm = false;
-			}
-
-		}
-
-		@Override
-		public void onClick(DialogInterface dialog, int item) {
-
-			if (dialog == mLyricsChooser) {
-				restore_lyrics_chooser = false;
-				confirmOverwrite(item, mPath);
-			}
-			if (dialog == mLyricsConfirm) {
-				restore_lyrics_confirm = false;
-				switch (item) {
-					case DialogInterface.BUTTON_POSITIVE:
-						mLyricsDownloadTask = new LyricsDownloadTask();
-						mLyricsDownloadTask.execute(String.valueOf(mItem), mPath);
-						break;
-				}
-			}
-		}
-
-		private void chooseLyrics(final String[] result) {
-
-			mLyricsChooser = new AlertDialog.Builder(SearchDialog.this)
-					.setTitle(R.string.search_lyrics).setItems(result, this)
-					.setOnCancelListener(this).show();
-		}
-
-		private void confirmOverwrite(int item, String path) {
-
-			mItem = item;
-
-			if (new File(mPath).exists()) {
-				mLyricsConfirm = new AlertDialog.Builder(SearchDialog.this)
-						.setIcon(android.R.drawable.ic_dialog_alert)
-						.setTitle(R.string.confirm_overwrite)
-						.setMessage(getString(R.string.lyrics_already_exist))
-						.setPositiveButton(android.R.string.ok, this)
-						.setNegativeButton(android.R.string.cancel, this).setOnCancelListener(this)
-						.show();
-			} else {
-				mLyricsDownloadTask = new LyricsDownloadTask();
-				mLyricsDownloadTask.execute(String.valueOf(item), mPath);
-			}
-		}
-
-	}
-
-	private class LyricsDownloadTask extends AsyncTask<String, Integer, Void> {
-
-		@Override
-		protected Void doInBackground(String... params) {
-
-			try {
-				mDownloader.download(Integer.valueOf(params[0]), params[1]);
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return null;
-		}
-
-		@Override
-		protected void onPreExecute() {
-
-			mProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+		if (mLyricsDownloadTask != null && mLyricsDownloadTask.getStatus().equals(Status.RUNNING)
+				|| mAlbumArtDownloadTask != null
+				&& !mAlbumArtDownloadTask.getStatus().equals(Status.RUNNING)) {
 			mProgress.setMessage(getString(R.string.downloading_please_wait));
 			mProgress.show();
-		}
-
-		@Override
-		protected void onPostExecute(Void result) {
-
-			if (mProgress != null) {
-				mProgress.dismiss();
-			}
-			if (mSearchDialog != null && mSearchDialog.isShowing()) {
-				mSearchDialog.dismiss();
-			}
-			MusicUtils.reloadLyrics();
-			finish();
-		}
-	}
-
-	private class AlbumArtSearchTask extends AsyncTask<String, Void, String> implements
-			OnClickListener {
-
-		String mUrl, mPath;
-
-		@Override
-		protected String doInBackground(String... params) {
-
-			mPath = params[2];
-			try {
-				return ImageDownloader.getCoverUrl(params[0], params[1]);
-			} catch (Exception e) {
-				return null;
-			}
-		}
-
-		@Override
-		protected void onPreExecute() {
-
-			mProgress.setMessage(getString(R.string.searching_please_wait));
-			mProgress.show();
-		}
-
-		@Override
-		protected void onPostExecute(String result) {
-
-			if (mProgress != null) {
-				mProgress.dismiss();
-			}
-			if (result != null) {
-				confirmOverwrite(result, mPath);
-			} else {
-				Toast.makeText(SearchDialog.this, R.string.search_noresult, Toast.LENGTH_SHORT)
-						.show();
-			}
-
-		}
-
-		@Override
-		public void onClick(DialogInterface dialog, int which) {
-
-			restore_albumart_confirm = false;
-			if (dialog == mAlbumArtConfirm) {
-				switch (which) {
-					case DialogInterface.BUTTON_POSITIVE:
-						mAlbumArtDownloadTask = new AlbumArtDownloadTask();
-						mAlbumArtDownloadTask.execute(mUrl, mPath);
-				}
-			}
-
-		}
-
-		private void confirmOverwrite(final String url, final String path) {
-
-			mUrl = url;
-			mPath = path;
-
-			if (new File(path).exists()) {
-				mAlbumArtConfirm = new AlertDialog.Builder(SearchDialog.this)
-						.setIcon(android.R.drawable.ic_dialog_alert)
-						.setTitle(R.string.confirm_overwrite)
-						.setMessage(getString(R.string.albumart_already_exist))
-						.setPositiveButton(android.R.string.ok, this)
-						.setNegativeButton(android.R.string.cancel, this).show();
-			} else {
-				mAlbumArtDownloadTask = new AlbumArtDownloadTask();
-				mAlbumArtDownloadTask.execute(url, path);
-			}
-		}
-
-	}
-
-	private class AlbumArtDownloadTask extends AsyncTask<String, Void, Bitmap> {
-
-		String albumArtPath;
-
-		@Override
-		protected Bitmap doInBackground(String... params) {
-
-			albumArtPath = params[1];
-			return ImageDownloader.getCoverBitmap(params[0]);
-		}
-
-		@Override
-		protected void onPreExecute() {
-
-			mProgress.setMessage(getString(R.string.downloading_please_wait));
-			mProgress.show();
-		}
-
-		@Override
-		protected void onPostExecute(Bitmap result) {
-
-			File art = new File(albumArtPath);
-			art.delete();
-			writeAlbumArt(result, albumArtPath);
-			if (mProgress != null) {
-				mProgress.dismiss();
-			}
-			if (mSearchDialog != null && mSearchDialog.isShowing()) {
-				mSearchDialog.dismiss();
-			}
-			finish();
-		}
-
-		private void writeAlbumArt(Bitmap bitmap, String path) {
-
-			try {
-				FileOutputStream fos = new FileOutputStream(path);
-				bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
-				fos.flush();
-				fos.close();
-				MusicUtils.clearAlbumArtCache();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 		}
 	}
 

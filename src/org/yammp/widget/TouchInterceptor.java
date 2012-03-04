@@ -37,6 +37,21 @@ import android.widget.ListView;
 
 public class TouchInterceptor extends ListView {
 
+	public interface OnDragListener {
+
+		void onDrag(int from, int to);
+	}
+
+	public interface OnDropListener {
+
+		void onDrop(int from, int to);
+	}
+
+	public interface OnRemoveListener {
+
+		void onRemove(int which);
+	}
+
 	private ImageView mDragView;
 	private WindowManager mWindowManager;
 	private WindowManager.LayoutParams mWindowParams;
@@ -58,8 +73,11 @@ public class TouchInterceptor extends ListView {
 	private final int mTouchSlop;
 	private int mItemHeightNormal;
 	private int mItemHeightExpanded;
+
 	private int mItemHeightHalf;
+
 	private int mStartX, mStartY = 0;
+
 	private boolean mSortDragging, mRemoveDragging = false;
 
 	public TouchInterceptor(Context context, AttributeSet attrs) {
@@ -87,8 +105,8 @@ public class TouchInterceptor extends ListView {
 					ViewGroup item = (ViewGroup) getChildAt(itemnum - getFirstVisiblePosition());
 					mDragPointX = x - item.getLeft();
 					mDragPointY = y - item.getTop();
-					mXOffset = ((int) ev.getRawX()) - x;
-					mYOffset = ((int) ev.getRawY()) - y;
+					mXOffset = (int) ev.getRawX() - x;
+					mYOffset = (int) ev.getRawY() - y;
 					// The left side of the item is the grabber for dragging the
 					// item
 					if (x < mItemHeightNormal) {
@@ -112,153 +130,6 @@ public class TouchInterceptor extends ListView {
 			}
 		}
 		return super.onInterceptTouchEvent(ev);
-	}
-
-	/**
-	 * pointToPosition() doesn't consider invisible views, but we need to, so
-	 * implement a slightly different version.
-	 */
-	private int betterPointToPosition(int x, int y) {
-
-		if (y < 0) {
-			// when dragging off the top of the screen, calculate position
-			// by going back from a visible item
-			int pos = betterPointToPosition(x, y + mItemHeightNormal);
-			if (pos > 0) {
-				return pos - 1;
-			}
-		}
-
-		Rect frame = mTempRect;
-		final int count = getChildCount();
-		for (int i = count - 1; i >= 0; i--) {
-			final View child = getChildAt(i);
-			child.getHitRect(frame);
-			if (frame.contains(x, y)) {
-				return getFirstVisiblePosition() + i;
-			}
-		}
-		return INVALID_POSITION;
-	}
-
-	private int getItemForPosition(int y) {
-
-		int adjustedy = y - mDragPointY - mItemHeightHalf;
-		int pos = betterPointToPosition(0, adjustedy);
-		if (pos >= 0) {
-			if (pos <= mSrcDragPos) {
-				pos += 1;
-			}
-		} else if (adjustedy < 0) {
-			// this shouldn't happen anymore now that myPointToPosition deals
-			// with this situation
-			pos = 0;
-		}
-		return pos;
-	}
-
-	private void adjustScrollBounds(int y) {
-
-		if (y >= mHeight / 3) {
-			mUpperBound = mHeight / 3;
-		}
-		if (y <= mHeight * 2 / 3) {
-			mLowerBound = mHeight * 2 / 3;
-		}
-	}
-
-	/**
-	 * Restore size and visibility for all listitems
-	 */
-	private void unExpandViews(boolean deletion) {
-
-		for (int i = 0;; i++) {
-			View v = getChildAt(i);
-			if (v == null) {
-				if (deletion) {
-					// HACK force update of mItemCount
-					int position = getFirstVisiblePosition();
-					int y = getChildAt(0).getTop();
-					setAdapter(getAdapter());
-					setSelectionFromTop(position, y);
-					// end hack
-				}
-				try {
-					layoutChildren(); // force children to be recreated where
-										// needed
-					v = getChildAt(i);
-				} catch (IllegalStateException ex) {
-					// layoutChildren throws this sometimes, presumably because
-					// we're in the process of being torn down but are still
-					// getting touch events
-				}
-				if (v == null) {
-					return;
-				}
-			}
-			ViewGroup.LayoutParams params = v.getLayoutParams();
-			params.height = mItemHeightNormal;
-			v.setLayoutParams(params);
-			v.setVisibility(View.VISIBLE);
-		}
-	}
-
-	/**
-	 * Adjust visibility and size to make it appear as though an item is being
-	 * dragged around and other items are making room for it: If dropping the
-	 * item would result in it still being in the same place, then make the
-	 * dragged listitem's size normal, but make the item invisible. Otherwise,
-	 * if the dragged listitem is still on screen, make it as small as possible
-	 * and expand the item below the insert point. If the dragged item is not on
-	 * screen, only expand the item below the current insertpoint.
-	 */
-	private void doExpansion() {
-
-		int childnum = mDragPos - getFirstVisiblePosition();
-		if (mDragPos > mSrcDragPos) {
-			childnum++;
-		}
-		int numheaders = getHeaderViewsCount();
-
-		View first = getChildAt(mSrcDragPos - getFirstVisiblePosition());
-		for (int i = 0;; i++) {
-			View vv = getChildAt(i);
-			if (vv == null) {
-				break;
-			}
-
-			int height = mItemHeightNormal;
-			int visibility = View.VISIBLE;
-			if (mDragPos < numheaders && i == numheaders) {
-				// dragging on top of the header item, so adjust the item below
-				// instead
-				if (vv.equals(first)) {
-					visibility = View.INVISIBLE;
-				} else {
-					height = mItemHeightExpanded;
-				}
-			} else if (vv.equals(first)) {
-				// processing the item that is being dragged
-				if (mDragPos == mSrcDragPos || getPositionForView(vv) == getCount() - 1) {
-					// hovering over the original location
-					visibility = View.INVISIBLE;
-				} else {
-					// not hovering over it
-					// Ideally the item would be completely gone, but neither
-					// setting its size to 0 nor settings visibility to GONE
-					// has the desired effect.
-					height = 1;
-				}
-			} else if (i == childnum) {
-				if (mDragPos >= numheaders && mDragPos < getCount() - 1) {
-					height = mItemHeightExpanded;
-				}
-			}
-			ViewGroup.LayoutParams params = vv.getLayoutParams();
-			params.height = height;
-			vv.setLayoutParams(params);
-			vv.setVisibility(visibility);
-		}
 	}
 
 	@Override
@@ -354,6 +225,145 @@ public class TouchInterceptor extends ListView {
 		return super.onTouchEvent(ev);
 	}
 
+	public void setDragListener(OnDragListener l) {
+
+		mDragListener = l;
+	}
+
+	public void setDropListener(OnDropListener l) {
+
+		mDropListener = l;
+	}
+
+	public void setRemoveListener(OnRemoveListener l) {
+
+		mRemoveListener = l;
+	}
+
+	private void adjustScrollBounds(int y) {
+
+		if (y >= mHeight / 3) {
+			mUpperBound = mHeight / 3;
+		}
+		if (y <= mHeight * 2 / 3) {
+			mLowerBound = mHeight * 2 / 3;
+		}
+	}
+
+	/**
+	 * pointToPosition() doesn't consider invisible views, but we need to, so
+	 * implement a slightly different version.
+	 */
+	private int betterPointToPosition(int x, int y) {
+
+		if (y < 0) {
+			// when dragging off the top of the screen, calculate position
+			// by going back from a visible item
+			int pos = betterPointToPosition(x, y + mItemHeightNormal);
+			if (pos > 0) return pos - 1;
+		}
+
+		Rect frame = mTempRect;
+		final int count = getChildCount();
+		for (int i = count - 1; i >= 0; i--) {
+			final View child = getChildAt(i);
+			child.getHitRect(frame);
+			if (frame.contains(x, y)) return getFirstVisiblePosition() + i;
+		}
+		return INVALID_POSITION;
+	}
+
+	/**
+	 * Adjust visibility and size to make it appear as though an item is being
+	 * dragged around and other items are making room for it: If dropping the
+	 * item would result in it still being in the same place, then make the
+	 * dragged listitem's size normal, but make the item invisible. Otherwise,
+	 * if the dragged listitem is still on screen, make it as small as possible
+	 * and expand the item below the insert point. If the dragged item is not on
+	 * screen, only expand the item below the current insertpoint.
+	 */
+	private void doExpansion() {
+
+		int childnum = mDragPos - getFirstVisiblePosition();
+		if (mDragPos > mSrcDragPos) {
+			childnum++;
+		}
+		int numheaders = getHeaderViewsCount();
+
+		View first = getChildAt(mSrcDragPos - getFirstVisiblePosition());
+		for (int i = 0;; i++) {
+			View vv = getChildAt(i);
+			if (vv == null) {
+				break;
+			}
+
+			int height = mItemHeightNormal;
+			int visibility = View.VISIBLE;
+			if (mDragPos < numheaders && i == numheaders) {
+				// dragging on top of the header item, so adjust the item below
+				// instead
+				if (vv.equals(first)) {
+					visibility = View.INVISIBLE;
+				} else {
+					height = mItemHeightExpanded;
+				}
+			} else if (vv.equals(first)) {
+				// processing the item that is being dragged
+				if (mDragPos == mSrcDragPos || getPositionForView(vv) == getCount() - 1) {
+					// hovering over the original location
+					visibility = View.INVISIBLE;
+				} else {
+					// not hovering over it
+					// Ideally the item would be completely gone, but neither
+					// setting its size to 0 nor settings visibility to GONE
+					// has the desired effect.
+					height = 1;
+				}
+			} else if (i == childnum) {
+				if (mDragPos >= numheaders && mDragPos < getCount() - 1) {
+					height = mItemHeightExpanded;
+				}
+			}
+			ViewGroup.LayoutParams params = vv.getLayoutParams();
+			params.height = height;
+			vv.setLayoutParams(params);
+			vv.setVisibility(visibility);
+		}
+	}
+
+	private void dragView(int x, int y) {
+
+		if (mRemoveDragging && !mSortDragging) {
+			mWindowParams.x = x + mXOffset;
+			if (x >= mWindowManager.getDefaultDisplay().getWidth() - mItemHeightNormal) {
+				mDragView.setBackgroundResource(R.drawable.playlist_tile_discard);
+			} else {
+				mDragView.setBackgroundResource(R.drawable.playlist_tile_drag);
+			}
+		} else if (!mRemoveDragging && mSortDragging) {
+			mWindowParams.x = mXOffset;
+			mWindowParams.y = y - mDragPointY + mYOffset;
+		}
+		mWindowManager.updateViewLayout(mDragView, mWindowParams);
+
+	}
+
+	private int getItemForPosition(int y) {
+
+		int adjustedy = y - mDragPointY - mItemHeightHalf;
+		int pos = betterPointToPosition(0, adjustedy);
+		if (pos >= 0) {
+			if (pos <= mSrcDragPos) {
+				pos += 1;
+			}
+		} else if (adjustedy < 0) {
+			// this shouldn't happen anymore now that myPointToPosition deals
+			// with this situation
+			pos = 0;
+		}
+		return pos;
+	}
+
 	private void startDragging(Bitmap bm, int x, int y) {
 
 		stopDragging();
@@ -385,23 +395,6 @@ public class TouchInterceptor extends ListView {
 		mDragView = v;
 	}
 
-	private void dragView(int x, int y) {
-
-		if (mRemoveDragging && !mSortDragging) {
-			mWindowParams.x = x + mXOffset;
-			if (x >= mWindowManager.getDefaultDisplay().getWidth() - mItemHeightNormal) {
-				mDragView.setBackgroundResource(R.drawable.playlist_tile_discard);
-			} else {
-				mDragView.setBackgroundResource(R.drawable.playlist_tile_drag);
-			}
-		} else if (!mRemoveDragging && mSortDragging) {
-			mWindowParams.x = mXOffset;
-			mWindowParams.y = y - mDragPointY + mYOffset;
-		}
-		mWindowManager.updateViewLayout(mDragView, mWindowParams);
-
-	}
-
 	private void stopDragging() {
 
 		if (mDragView != null) {
@@ -418,33 +411,37 @@ public class TouchInterceptor extends ListView {
 		}
 	}
 
-	public void setDragListener(OnDragListener l) {
+	/**
+	 * Restore size and visibility for all listitems
+	 */
+	private void unExpandViews(boolean deletion) {
 
-		mDragListener = l;
-	}
-
-	public void setDropListener(OnDropListener l) {
-
-		mDropListener = l;
-	}
-
-	public void setRemoveListener(OnRemoveListener l) {
-
-		mRemoveListener = l;
-	}
-
-	public interface OnDragListener {
-
-		void onDrag(int from, int to);
-	}
-
-	public interface OnDropListener {
-
-		void onDrop(int from, int to);
-	}
-
-	public interface OnRemoveListener {
-
-		void onRemove(int which);
+		for (int i = 0;; i++) {
+			View v = getChildAt(i);
+			if (v == null) {
+				if (deletion) {
+					// HACK force update of mItemCount
+					int position = getFirstVisiblePosition();
+					int y = getChildAt(0).getTop();
+					setAdapter(getAdapter());
+					setSelectionFromTop(position, y);
+					// end hack
+				}
+				try {
+					layoutChildren(); // force children to be recreated where
+										// needed
+					v = getChildAt(i);
+				} catch (IllegalStateException ex) {
+					// layoutChildren throws this sometimes, presumably because
+					// we're in the process of being torn down but are still
+					// getting touch events
+				}
+				if (v == null) return;
+			}
+			ViewGroup.LayoutParams params = v.getLayoutParams();
+			params.height = mItemHeightNormal;
+			v.setLayoutParams(params);
+			v.setVisibility(View.VISIBLE);
+		}
 	}
 }

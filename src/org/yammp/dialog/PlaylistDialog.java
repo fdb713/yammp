@@ -51,6 +51,59 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 	private long mRenameId;
 	private long[] mList = new long[] {};
 
+	private OnClickListener mRenamePlaylistListener = new OnClickListener() {
+
+		@Override
+		public void onClick(DialogInterface dialog, int which) {
+
+			String name = mPlaylist.getText().toString();
+			MusicUtils.renamePlaylist(PlaylistDialog.this, mRenameId, name);
+			finish();
+		}
+	};
+
+	private OnClickListener mCreatePlaylistListener = new OnClickListener() {
+
+		@Override
+		public void onClick(DialogInterface dialog, int which) {
+
+			String name = mPlaylist.getText().toString();
+			if (name != null && name.length() > 0) {
+				int id = idForplaylist(name);
+				if (id >= 0) {
+					MusicUtils.clearPlaylist(PlaylistDialog.this, id);
+					MusicUtils.addToPlaylist(PlaylistDialog.this, mList, id);
+				} else {
+					long new_id = MusicUtils.createPlaylist(PlaylistDialog.this, name);
+					if (new_id >= 0) {
+						MusicUtils.addToPlaylist(PlaylistDialog.this, mList, new_id);
+					}
+				}
+				finish();
+			}
+		}
+	};
+
+	@Override
+	public void afterTextChanged(Editable s) {
+
+		// don't care about this one
+	}
+
+	@Override
+	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+		// don't care about this one
+	}
+
+	@Override
+	public void onCancel(DialogInterface dialog) {
+
+		if (dialog == mPlaylistDialog) {
+			finish();
+		}
+	}
+
 	@Override
 	public void onCreate(Bundle icicle) {
 
@@ -129,37 +182,12 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 	}
 
 	@Override
-	protected void onResume() {
-
-		super.onResume();
-		if (mPlaylistDialog != null) {
-			mPlaylistDialog.show();
-		}
-	}
-
-	@Override
 	public void onPause() {
 
 		if (mPlaylistDialog != null && mPlaylistDialog.isShowing()) {
 			mPlaylistDialog.dismiss();
 		}
 		super.onPause();
-	}
-
-	@Override
-	public void onCancel(DialogInterface dialog) {
-
-		if (dialog == mPlaylistDialog) {
-			finish();
-		}
-	}
-
-	@Override
-	public void onShow(DialogInterface dialog) {
-
-		if (dialog == mPlaylistDialog) {
-			setSaveButton();
-		}
 	}
 
 	@Override
@@ -173,24 +201,18 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 		}
 	}
 
-	private void setSaveButton() {
+	@Override
+	public void onShow(DialogInterface dialog) {
 
-		String typedname = mPlaylist.getText().toString();
-		Button button = mPlaylistDialog.getButton(Dialog.BUTTON_POSITIVE);
-		if (button == null) {
-			return;
+		if (dialog == mPlaylistDialog) {
+			setSaveButton();
 		}
-		if (typedname.trim().length() == 0 || PLAYLIST_NAME_FAVORITES.equals(typedname)) {
-			button.setEnabled(false);
-		} else {
-			button.setEnabled(true);
-			if (idForplaylist(typedname) >= 0 && !mOriginalName.equals(typedname)) {
-				button.setText(R.string.overwrite);
-			} else {
-				button.setText(R.string.save);
-			}
-		}
-		button.invalidate();
+	}
+
+	@Override
+	public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+		setSaveButton();
 	}
 
 	private int idForplaylist(String name) {
@@ -210,23 +232,6 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 		return id;
 	}
 
-	private String nameForId(long id) {
-
-		Cursor cursor = MusicUtils.query(this, MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-				new String[] { MediaStore.Audio.Playlists.NAME }, MediaStore.Audio.Playlists._ID
-						+ "=?", new String[] { Long.valueOf(id).toString() },
-				MediaStore.Audio.Playlists.NAME);
-		String name = null;
-		if (cursor != null) {
-			cursor.moveToFirst();
-			if (!cursor.isAfterLast()) {
-				name = cursor.getString(0);
-			}
-			cursor.close();
-		}
-		return name;
-	}
-
 	private String makePlaylistName() {
 
 		String template = getString(R.string.new_playlist_name_template);
@@ -238,9 +243,7 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 		Cursor cursor = resolver.query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, cols,
 				whereclause, null, MediaStore.Audio.Playlists.NAME);
 
-		if (cursor == null) {
-			return null;
-		}
+		if (cursor == null) return null;
 
 		String suggestedname;
 		suggestedname = String.format(template, num++);
@@ -266,56 +269,49 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 		}
 		cursor.close();
 		return suggestedname;
-	}
-
-	@Override
-	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-		// don't care about this one
-	}
-
-	@Override
-	public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-		setSaveButton();
 	};
 
-	@Override
-	public void afterTextChanged(Editable s) {
+	private String nameForId(long id) {
 
-		// don't care about this one
-	}
-
-	private OnClickListener mRenamePlaylistListener = new OnClickListener() {
-
-		@Override
-		public void onClick(DialogInterface dialog, int which) {
-
-			String name = mPlaylist.getText().toString();
-			MusicUtils.renamePlaylist(PlaylistDialog.this, mRenameId, name);
-			finish();
+		Cursor cursor = MusicUtils.query(this, MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+				new String[] { MediaStore.Audio.Playlists.NAME }, MediaStore.Audio.Playlists._ID
+						+ "=?", new String[] { Long.valueOf(id).toString() },
+				MediaStore.Audio.Playlists.NAME);
+		String name = null;
+		if (cursor != null) {
+			cursor.moveToFirst();
+			if (!cursor.isAfterLast()) {
+				name = cursor.getString(0);
+			}
+			cursor.close();
 		}
-	};
+		return name;
+	}
 
-	private OnClickListener mCreatePlaylistListener = new OnClickListener() {
+	private void setSaveButton() {
 
-		@Override
-		public void onClick(DialogInterface dialog, int which) {
-
-			String name = mPlaylist.getText().toString();
-			if (name != null && name.length() > 0) {
-				int id = idForplaylist(name);
-				if (id >= 0) {
-					MusicUtils.clearPlaylist(PlaylistDialog.this, id);
-					MusicUtils.addToPlaylist(PlaylistDialog.this, mList, id);
-				} else {
-					long new_id = MusicUtils.createPlaylist(PlaylistDialog.this, name);
-					if (new_id >= 0) {
-						MusicUtils.addToPlaylist(PlaylistDialog.this, mList, new_id);
-					}
-				}
-				finish();
+		String typedname = mPlaylist.getText().toString();
+		Button button = mPlaylistDialog.getButton(Dialog.BUTTON_POSITIVE);
+		if (button == null) return;
+		if (typedname.trim().length() == 0 || PLAYLIST_NAME_FAVORITES.equals(typedname)) {
+			button.setEnabled(false);
+		} else {
+			button.setEnabled(true);
+			if (idForplaylist(typedname) >= 0 && !mOriginalName.equals(typedname)) {
+				button.setText(R.string.overwrite);
+			} else {
+				button.setText(R.string.save);
 			}
 		}
-	};
+		button.invalidate();
+	}
+
+	@Override
+	protected void onResume() {
+
+		super.onResume();
+		if (mPlaylistDialog != null) {
+			mPlaylistDialog.show();
+		}
+	}
 }

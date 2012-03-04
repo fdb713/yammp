@@ -41,6 +41,38 @@ public class MediaButtonIntentReceiver extends BroadcastReceiver implements Cons
 	private static long mFirstTime;
 	private static int mPressedCount = 0;
 
+	private Handler mHandler = new Handler() {
+
+		@Override
+		public void handleMessage(Message msg) {
+
+			switch (msg.what) {
+				case MSG_PRESSED:
+					mHandler.removeMessages(MSG_TIMEOUT);
+					if (mPressedCount < Integer.MAX_VALUE) {
+						mPressedCount++;
+					}
+					break;
+				case MSG_TIMEOUT:
+					mHandler.removeCallbacksAndMessages(null);
+					switch (mPressedCount) {
+						case SINGLE_CLICK:
+							sendMediaCommand((Context) msg.obj, CMDTOGGLEPAUSE);
+							break;
+						case DOUBLE_CLICK:
+							sendMediaCommand((Context) msg.obj, CMDNEXT);
+							break;
+						case TRIPLE_CLICK:
+							sendMediaCommand((Context) msg.obj, CMDPREVIOUS);
+							break;
+					}
+					mPressedCount = 0;
+					break;
+			}
+
+		}
+	};
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 
@@ -53,9 +85,7 @@ public class MediaButtonIntentReceiver extends BroadcastReceiver implements Cons
 		} else if (Intent.ACTION_MEDIA_BUTTON.equals(intentAction)) {
 			KeyEvent event = (KeyEvent) intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 
-			if (event == null) {
-				return;
-			}
+			if (event == null) return;
 
 			int keycode = event.getKeyCode();
 			int action = event.getAction();
@@ -79,13 +109,6 @@ public class MediaButtonIntentReceiver extends BroadcastReceiver implements Cons
 					break;
 			}
 		}
-	}
-
-	private void sendMediaCommand(Context context, String command) {
-		Intent i = new Intent(context, MusicPlaybackService.class);
-		i.setAction(SERVICECMD);
-		i.putExtra(CMDNAME, command);
-		context.startService(i);
 	}
 
 	private void processHeadsetHookEvent(Context context, int action, long eventtime) {
@@ -117,33 +140,10 @@ public class MediaButtonIntentReceiver extends BroadcastReceiver implements Cons
 		}
 	}
 
-	private Handler mHandler = new Handler() {
-
-		@Override
-		public void handleMessage(Message msg) {
-
-			switch (msg.what) {
-				case MSG_PRESSED:
-					mHandler.removeMessages(MSG_TIMEOUT);
-					if (mPressedCount < Integer.MAX_VALUE) mPressedCount++;
-					break;
-				case MSG_TIMEOUT:
-					mHandler.removeCallbacksAndMessages(null);
-					switch (mPressedCount) {
-						case SINGLE_CLICK:
-							sendMediaCommand((Context) msg.obj, CMDTOGGLEPAUSE);
-							break;
-						case DOUBLE_CLICK:
-							sendMediaCommand((Context) msg.obj, CMDNEXT);
-							break;
-						case TRIPLE_CLICK:
-							sendMediaCommand((Context) msg.obj, CMDPREVIOUS);
-							break;
-					}
-					mPressedCount = 0;
-					break;
-			}
-
-		}
-	};
+	private void sendMediaCommand(Context context, String command) {
+		Intent i = new Intent(context, MusicPlaybackService.class);
+		i.setAction(SERVICECMD);
+		i.putExtra(CMDNAME, command);
+		context.startService(i);
+	}
 }

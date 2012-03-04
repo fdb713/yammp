@@ -39,9 +39,20 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 public class LyricsDownloader {
 
+	public interface OnProgressChangeListener {
+
+		void onProgressChange(int progress, int total);
+	}
+
 	private final static char[] digit = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
 			'B', 'C', 'D', 'E', 'F' };
+
 	private final static String UTF_8 = "utf-8";
+
+	private static String urlDownload(int id, String code) {
+
+		return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?dl?Id=" + id + "&Code=" + code;
+	}
 
 	private static String urlSearch(String artist, String track) {
 
@@ -49,63 +60,14 @@ public class LyricsDownloader {
 				+ track + "&Flags=0";
 	}
 
-	private static String urlDownload(int id, String code) {
-
-		return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?dl?Id=" + id + "&Code=" + code;
-	}
-
 	private List<Integer> mIdList = new ArrayList<Integer>();
+
 	private List<String> mVerifyCodeList = new ArrayList<String>();
-
-	public LyricsDownloader() {
-
-	}
-
-	public interface OnProgressChangeListener {
-
-		void onProgressChange(int progress, int total);
-	}
-
-	public void setOnProgressChangeListener(OnProgressChangeListener listener) {
-
-		mListener = listener;
-	}
-
-	public void removeOnProgressChangeListener(OnProgressChangeListener listener) {
-
-		mListener = null;
-	}
 
 	public OnProgressChangeListener mListener;
 
-	/**
-	 * Search lyrics from server
-	 * 
-	 * @return result list in string array.
-	 * 
-	 * @param artist
-	 *            The artist of sound track.
-	 * @param track
-	 *            The name of sound track.
-	 */
-	public String[] search(String artist, String track) throws UnsupportedEncodingException,
-			XmlPullParserException, IOException {
+	public LyricsDownloader() {
 
-		String url = urlSearch(encode(artist), encode(track));
-		return parseResult(get(url, UTF_8));
-	}
-
-	/**
-	 * Download lyrics from server
-	 * 
-	 * @param id
-	 *            Id of selected item.
-	 * @param file
-	 *            Destination file path.
-	 */
-	public void download(int id, String path) throws MalformedURLException, IOException {
-
-		download(id, new File(path));
 	}
 
 	/**
@@ -141,6 +103,46 @@ public class LyricsDownloader {
 		output.close();
 	}
 
+	/**
+	 * Download lyrics from server
+	 * 
+	 * @param id
+	 *            Id of selected item.
+	 * @param file
+	 *            Destination file path.
+	 */
+	public void download(int id, String path) throws MalformedURLException, IOException {
+
+		download(id, new File(path));
+	}
+
+	public void removeOnProgressChangeListener(OnProgressChangeListener listener) {
+
+		mListener = null;
+	}
+
+	/**
+	 * Search lyrics from server
+	 * 
+	 * @return result list in string array.
+	 * 
+	 * @param artist
+	 *            The artist of sound track.
+	 * @param track
+	 *            The name of sound track.
+	 */
+	public String[] search(String artist, String track) throws UnsupportedEncodingException,
+			XmlPullParserException, IOException {
+
+		String url = urlSearch(encode(artist), encode(track));
+		return parseResult(get(url, UTF_8));
+	}
+
+	public void setOnProgressChangeListener(OnProgressChangeListener listener) {
+
+		mListener = listener;
+	}
+
 	private String encode(String source) {
 
 		final String UTF_16LE = "utf-16le";
@@ -162,81 +164,45 @@ public class LyricsDownloader {
 		char[] charactor = new char[2];
 		StringBuilder builder = new StringBuilder();
 		for (byte byteValue : bytes) {
-			charactor[0] = digit[(byteValue >>> 4) & 0X0F];
+			charactor[0] = digit[byteValue >>> 4 & 0X0F];
 			charactor[1] = digit[byteValue & 0X0F];
 			builder.append(charactor);
 		}
 		return builder.toString();
 	}
 
-	private String verify(String artist, String track, int id) {
+	// get text from url
+	private String get(String url, String encoding) throws UnsupportedEncodingException,
+			IOException {
 
-		try {
-			byte[] bytes = (artist + track).getBytes(UTF_8);
-			int[] song = new int[bytes.length];
-			for (int i = 0; i < bytes.length; i++) {
-				song[i] = bytes[i] & 0xff;
-			}
-			int intVal1 = 0, intVal2 = 0, intVal3 = 0;
-			intVal1 = (id & 0xFF00) >> 8;
-			if ((id & 0xFF0000) == 0) {
-				intVal3 = 0xFF & ~intVal1;
-			} else {
-				intVal3 = 0xFF & ((id & 0x00FF0000) >> 16);
-			}
-
-			intVal3 = intVal3 | ((0xFF & id) << 8);
-			intVal3 = intVal3 << 8;
-			intVal3 = intVal3 | (0xFF & intVal1);
-			intVal3 = intVal3 << 8;
-
-			if ((id & 0xFF000000) == 0) {
-				intVal3 = intVal3 | (0xFF & (~id));
-			} else {
-				intVal3 = intVal3 | (0xFF & (id >> 24));
-			}
-
-			int uBound = bytes.length - 1;
-			while (uBound >= 0) {
-				int c = song[uBound];
-				if (c >= 0x80) c = c - 0x100;
-				intVal1 = c + intVal2;
-				intVal2 = intVal2 << (uBound % 2 + 4);
-				intVal2 = intVal1 + intVal2;
-				uBound -= 1;
-			}
-
-			uBound = 0;
-			intVal1 = 0;
-
-			while (uBound <= bytes.length - 1) {
-				int c = song[uBound];
-				if (c >= 128) {
-					c -= 256;
-				}
-				int intVal4 = c + intVal1;
-				intVal1 = intVal1 << (uBound % 2 + 3);
-				intVal1 = intVal1 + intVal4;
-				uBound += 1;
-			}
-
-			int intVal5 = intVal2 ^ intVal3;
-			intVal5 = intVal5 + (intVal1 | id);
-			intVal5 = intVal5 * (intVal1 | intVal3);
-			intVal5 = intVal5 * (intVal2 ^ id);
-
-			return String.valueOf(intVal5);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return "";
+		if (url == null) return null;
+		URLConnection conn = new URL(url).openConnection();
+		conn.connect();
+		String contentType = conn.getContentType();
+		if (contentType == null) {
+			contentType = encoding;
 		}
+
+		Pattern pattern = Pattern.compile("(?i)\\bcharset=([^\\s;]+)");
+		Matcher matcher = pattern.matcher(contentType);
+		String encoder = encoding;
+		if (matcher.find()) {
+			encoder = matcher.group(1);
+		}
+
+		BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(),
+				encoder));
+		char[] str = new char[4096];
+		StringBuilder builder = new StringBuilder();
+		for (int len; (len = reader.read(str)) > -1;) {
+			builder.append(str, 0, len);
+		}
+		return builder.toString();
 	}
 
 	private String[] parseResult(String xml) throws XmlPullParserException, IOException {
 
-		if (xml == null || "".equals(xml)) {
-			return new String[] {};
-		}
+		if (xml == null || "".equals(xml)) return new String[] {};
 
 		mIdList = new ArrayList<Integer>();
 		mVerifyCodeList = new ArrayList<String>();
@@ -312,32 +278,68 @@ public class LyricsDownloader {
 		return mNameList.toArray(new String[mNameList.size()]);
 	}
 
-	// get text from url
-	private String get(String url, String encoding) throws UnsupportedEncodingException,
-			IOException {
+	private String verify(String artist, String track, int id) {
 
-		if (url == null) {
-			return null;
-		}
-		URLConnection conn = new URL(url).openConnection();
-		conn.connect();
-		String contentType = conn.getContentType();
-		if (contentType == null) contentType = encoding;
+		try {
+			byte[] bytes = (artist + track).getBytes(UTF_8);
+			int[] song = new int[bytes.length];
+			for (int i = 0; i < bytes.length; i++) {
+				song[i] = bytes[i] & 0xff;
+			}
+			int intVal1 = 0, intVal2 = 0, intVal3 = 0;
+			intVal1 = (id & 0xFF00) >> 8;
+			if ((id & 0xFF0000) == 0) {
+				intVal3 = 0xFF & ~intVal1;
+			} else {
+				intVal3 = 0xFF & (id & 0x00FF0000) >> 16;
+			}
 
-		Pattern pattern = Pattern.compile("(?i)\\bcharset=([^\\s;]+)");
-		Matcher matcher = pattern.matcher(contentType);
-		String encoder = encoding;
-		if (matcher.find()) {
-			encoder = matcher.group(1);
-		}
+			intVal3 = intVal3 | (0xFF & id) << 8;
+			intVal3 = intVal3 << 8;
+			intVal3 = intVal3 | 0xFF & intVal1;
+			intVal3 = intVal3 << 8;
 
-		BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(),
-				encoder));
-		char[] str = new char[4096];
-		StringBuilder builder = new StringBuilder();
-		for (int len; (len = reader.read(str)) > -1;) {
-			builder.append(str, 0, len);
+			if ((id & 0xFF000000) == 0) {
+				intVal3 = intVal3 | 0xFF & ~id;
+			} else {
+				intVal3 = intVal3 | 0xFF & id >> 24;
+			}
+
+			int uBound = bytes.length - 1;
+			while (uBound >= 0) {
+				int c = song[uBound];
+				if (c >= 0x80) {
+					c = c - 0x100;
+				}
+				intVal1 = c + intVal2;
+				intVal2 = intVal2 << uBound % 2 + 4;
+				intVal2 = intVal1 + intVal2;
+				uBound -= 1;
+			}
+
+			uBound = 0;
+			intVal1 = 0;
+
+			while (uBound <= bytes.length - 1) {
+				int c = song[uBound];
+				if (c >= 128) {
+					c -= 256;
+				}
+				int intVal4 = c + intVal1;
+				intVal1 = intVal1 << uBound % 2 + 3;
+				intVal1 = intVal1 + intVal4;
+				uBound += 1;
+			}
+
+			int intVal5 = intVal2 ^ intVal3;
+			intVal5 = intVal5 + (intVal1 | id);
+			intVal5 = intVal5 * (intVal1 | intVal3);
+			intVal5 = intVal5 * (intVal2 ^ id);
+
+			return String.valueOf(intVal5);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "";
 		}
-		return builder.toString();
 	}
 }

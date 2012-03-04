@@ -19,6 +19,16 @@ package org.yammp.dialog;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.yammp.Constants;
+import org.yammp.IMusicPlaybackService;
+import org.yammp.R;
+import org.yammp.util.EqualizerWrapper;
+import org.yammp.util.MusicUtils;
+import org.yammp.util.PreferencesEditor;
+import org.yammp.util.ServiceToken;
+import org.yammp.view.EqualizerView;
+import org.yammp.view.EqualizerView.OnBandLevelChangeListener;
+
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.DialogInterface;
@@ -27,60 +37,188 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
-import android.util.DisplayMetrics;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
-import android.widget.SeekBar;
-import android.widget.TextView;
 
-import org.yammp.Constants;
-import org.yammp.IMusicPlaybackService;
-import org.yammp.R;
-import org.yammp.util.*;
-
-public class EqualizerDialog extends FragmentActivity implements Constants {
+public class EqualizerDialog extends FragmentActivity implements Constants,
+		OnBandLevelChangeListener {
 
 	private IMusicPlaybackService mService = null;
 	private ServiceToken mToken;
 	private EqualizerWrapper mEqualizer;
-	private ScrollView mScrollView;
-	private LinearLayout mLinearLayout;
+	private EqualizerView mEqualizerView;
 	private int mAudioSessionId;
 	private PreferencesEditor mPrefs;
+
+	private ServiceConnection osc = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName classname, IBinder obj) {
+
+			mService = IMusicPlaybackService.Stub.asInterface(obj);
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName classname) {
+
+			mService = null;
+		}
+	};
+
+	@Override
+	public void onBandLevelChange(short band, short level) {
+		if (mEqualizer != null) {
+			mEqualizer.setBandLevel(band, level);
+			mPrefs.setEqualizerSetting(band, level);
+			reloadEqualizer();
+		}
+
+	}
 
 	@Override
 	public void onCreate(Bundle icicle) {
 
-		if (!EqualizerWrapper.isSupported()) finish();
-		
+		if (!EqualizerWrapper.isSupported()) {
+			finish();
+		}
+
 		super.onCreate(icicle);
 
 		mPrefs = new PreferencesEditor(getApplicationContext());
 
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		mEqualizerView = new EqualizerView(this);
+		mEqualizerView.setOnBandLevelChangeListener(this);
+		setContentView(mEqualizerView);
 
-		mScrollView = new ScrollView(this);
-		mScrollView.setVerticalScrollBarEnabled(false);
+	}
 
-		setContentView(mScrollView);
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
 
-		mLinearLayout = new LinearLayout(this);
-		mLinearLayout.setOrientation(LinearLayout.VERTICAL);
+		MenuInflater mInflater = getMenuInflater();
+		mInflater.inflate(R.menu.equalizer, menu);
 
-		mScrollView.addView(mLinearLayout);
+		return super.onCreateOptionsMenu(menu);
+	}
 
-		DisplayMetrics dm = new DisplayMetrics();
-		dm = getResources().getDisplayMetrics();
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
 
-		getWindow().setLayout((int) (300 * dm.density), WindowManager.LayoutParams.WRAP_CONTENT);
+		switch (item.getItemId()) {
+			case EQUALIZER_PRESETS:
+				showPresets();
+				break;
+			case EQUALIZER_RESET:
+				resetEqualizer();
+				break;
 
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+
+		MenuItem MENU_PRESETS = menu.findItem(EQUALIZER_PRESETS);
+		if (mEqualizer != null) {
+			if (mEqualizer.getNumberOfPresets() <= 0) {
+				MENU_PRESETS.setVisible(false);
+			} else {
+				MENU_PRESETS.setVisible(true);
+			}
+		}
+		return super.onPrepareOptionsMenu(menu);
+	}
+
+	private void reloadEqualizer() {
+
+		try {
+			mService.reloadEqualizer();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void resetEqualizer() {
+
+		if (mEqualizer != null) {
+			short bands = mEqualizer.getNumberOfBands();
+
+			final short minEQLevel = mEqualizer.getBandLevelRange()[0];
+			final short maxEQLevel = mEqualizer.getBandLevelRange()[1];
+
+			for (short i = 0; i < bands; i++) {
+				final short band = i;
+				mEqualizer.setBandLevel(band, (short) ((maxEQLevel + minEQLevel) / 2));
+				mPrefs.setEqualizerSetting(band, (short) ((maxEQLevel + minEQLevel) / 2));
+			}
+			reloadEqualizer();
+			setupEqualizerFxAndUI(mAudioSessionId);
+		}
+	}
+
+	private void setPreset(short preset_id) {
+
+		if (mEqualizer != null) {
+			mEqualizer.usePreset(preset_id);
+			for (short i = 0; i < mEqualizer.getNumberOfBands(); i++) {
+				short band = i;
+				mPrefs.setEqualizerSetting(band, mEqualizer.getBandLevel(band));
+			}
+		}
+	}
+
+	private void setupEqualizerFxAndUI(int audioSessionId) {
+
+		// Create the Equalizer object (an AudioEffect subclass) and attach it
+		// to our media player, with a default priority (0).
+		mEqualizer = new EqualizerWrapper(0, audioSessionId);
+		if (mEqualizer == null) {
+			finish();
+			return;
+		}
+		mEqualizer.setEnabled(false);
+
+		short bands = mEqualizer.getNumberOfBands();
+
+		mEqualizerView.setNumberOfBands(bands);
+		mEqualizerView.setBandLevelRange(mEqualizer.getBandLevelRange());
+
+		for (short i = 0; i < bands; i++) {
+
+			mEqualizerView.setCenterFreq(i, mEqualizer.getCenterFreq(i));
+			mEqualizer.setBandLevel(i, mPrefs.getEqualizerSetting(i, (short) 0));
+			mEqualizerView.setBandLevel(i, mPrefs.getEqualizerSetting(i, (short) 0));
+
+		}
+	}
+
+	private void showPresets() {
+
+		if (mEqualizer != null) {
+			List<String> mPresetsList = new ArrayList<String>();
+			String mPresetName;
+			for (short preset_id = 0; preset_id < mEqualizer.getNumberOfPresets(); preset_id++) {
+				mPresetName = mEqualizer.getPresetName(preset_id);
+				mPresetsList.add(mPresetName);
+			}
+
+			CharSequence[] mPresetsItems = mPresetsList.toArray(new CharSequence[mPresetsList
+					.size()]);
+
+			new AlertDialog.Builder(this).setTitle(R.string.equalizer_presets)
+					.setItems(mPresetsItems, new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int item) {
+
+							setPreset((short) item);
+							setupEqualizerFxAndUI(mAudioSessionId);
+							reloadEqualizer();
+						}
+					}).show();
+		}
 	}
 
 	@Override
@@ -117,209 +255,4 @@ public class EqualizerDialog extends FragmentActivity implements Constants {
 		mService = null;
 		super.onStop();
 	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-
-		MenuInflater mInflater = getMenuInflater();
-		mInflater.inflate(R.menu.equalizer, menu);
-
-		return super.onCreateOptionsMenu(menu);
-	}
-
-	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
-
-		MenuItem MENU_PRESETS = menu.findItem(EQUALIZER_PRESETS);
-		if (mEqualizer != null) {
-			if (mEqualizer.getNumberOfPresets() <= 0) {
-				MENU_PRESETS.setVisible(false);
-			} else {
-				MENU_PRESETS.setVisible(true);
-			}
-		}
-		return super.onPrepareOptionsMenu(menu);
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-
-		switch (item.getItemId()) {
-			case EQUALIZER_PRESETS:
-				showPresets();
-				break;
-			case EQUALIZER_RESET:
-				resetEqualizer();
-				break;
-
-		}
-		return super.onOptionsItemSelected(item);
-	}
-
-	private void setupEqualizerFxAndUI(int audioSessionId) {
-
-		// Create the Equalizer object (an AudioEffect subclass) and attach it
-		// to our media player, with a default priority (0).
-		mEqualizer = new EqualizerWrapper(0, audioSessionId);
-		if (mEqualizer == null) {
-			finish();
-			return;
-		}
-		mEqualizer.setEnabled(false);
-
-		short bands = mEqualizer.getNumberOfBands();
-
-		final short minEQLevel = mEqualizer.getBandLevelRange()[0];
-		final short maxEQLevel = mEqualizer.getBandLevelRange()[1];
-
-		mLinearLayout.removeAllViews();
-
-		for (short i = 0; i < bands; i++) {
-			final short band = i;
-
-			TextView freqTextView = new TextView(this);
-			freqTextView.setLayoutParams(new ViewGroup.LayoutParams(
-					ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-			freqTextView.setGravity(Gravity.CENTER_HORIZONTAL);
-
-			if (mEqualizer.getCenterFreq(band) / 1000 < 1000) {
-				freqTextView.setText((mEqualizer.getCenterFreq(band) / 1000) + " Hz");
-			} else {
-				freqTextView.setText(((float) mEqualizer.getCenterFreq(band) / 1000 / 1000)
-						+ " KHz");
-			}
-
-			mLinearLayout.addView(freqTextView);
-
-			LinearLayout row = new LinearLayout(this);
-			row.setOrientation(LinearLayout.HORIZONTAL);
-
-			TextView minDbTextView = new TextView(this);
-			minDbTextView.setLayoutParams(new ViewGroup.LayoutParams(
-					ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-			minDbTextView.setText((minEQLevel / 100) + " dB");
-
-			TextView maxDbTextView = new TextView(this);
-			maxDbTextView.setLayoutParams(new ViewGroup.LayoutParams(
-					ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-			maxDbTextView.setText((maxEQLevel / 100) + " dB");
-
-			LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-					ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-			layoutParams.weight = 1;
-			SeekBar bar = new SeekBar(this);
-			bar.setLayoutParams(layoutParams);
-			bar.setMax(maxEQLevel - minEQLevel);
-			bar.setProgress(mPrefs.getEqualizerSetting(band,
-					(short) ((maxEQLevel + minEQLevel) / 2)) - minEQLevel);
-			mEqualizer.setBandLevel(band,
-					mPrefs.getEqualizerSetting(band, (short) ((maxEQLevel + minEQLevel) / 2)));
-
-			bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
-				@Override
-				public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
-					mEqualizer.setBandLevel(band, (short) (minEQLevel + progress));
-					mPrefs.setEqualizerSetting(band, (short) (minEQLevel + progress));
-					reloadEqualizer();
-				}
-
-				@Override
-				public void onStartTrackingTouch(SeekBar seekBar) {
-
-				}
-
-				@Override
-				public void onStopTrackingTouch(SeekBar seekBar) {
-
-				}
-			});
-
-			row.addView(minDbTextView);
-			row.addView(bar);
-			row.addView(maxDbTextView);
-
-			mLinearLayout.addView(row);
-		}
-	}
-
-	private void reloadEqualizer() {
-
-		try {
-			mService.reloadEqualizer();
-		} catch (Exception e) {
-		}
-	}
-
-	private void showPresets() {
-
-		if (mEqualizer != null) {
-			List<String> mPresetsList = new ArrayList<String>();
-			String mPresetName;
-			for (short preset_id = 0; preset_id < mEqualizer.getNumberOfPresets(); preset_id++) {
-				mPresetName = mEqualizer.getPresetName(preset_id);
-				mPresetsList.add(mPresetName);
-			}
-
-			CharSequence[] mPresetsItems = mPresetsList.toArray(new CharSequence[mPresetsList
-					.size()]);
-
-			new AlertDialog.Builder(this).setTitle(R.string.equalizer_presets)
-					.setItems(mPresetsItems, new DialogInterface.OnClickListener() {
-
-						@Override
-						public void onClick(DialogInterface dialog, int item) {
-
-							setPreset((short) item);
-							setupEqualizerFxAndUI(mAudioSessionId);
-							reloadEqualizer();
-						}
-					}).show();
-		}
-	}
-
-	private void setPreset(short preset_id) {
-
-		if (mEqualizer != null) {
-			mEqualizer.usePreset(preset_id);
-			for (short i = 0; i < mEqualizer.getNumberOfBands(); i++) {
-				short band = i;
-				mPrefs.setEqualizerSetting(band, mEqualizer.getBandLevel(band));
-			}
-		}
-	}
-
-	private void resetEqualizer() {
-
-		if (mEqualizer != null) {
-			short bands = mEqualizer.getNumberOfBands();
-
-			final short minEQLevel = mEqualizer.getBandLevelRange()[0];
-			final short maxEQLevel = mEqualizer.getBandLevelRange()[1];
-
-			for (short i = 0; i < bands; i++) {
-				final short band = i;
-				mEqualizer.setBandLevel(band, (short) ((maxEQLevel + minEQLevel) / 2));
-				mPrefs.setEqualizerSetting(band, (short) ((maxEQLevel + minEQLevel) / 2));
-			}
-			reloadEqualizer();
-			setupEqualizerFxAndUI(mAudioSessionId);
-		}
-	}
-
-	private ServiceConnection osc = new ServiceConnection() {
-
-		@Override
-		public void onServiceConnected(ComponentName classname, IBinder obj) {
-
-			mService = IMusicPlaybackService.Stub.asInterface(obj);
-		}
-
-		@Override
-		public void onServiceDisconnected(ComponentName classname) {
-
-			mService = null;
-		}
-	};
 }

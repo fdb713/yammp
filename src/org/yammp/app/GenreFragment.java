@@ -44,6 +44,42 @@ import android.widget.TextView;
 
 public class GenreFragment extends ListFragment implements LoaderCallbacks<Cursor>, Constants {
 
+	private class GenresAdapter extends CursorAdapter {
+
+		private class ViewHolder {
+
+			TextView genre_name;
+
+			public ViewHolder(View view) {
+				genre_name = (TextView) view.findViewById(R.id.playlist_name);
+			}
+		}
+
+		private GenresAdapter(Context context, Cursor cursor, boolean autoRequery) {
+			super(context, cursor, autoRequery);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+
+			ViewHolder viewholder = (ViewHolder) view.getTag();
+
+			String genre_name = cursor.getString(mNameIdx);
+			viewholder.genre_name.setText(MusicUtils.parseGenreName(genre_name));
+
+		}
+
+		@Override
+		public View newView(Context context, Cursor cursor, ViewGroup parent) {
+
+			View view = LayoutInflater.from(context).inflate(R.layout.playlist_list_item, null);
+			ViewHolder viewholder = new ViewHolder(view);
+			view.setTag(viewholder);
+			return view;
+		}
+
+	}
+
 	private GenresAdapter mAdapter;
 
 	private int mNameIdx;
@@ -68,18 +104,6 @@ public class GenreFragment extends ListFragment implements LoaderCallbacks<Curso
 	}
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.playlists_browser, container, false);
-		return view;
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		outState.putAll(getArguments() != null ? getArguments() : new Bundle());
-		super.onSaveInstanceState(outState);
-	}
-
-	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
 		String[] cols = new String[] { Audio.Genres._ID, Audio.Genres.NAME };
@@ -90,6 +114,23 @@ public class GenreFragment extends ListFragment implements LoaderCallbacks<Curso
 
 		return new CursorLoader(getActivity(), uri, cols, where, null,
 				Audio.Genres.DEFAULT_SORT_ORDER);
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		View view = inflater.inflate(R.layout.playlists_browser, container, false);
+		return view;
+	}
+
+	@Override
+	public void onListItemClick(ListView listview, View view, int position, long id) {
+
+		showDetails(position, id);
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> loader) {
+		mAdapter.swapCursor(null);
 	}
 
 	@Override
@@ -109,14 +150,9 @@ public class GenreFragment extends ListFragment implements LoaderCallbacks<Curso
 	}
 
 	@Override
-	public void onLoaderReset(Loader<Cursor> loader) {
-		mAdapter.swapCursor(null);
-	}
-
-	@Override
-	public void onListItemClick(ListView listview, View view, int position, long id) {
-
-		showDetails(position, id);
+	public void onSaveInstanceState(Bundle outState) {
+		outState.putAll(getArguments() != null ? getArguments() : new Bundle());
+		super.onSaveInstanceState(outState);
 	}
 
 	private void showDetails(int index, long id) {
@@ -144,42 +180,6 @@ public class GenreFragment extends ListFragment implements LoaderCallbacks<Curso
 			intent.putExtras(bundle);
 			startActivity(intent);
 		}
-	}
-
-	private class GenresAdapter extends CursorAdapter {
-
-		private class ViewHolder {
-
-			TextView genre_name;
-
-			public ViewHolder(View view) {
-				genre_name = (TextView) view.findViewById(R.id.playlist_name);
-			}
-		}
-
-		private GenresAdapter(Context context, Cursor cursor, boolean autoRequery) {
-			super(context, cursor, autoRequery);
-		}
-
-		@Override
-		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-			View view = LayoutInflater.from(context).inflate(R.layout.playlist_list_item, null);
-			ViewHolder viewholder = new ViewHolder(view);
-			view.setTag(viewholder);
-			return view;
-		}
-
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-
-			ViewHolder viewholder = (ViewHolder) view.getTag();
-
-			String genre_name = cursor.getString(mNameIdx);
-			viewholder.genre_name.setText(MusicUtils.parseGenreName(genre_name));
-
-		}
-
 	}
 
 }

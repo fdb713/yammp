@@ -20,7 +20,7 @@
 
 package org.yammp.app;
 
-import org.mariotaku.actionbarcompat.app.ActionBarPreferenceActivity;
+import org.mariotaku.actionbarcompat.app.PreferenceActivity;
 import org.yammp.Constants;
 import org.yammp.R;
 
@@ -32,7 +32,7 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.view.MenuItem;
 
-public class MusicSettingsActivity extends ActionBarPreferenceActivity implements Constants,
+public class MusicSettingsActivity extends PreferenceActivity implements Constants,
 		OnPreferenceClickListener {
 
 	@Override

@@ -17,6 +17,7 @@
 package org.yammp.view;
 
 import org.yammp.R;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -29,8 +30,12 @@ import android.view.View;
 
 public class VerticalTextSpinner extends View {
 
-	private static final int SELECTOR_ARROW_HEIGHT = 15;
+	public interface OnChangedListener {
 
+		void onChanged(VerticalTextSpinner spinner, int oldPos, int newPos, String[] items);
+	}
+
+	private static final int SELECTOR_ARROW_HEIGHT = 15;
 	private static int TEXT_SPACING;
 	private static int TEXT_MARGIN_RIGHT;
 	private static int TEXT_SIZE;
@@ -39,23 +44,23 @@ public class VerticalTextSpinner extends View {
 	private static int TEXT3_Y;
 	private static int TEXT4_Y;
 	private static int TEXT5_Y;
-	private static int SCROLL_DISTANCE;
 
+	private static int SCROLL_DISTANCE;
 	private static final int SCROLL_MODE_NONE = 0;
 	private static final int SCROLL_MODE_UP = 1;
+
 	private static final int SCROLL_MODE_DOWN = 2;
-
 	private static final long DEFAULT_SCROLL_INTERVAL_MS = 400;
-	private static final int MIN_ANIMATIONS = 4;
 
+	private static final int MIN_ANIMATIONS = 4;
 	private final Drawable mBackgroundFocused;
 	private final int mSelectorDefaultY;
 	private final int mSelectorMinY;
 	private final int mSelectorMaxY;
 	private final int mSelectorHeight;
 	private final TextPaint mTextPaintDark;
-	private final TextPaint mTextPaintLight;
 
+	private final TextPaint mTextPaintLight;
 	private int mSelectorY;
 	private Drawable mSelector;
 	private int mDownY;
@@ -64,27 +69,23 @@ public class VerticalTextSpinner extends View {
 	private long mScrollInterval;
 	private boolean mIsAnimationRunning;
 	private boolean mStopAnimation;
-	private boolean mWrapAround = true;
 
+	private boolean mWrapAround = true;
 	private int mTotalAnimatedDistance;
 	private int mNumberOfAnimations;
 	private long mDelayBetweenAnimations;
-	private int mDistanceOfEachAnimation;
 
+	private int mDistanceOfEachAnimation;
 	private String[] mTextList;
 	private int mCurrentSelectedPos;
-	private OnChangedListener mListener;
 
+	private OnChangedListener mListener;
 	private String mText1;
 	private String mText2;
 	private String mText3;
 	private String mText4;
+
 	private String mText5;
-
-	public interface OnChangedListener {
-
-		void onChanged(VerticalTextSpinner spinner, int oldPos, int newPos, String[] items);
-	}
 
 	public VerticalTextSpinner(Context context) {
 
@@ -105,11 +106,11 @@ public class VerticalTextSpinner extends View {
 		TEXT_MARGIN_RIGHT = (int) (25 * scale);
 		TEXT_SIZE = (int) (22 * scale);
 		SCROLL_DISTANCE = TEXT_SIZE + TEXT_SPACING;
-		TEXT1_Y = (TEXT_SIZE * (-2 + 2)) + (TEXT_SPACING * (-2 + 1));
-		TEXT2_Y = (TEXT_SIZE * (-1 + 2)) + (TEXT_SPACING * (-1 + 1));
-		TEXT3_Y = (TEXT_SIZE * (0 + 2)) + (TEXT_SPACING * (0 + 1));
-		TEXT4_Y = (TEXT_SIZE * (1 + 2)) + (TEXT_SPACING * (1 + 1));
-		TEXT5_Y = (TEXT_SIZE * (2 + 2)) + (TEXT_SPACING * (2 + 1));
+		TEXT1_Y = TEXT_SIZE * (-2 + 2) + TEXT_SPACING * (-2 + 1);
+		TEXT2_Y = TEXT_SIZE * (-1 + 2) + TEXT_SPACING * (-1 + 1);
+		TEXT3_Y = TEXT_SIZE * (0 + 2) + TEXT_SPACING * (0 + 1);
+		TEXT4_Y = TEXT_SIZE * (1 + 2) + TEXT_SPACING * (1 + 1);
+		TEXT5_Y = TEXT_SIZE * (2 + 2) + TEXT_SPACING * (2 + 1);
 
 		mBackgroundFocused = context.getResources().getDrawable(R.drawable.pickerbox_background);
 
@@ -137,33 +138,9 @@ public class VerticalTextSpinner extends View {
 		calculateAnimationValues();
 	}
 
-	public void setOnChangeListener(OnChangedListener listener) {
+	public int getCurrentSelectedPos() {
 
-		mListener = listener;
-	}
-
-	public void setItems(String[] textList) {
-
-		mTextList = textList;
-		calculateTextPositions();
-	}
-
-	public void setSelectedPos(int selectedPos) {
-
-		mCurrentSelectedPos = selectedPos;
-		calculateTextPositions();
-		postInvalidate();
-	}
-
-	public void setScrollInterval(long interval) {
-
-		mScrollInterval = interval;
-		calculateAnimationValues();
-	}
-
-	public void setWrapAround(boolean wrap) {
-
-		mWrapAround = wrap;
+		return mCurrentSelectedPos;
 	}
 
 	@Override
@@ -174,28 +151,18 @@ public class VerticalTextSpinner extends View {
 		 * actually roll the spinner up. When the key event is DPAD_UP we roll
 		 * the spinner down.
 		 */
-		if ((keyCode == KeyEvent.KEYCODE_DPAD_UP) && canScrollDown()) {
+		if (keyCode == KeyEvent.KEYCODE_DPAD_UP && canScrollDown()) {
 			mScrollMode = SCROLL_MODE_DOWN;
 			scroll();
 			mStopAnimation = true;
 			return true;
-		} else if ((keyCode == KeyEvent.KEYCODE_DPAD_DOWN) && canScrollUp()) {
+		} else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && canScrollUp()) {
 			mScrollMode = SCROLL_MODE_UP;
 			scroll();
 			mStopAnimation = true;
 			return true;
 		}
 		return super.onKeyDown(keyCode, event);
-	}
-
-	private boolean canScrollDown() {
-
-		return (mCurrentSelectedPos > 0) || mWrapAround;
-	}
-
-	private boolean canScrollUp() {
-
-		return ((mCurrentSelectedPos < (mTextList.length - 1)) || mWrapAround);
 	}
 
 	@Override
@@ -208,13 +175,13 @@ public class VerticalTextSpinner extends View {
 			case MotionEvent.ACTION_DOWN:
 				requestFocus();
 				mDownY = y;
-				isDraggingSelector = (y >= mSelectorY)
-						&& (y <= (mSelectorY + mSelector.getIntrinsicHeight()));
+				isDraggingSelector = y >= mSelectorY
+						&& y <= mSelectorY + mSelector.getIntrinsicHeight();
 				break;
 
 			case MotionEvent.ACTION_MOVE:
 				if (isDraggingSelector) {
-					int top = mSelectorDefaultY + (y - mDownY);
+					int top = mSelectorDefaultY + y - mDownY;
 					if (top <= mSelectorMinY && canScrollDown()) {
 						mSelectorY = mSelectorMinY;
 						mStopAnimation = false;
@@ -247,6 +214,110 @@ public class VerticalTextSpinner extends View {
 		return true;
 	}
 
+	public void setItems(String[] textList) {
+
+		mTextList = textList;
+		calculateTextPositions();
+	}
+
+	public void setOnChangeListener(OnChangedListener listener) {
+
+		mListener = listener;
+	}
+
+	public void setScrollInterval(long interval) {
+
+		mScrollInterval = interval;
+		calculateAnimationValues();
+	}
+
+	public void setSelectedPos(int selectedPos) {
+
+		mCurrentSelectedPos = selectedPos;
+		calculateTextPositions();
+		postInvalidate();
+	}
+
+	public void setWrapAround(boolean wrap) {
+
+		mWrapAround = wrap;
+	}
+
+	private void calculateAnimationValues() {
+
+		mNumberOfAnimations = (int) mScrollInterval / SCROLL_DISTANCE;
+		if (mNumberOfAnimations < MIN_ANIMATIONS) {
+			mNumberOfAnimations = MIN_ANIMATIONS;
+			mDistanceOfEachAnimation = SCROLL_DISTANCE / mNumberOfAnimations;
+			mDelayBetweenAnimations = 0;
+		} else {
+			mDistanceOfEachAnimation = SCROLL_DISTANCE / mNumberOfAnimations;
+			mDelayBetweenAnimations = mScrollInterval / mNumberOfAnimations;
+		}
+	}
+
+	/**
+	 * Called every time the text items or current position changes. We
+	 * calculate store we don't have to calculate onDraw.
+	 */
+	private void calculateTextPositions() {
+
+		mText1 = getTextToDraw(-2);
+		mText2 = getTextToDraw(-1);
+		mText3 = getTextToDraw(0);
+		mText4 = getTextToDraw(1);
+		mText5 = getTextToDraw(2);
+	}
+
+	private boolean canScrollDown() {
+
+		return mCurrentSelectedPos > 0 || mWrapAround;
+	}
+
+	private boolean canScrollUp() {
+
+		return mCurrentSelectedPos < mTextList.length - 1 || mWrapAround;
+	}
+
+	private void drawText(Canvas canvas, String text, int y, TextPaint paint) {
+
+		int width = (int) paint.measureText(text);
+		int x = getMeasuredWidth() - width - TEXT_MARGIN_RIGHT;
+		canvas.drawText(text, x, y, paint);
+	}
+
+	private int getNewIndex(int offset) {
+
+		int index = mCurrentSelectedPos + offset;
+		if (index < 0) {
+			if (mWrapAround) {
+				index += mTextList.length;
+			} else
+				return -1;
+		} else if (index >= mTextList.length) {
+			if (mWrapAround) {
+				index -= mTextList.length;
+			} else
+				return -1;
+		}
+		return index;
+	}
+
+	private String getTextToDraw(int offset) {
+
+		int index = getNewIndex(offset);
+		if (index < 0) return "";
+		return mTextList[index];
+	}
+
+	private void scroll() {
+
+		if (mIsAnimationRunning) return;
+		mTotalAnimatedDistance = 0;
+		mIsAnimationRunning = true;
+		invalidate();
+	}
+
 	@Override
 	protected void onDraw(Canvas canvas) {
 
@@ -260,11 +331,11 @@ public class VerticalTextSpinner extends View {
 		mSelector.setBounds(selectorLeft, selectorTop, selectorRight, selectorBottom);
 		mSelector.draw(canvas);
 
-		if (mTextList == null) {
-
-			/* We're not setup with values so don't draw anything else */
-			return;
-		}
+		if (mTextList == null) /*
+								 * We're not setup with values so don't draw
+								 * anything else
+								 */
+		return;
 
 		final TextPaint textPaintDark = mTextPaintDark;
 		if (hasFocus()) {
@@ -327,7 +398,7 @@ public class VerticalTextSpinner extends View {
 			drawText(canvas, mText3, TEXT3_Y, textPaintDark);
 		}
 		if (mIsAnimationRunning) {
-			if ((Math.abs(mTotalAnimatedDistance) + mDistanceOfEachAnimation) > SCROLL_DISTANCE) {
+			if (Math.abs(mTotalAnimatedDistance) + mDistanceOfEachAnimation > SCROLL_DISTANCE) {
 				mTotalAnimatedDistance = 0;
 				if (mScrollMode == SCROLL_MODE_UP) {
 					int oldPos = mCurrentSelectedPos;
@@ -338,7 +409,7 @@ public class VerticalTextSpinner extends View {
 							mListener.onChanged(this, oldPos, mCurrentSelectedPos, mTextList);
 						}
 					}
-					if (newPos < 0 || ((newPos >= mTextList.length - 1) && !mWrapAround)) {
+					if (newPos < 0 || newPos >= mTextList.length - 1 && !mWrapAround) {
 						mStopAnimation = true;
 					}
 					calculateTextPositions();
@@ -351,7 +422,7 @@ public class VerticalTextSpinner extends View {
 							mListener.onChanged(this, oldPos, mCurrentSelectedPos, mTextList);
 						}
 					}
-					if (newPos < 0 || (newPos == 0 && !mWrapAround)) {
+					if (newPos < 0 || newPos == 0 && !mWrapAround) {
 						mStopAnimation = true;
 					}
 					calculateTextPositions();
@@ -390,81 +461,5 @@ public class VerticalTextSpinner extends View {
 				invalidate();
 			}
 		}
-	}
-
-	/**
-	 * Called every time the text items or current position changes. We
-	 * calculate store we don't have to calculate onDraw.
-	 */
-	private void calculateTextPositions() {
-
-		mText1 = getTextToDraw(-2);
-		mText2 = getTextToDraw(-1);
-		mText3 = getTextToDraw(0);
-		mText4 = getTextToDraw(1);
-		mText5 = getTextToDraw(2);
-	}
-
-	private String getTextToDraw(int offset) {
-
-		int index = getNewIndex(offset);
-		if (index < 0) {
-			return "";
-		}
-		return mTextList[index];
-	}
-
-	private int getNewIndex(int offset) {
-
-		int index = mCurrentSelectedPos + offset;
-		if (index < 0) {
-			if (mWrapAround) {
-				index += mTextList.length;
-			} else {
-				return -1;
-			}
-		} else if (index >= mTextList.length) {
-			if (mWrapAround) {
-				index -= mTextList.length;
-			} else {
-				return -1;
-			}
-		}
-		return index;
-	}
-
-	private void scroll() {
-
-		if (mIsAnimationRunning) {
-			return;
-		}
-		mTotalAnimatedDistance = 0;
-		mIsAnimationRunning = true;
-		invalidate();
-	}
-
-	private void calculateAnimationValues() {
-
-		mNumberOfAnimations = (int) mScrollInterval / SCROLL_DISTANCE;
-		if (mNumberOfAnimations < MIN_ANIMATIONS) {
-			mNumberOfAnimations = MIN_ANIMATIONS;
-			mDistanceOfEachAnimation = SCROLL_DISTANCE / mNumberOfAnimations;
-			mDelayBetweenAnimations = 0;
-		} else {
-			mDistanceOfEachAnimation = SCROLL_DISTANCE / mNumberOfAnimations;
-			mDelayBetweenAnimations = mScrollInterval / mNumberOfAnimations;
-		}
-	}
-
-	private void drawText(Canvas canvas, String text, int y, TextPaint paint) {
-
-		int width = (int) paint.measureText(text);
-		int x = getMeasuredWidth() - width - TEXT_MARGIN_RIGHT;
-		canvas.drawText(text, x, y, paint);
-	}
-
-	public int getCurrentSelectedPos() {
-
-		return mCurrentSelectedPos;
 	}
 }

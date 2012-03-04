@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<style name="Theme" parent="@style/Theme.ActionBarCompat">
+	<style name="Theme" parent="@style/Theme.Holo">
 		<item name="android:windowTitleBackgroundStyle">@style/Widget.ActionBar</item>
 		<item name="android:colorBackgroundCacheHint">@null</item>
 		<item name="android:windowShowWallpaper">true</item>

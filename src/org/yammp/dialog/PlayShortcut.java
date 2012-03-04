@@ -18,6 +18,42 @@ public class PlayShortcut extends FragmentActivity implements Constants {
 	private long mPlaylistId;
 	private ServiceToken mToken = null;
 
+	private ServiceConnection osc = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName classname, IBinder obj) {
+
+			if (getIntent().getAction() != null
+					&& getIntent().getAction().equals(INTENT_PLAY_SHORTCUT)
+					&& mPlaylistId != PLAYLIST_UNKNOWN) {
+				switch ((int) mPlaylistId) {
+					case (int) PLAYLIST_ALL_SONGS:
+						MusicUtils.playAll(getApplicationContext());
+						break;
+					case (int) PLAYLIST_RECENTLY_ADDED:
+						MusicUtils.playRecentlyAdded(getApplicationContext());
+						break;
+					default:
+						if (mPlaylistId >= 0) {
+							MusicUtils.playPlaylist(PlayShortcut.this, mPlaylistId);
+						}
+						break;
+				}
+
+			} else {
+				Toast.makeText(PlayShortcut.this, R.string.error_bad_parameters, Toast.LENGTH_SHORT)
+						.show();
+			}
+			finish();
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName classname) {
+
+			finish();
+		}
+	};
+
 	@Override
 	public void onCreate(Bundle icicle) {
 
@@ -37,40 +73,5 @@ public class PlayShortcut extends FragmentActivity implements Constants {
 		finish();
 		super.onStop();
 	}
-
-	private ServiceConnection osc = new ServiceConnection() {
-
-		@Override
-		public void onServiceConnected(ComponentName classname, IBinder obj) {
-
-			if (getIntent().getAction() != null
-					&& getIntent().getAction().equals(INTENT_PLAY_SHORTCUT)
-					&& mPlaylistId != PLAYLIST_UNKNOWN) {
-				switch ((int) mPlaylistId) {
-					case (int) PLAYLIST_ALL_SONGS:
-						MusicUtils.playAll(getApplicationContext());
-						break;
-					case (int) PLAYLIST_RECENTLY_ADDED:
-						MusicUtils.playRecentlyAdded(getApplicationContext());
-						break;
-					default:
-						if (mPlaylistId >= 0)
-							MusicUtils.playPlaylist(PlayShortcut.this, mPlaylistId);
-						break;
-				}
-
-			} else {
-				Toast.makeText(PlayShortcut.this, R.string.error_bad_parameters, Toast.LENGTH_SHORT)
-						.show();
-			}
-			finish();
-		}
-
-		@Override
-		public void onServiceDisconnected(ComponentName classname) {
-
-			finish();
-		}
-	};
 
 }

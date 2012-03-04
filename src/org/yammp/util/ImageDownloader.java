@@ -21,35 +21,18 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import net.roarsoftware.lastfm.Album;
+import net.roarsoftware.lastfm.Artist;
+import net.roarsoftware.lastfm.Image;
+import net.roarsoftware.lastfm.ImageSize;
+
 import org.yammp.Constants;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
-import net.roarsoftware.lastfm.Album;
-import net.roarsoftware.lastfm.Artist;
-import net.roarsoftware.lastfm.Image;
-import net.roarsoftware.lastfm.ImageSize;
-
 public class ImageDownloader implements Constants {
-
-	public static String getCoverUrl(String artist, String album) throws Exception {
-
-		Album albumInfo = Album.getInfo(artist, album, LASTFM_APIKEY);
-		return albumInfo.getImageURL(ImageSize.MEGA);
-	}
-
-	public void getArtistImage(String artist) {
-
-		Image[] images = Artist
-				.getImages(artist, LASTFM_APIKEY)
-				.getPageResults()
-				.toArray(new Image[Artist.getImages(artist, LASTFM_APIKEY).getPageResults().size()]);
-		for (Image image : images) {
-			Log.d("ImageDownloader", "url = " + image.getImageURL(ImageSize.ORIGINAL));
-		}
-	}
 
 	public static Bitmap getCoverBitmap(String urlString) {
 
@@ -71,6 +54,23 @@ public class ImageDownloader implements Constants {
 			return BitmapFactory.decodeStream(is);
 		} catch (Exception e) {
 			return null;
+		}
+	}
+
+	public static String getCoverUrl(String artist, String album) throws Exception {
+
+		Album albumInfo = Album.getInfo(artist, album, LASTFM_APIKEY);
+		return albumInfo.getImageURL(ImageSize.MEGA);
+	}
+
+	public void getArtistImage(String artist) {
+
+		Image[] images = Artist
+				.getImages(artist, LASTFM_APIKEY)
+				.getPageResults()
+				.toArray(new Image[Artist.getImages(artist, LASTFM_APIKEY).getPageResults().size()]);
+		for (Image image : images) {
+			Log.d("ImageDownloader", "url = " + image.getImageURL(ImageSize.ORIGINAL));
 		}
 	}
 
