@@ -50,106 +50,10 @@ import android.widget.TextView;
 
 public class QueryFragment extends ListFragment implements Constants, LoaderCallbacks<Cursor> {
 
-	private class QueryListAdapter extends SimpleCursorAdapter {
-
-		private class ViewHolder {
-
-			ImageView result_icon;
-			TextView query_result;
-			TextView result_summary;
-
-			public ViewHolder(View view) {
-				result_icon = (ImageView) view.findViewById(R.id.icon);
-				query_result = (TextView) view.findViewById(R.id.name);
-				result_summary = (TextView) view.findViewById(R.id.summary);
-			}
-
-		}
-
-		private QueryListAdapter(Context context, int layout, Cursor cursor, String[] from,
-				int[] to, int flags) {
-			super(context, layout, cursor, from, to, flags);
-		}
-
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-
-			ViewHolder viewholder = (ViewHolder) view.getTag();
-
-			String mimetype = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Media.MIME_TYPE));
-
-			if (mimetype == null) {
-				mimetype = "audio/";
-			}
-			if (mimetype.equals("artist")) {
-				viewholder.result_icon.setImageResource(R.drawable.ic_mp_list_artist);
-				String name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Artists.ARTIST));
-				String displayname = name;
-				boolean isunknown = false;
-				if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
-					displayname = context.getString(R.string.unknown_artist);
-					isunknown = true;
-				}
-				viewholder.query_result.setText(displayname);
-
-				int numalbums = cursor.getInt(cursor.getColumnIndexOrThrow("data1"));
-				int numsongs = cursor.getInt(cursor.getColumnIndexOrThrow("data2"));
-
-				String songs_albums = MusicUtils.makeAlbumsSongsLabel(context, numalbums, numsongs,
-						isunknown);
-
-				viewholder.result_summary.setText(songs_albums);
-
-			} else if (mimetype.equals("album")) {
-				viewholder.result_icon.setImageResource(R.drawable.ic_mp_list_album);
-				String name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Albums.ALBUM));
-				String displayname = name;
-				if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
-					displayname = context.getString(R.string.unknown_album);
-				}
-				viewholder.query_result.setText(displayname);
-
-				name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Artists.ARTIST));
-				displayname = name;
-				if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
-					displayname = context.getString(R.string.unknown_artist);
-				}
-				viewholder.result_summary.setText(displayname);
-
-			} else if (mimetype.startsWith("audio/") || mimetype.equals("application/ogg")
-					|| mimetype.equals("application/x-ogg")) {
-				viewholder.result_icon.setImageResource(R.drawable.ic_mp_list_song);
-				String name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Media.TITLE));
-				viewholder.query_result.setText(name);
-
-				String displayname = cursor.getString(cursor
-						.getColumnIndexOrThrow(Audio.Artists.ARTIST));
-				if (displayname == null || displayname.equals(MediaStore.UNKNOWN_STRING)) {
-					displayname = context.getString(R.string.unknown_artist);
-				}
-				name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Albums.ALBUM));
-				if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
-					name = context.getString(R.string.unknown_album);
-				}
-				viewholder.result_summary.setText(displayname + " - " + name);
-			}
-		}
-
-		@Override
-		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-			View view = super.newView(context, cursor, parent);
-			ViewHolder viewholder = new ViewHolder(view);
-			view.setTag(viewholder);
-			return view;
-		}
-
-	}
-
 	private QueryListAdapter mAdapter;
+
 	private String mFilterString = "";
 	private Cursor mQueryCursor;
-
 	private ListView mTrackList;
 
 	public QueryFragment() {
@@ -322,6 +226,102 @@ public class QueryFragment extends ListFragment implements Constants, LoaderCall
 	}
 
 	public void onServiceDisconnected(ComponentName name) {
+
+	}
+
+	private class QueryListAdapter extends SimpleCursorAdapter {
+
+		private QueryListAdapter(Context context, int layout, Cursor cursor, String[] from,
+				int[] to, int flags) {
+			super(context, layout, cursor, from, to, flags);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+
+			ViewHolder viewholder = (ViewHolder) view.getTag();
+
+			String mimetype = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Media.MIME_TYPE));
+
+			if (mimetype == null) {
+				mimetype = "audio/";
+			}
+			if (mimetype.equals("artist")) {
+				viewholder.result_icon.setImageResource(R.drawable.ic_mp_list_artist);
+				String name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Artists.ARTIST));
+				String displayname = name;
+				boolean isunknown = false;
+				if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
+					displayname = context.getString(R.string.unknown_artist);
+					isunknown = true;
+				}
+				viewholder.query_result.setText(displayname);
+
+				int numalbums = cursor.getInt(cursor.getColumnIndexOrThrow("data1"));
+				int numsongs = cursor.getInt(cursor.getColumnIndexOrThrow("data2"));
+
+				String songs_albums = MusicUtils.makeAlbumsSongsLabel(context, numalbums, numsongs,
+						isunknown);
+
+				viewholder.result_summary.setText(songs_albums);
+
+			} else if (mimetype.equals("album")) {
+				viewholder.result_icon.setImageResource(R.drawable.ic_mp_list_album);
+				String name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Albums.ALBUM));
+				String displayname = name;
+				if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
+					displayname = context.getString(R.string.unknown_album);
+				}
+				viewholder.query_result.setText(displayname);
+
+				name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Artists.ARTIST));
+				displayname = name;
+				if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
+					displayname = context.getString(R.string.unknown_artist);
+				}
+				viewholder.result_summary.setText(displayname);
+
+			} else if (mimetype.startsWith("audio/") || mimetype.equals("application/ogg")
+					|| mimetype.equals("application/x-ogg")) {
+				viewholder.result_icon.setImageResource(R.drawable.ic_mp_list_song);
+				String name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Media.TITLE));
+				viewholder.query_result.setText(name);
+
+				String displayname = cursor.getString(cursor
+						.getColumnIndexOrThrow(Audio.Artists.ARTIST));
+				if (displayname == null || displayname.equals(MediaStore.UNKNOWN_STRING)) {
+					displayname = context.getString(R.string.unknown_artist);
+				}
+				name = cursor.getString(cursor.getColumnIndexOrThrow(Audio.Albums.ALBUM));
+				if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
+					name = context.getString(R.string.unknown_album);
+				}
+				viewholder.result_summary.setText(displayname + " - " + name);
+			}
+		}
+
+		@Override
+		public View newView(Context context, Cursor cursor, ViewGroup parent) {
+
+			View view = super.newView(context, cursor, parent);
+			ViewHolder viewholder = new ViewHolder(view);
+			view.setTag(viewholder);
+			return view;
+		}
+
+		private class ViewHolder {
+
+			ImageView result_icon;
+			TextView query_result;
+			TextView result_summary;
+
+			public ViewHolder(View view) {
+				result_icon = (ImageView) view.findViewById(R.id.icon);
+				query_result = (TextView) view.findViewById(R.id.name);
+				result_summary = (TextView) view.findViewById(R.id.summary);
+			}
+
+		}
 
 	}
 

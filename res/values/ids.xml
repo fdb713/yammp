@@ -23,5 +23,8 @@
 	<item name="settings" type="id"/>
 	<item name="search" type="id"/>
 	<item name="remove" type="id"/>
+	<item name="add_to_favorite" type="id"/>
+	<item name="play_pause" type="id"/>
+	<item name="next" type="id"/>
 
 </resources>

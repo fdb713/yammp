@@ -16,14 +16,8 @@ import android.view.View;
 
 public class TouchPaintView extends View {
 
-	public interface EventListener {
-
-		boolean onTouchEvent(MotionEvent event);
-
-		boolean onTrackballEvent(MotionEvent event);
-	}
-
 	private static final int FADE_DELAY = 2;
+
 	private static final int FADE_ALPHA = 0x10;
 	private static final int MAX_FADE_STEPS = 256 / FADE_ALPHA * 2 + 8;
 	private Bitmap mBitmap;
@@ -37,7 +31,6 @@ public class TouchPaintView extends View {
 	private int mCurWidth;
 	private int mFadeSteps = 0;
 	private int mColor = Color.WHITE;
-
 	private EventListener mListener;
 
 	private Handler mHandler = new Handler() {
@@ -71,11 +64,11 @@ public class TouchPaintView extends View {
 		}
 		int action = event.getAction();
 		mCurDown = action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE;
-		int N = event.getHistorySize();
-		for (int i = 0; i < N; i++) {
-			drawPoint(event.getHistoricalX(i), event.getHistoricalY(i),
-					event.getHistoricalPressure(i), event.getHistoricalSize(i));
-		}
+//		int N = event.getHistorySize();
+//		for (int i = 0; i < N; i++) {
+//			drawPoint(event.getHistoricalX(i), event.getHistoricalY(i),
+//					event.getHistoricalPressure(i), event.getHistoricalSize(i));
+//		}
 		drawPoint(event.getX(), event.getY(), event.getPressure(), event.getSize());
 		mFadeSteps = 0;
 		mHandler.sendEmptyMessageDelayed(0, FADE_DELAY);
@@ -183,5 +176,12 @@ public class TouchPaintView extends View {
 		mBitmap = newBitmap;
 		mCanvas = newCanvas;
 		mFadeSteps = MAX_FADE_STEPS;
+	}
+
+	public interface EventListener {
+
+		boolean onTouchEvent(MotionEvent event);
+
+		boolean onTrackballEvent(MotionEvent event);
 	}
 }

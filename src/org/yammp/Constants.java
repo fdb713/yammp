@@ -22,9 +22,9 @@ package org.yammp;
 
 public interface Constants {
 
-	public final static int NOW = 1;
-	public final static int NEXT = 2;
-	public final static int LAST = 3;
+	public final static int ACTION_NOW = 1;
+	public final static int ACTION_NEXT = 2;
+	public final static int ACTION_LAST = 3;
 	public final static int PLAYBACKSERVICE_STATUS = 1;
 	public final static int SLEEPTIMER_STATUS = 2;
 
@@ -233,6 +233,7 @@ public interface Constants {
 	public final static String INTENT_EQUALIZER = "org.yammp.EQUALIZER";
 	public final static String INTENT_PLAY_SHORTCUT = "org.yammp.PLAY_SHORTCUT";
 	public final static String INTENT_PLUGINS_MANAGER = "org.yammp.PLUGINS_MANAGER";
+	public final static String INTENT_PLAYBACK_SERVICE = "org.yammp.PLAYBACK_SERVICE";
 
 	public final static String BROADCAST_PLAYSTATE_CHANGED = "org.yammp.playstatechanged";
 	public final static String BROADCAST_META_CHANGED = "org.yammp.metachanged";
@@ -258,7 +259,7 @@ public interface Constants {
 	public final static int PLAY_SELECTION = R.id.play_selection;
 	public final static int GOTO_PLAYBACK = R.id.goto_playback;
 	public final static int GOTO_HOME = android.R.id.home;
-	public final static int ADD_TO_FAVORITES = R.id.menu_star;
+	public final static int ADD_TO_FAVORITES = R.id.add_to_favorite;
 	public final static int PARTY_SHUFFLE = R.id.party_shuffle;
 	public final static int SHUFFLE_ALL = R.id.shuffle_all;
 	public final static int PLAY_ALL = R.id.play_all;
@@ -271,6 +272,8 @@ public interface Constants {
 	public final static int SETTINGS = R.id.settings;
 	public final static int SEARCH = R.id.search;
 	public final static int REMOVE = R.id.remove;
+	public final static int PLAY_PAUSE = R.id.play_pause;
+	public final static int NEXT = R.id.next;
 	public final static int CHILD_MENU_BASE = 15; // this should be the last
 
 	public final static String[] HIDE_PLAYLISTS = new String[] { "Sony Ericsson play queue",

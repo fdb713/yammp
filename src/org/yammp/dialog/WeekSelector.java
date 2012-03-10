@@ -33,6 +33,43 @@ import android.widget.Toast;
 
 public class WeekSelector extends FragmentActivity implements Constants {
 
+	private String action;
+
+	private static VerticalTextSpinnerDialog mAlert;
+	private static PreferencesEditor mPrefs;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+
+		super.onCreate(savedInstanceState);
+
+		setContentView(new LinearLayout(this));
+		mPrefs = new PreferencesEditor(this);
+		int def = mPrefs.getIntPref(PREF_KEY_NUMWEEKS, 2);
+		int pos = savedInstanceState != null ? savedInstanceState.getInt(PREF_KEY_NUMWEEKS, def)
+				: def;
+
+		mAlert = new VerticalTextSpinnerDialog(this, getResources()
+				.getStringArray(R.array.weeklist), pos - 1);
+		action = getIntent().getAction();
+
+		if (INTENT_WEEK_SELECTOR.equals(action)) {
+			DialogFragment fragment = new WeekSelectorDialogFragment();
+			fragment.show(getSupportFragmentManager(), "dialog");
+
+		} else {
+			Toast.makeText(this, R.string.error_bad_parameters, Toast.LENGTH_SHORT).show();
+			finish();
+		}
+
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		savedInstanceState.putInt(PREF_KEY_NUMWEEKS, mAlert.getCurrentSelectedPos() + 1);
+		super.onSaveInstanceState(savedInstanceState);
+	}
+
 	public static class WeekSelectorDialogFragment extends DialogFragment implements
 			OnClickListener, OnCancelListener {
 
@@ -70,42 +107,5 @@ public class WeekSelector extends FragmentActivity implements Constants {
 			return mAlert;
 
 		}
-	}
-
-	private String action;
-	private static VerticalTextSpinnerDialog mAlert;
-
-	private static PreferencesEditor mPrefs;
-
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-
-		super.onCreate(savedInstanceState);
-
-		setContentView(new LinearLayout(this));
-		mPrefs = new PreferencesEditor(this);
-		int def = mPrefs.getIntPref(PREF_KEY_NUMWEEKS, 2);
-		int pos = savedInstanceState != null ? savedInstanceState.getInt(PREF_KEY_NUMWEEKS, def)
-				: def;
-
-		mAlert = new VerticalTextSpinnerDialog(this, getResources()
-				.getStringArray(R.array.weeklist), pos - 1);
-		action = getIntent().getAction();
-
-		if (INTENT_WEEK_SELECTOR.equals(action)) {
-			DialogFragment fragment = new WeekSelectorDialogFragment();
-			fragment.show(getSupportFragmentManager(), "dialog");
-
-		} else {
-			Toast.makeText(this, R.string.error_bad_parameters, Toast.LENGTH_SHORT).show();
-			finish();
-		}
-
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle savedInstanceState) {
-		savedInstanceState.putInt(PREF_KEY_NUMWEEKS, mAlert.getCurrentSelectedPos() + 1);
-		super.onSaveInstanceState(savedInstanceState);
 	}
 }

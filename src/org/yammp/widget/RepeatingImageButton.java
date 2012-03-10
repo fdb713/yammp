@@ -30,30 +30,10 @@ import android.widget.ImageButton;
  */
 public class RepeatingImageButton extends ImageButton {
 
-	public interface RepeatListener {
-
-		/**
-		 * This method will be called repeatedly at roughly the interval
-		 * specified in setRepeatListener(), for as long as the button is
-		 * pressed.
-		 * 
-		 * @param v
-		 *            The button as a View.
-		 * @param duration
-		 *            The number of milliseconds the button has been pressed so
-		 *            far.
-		 * @param repeatcount
-		 *            The number of previous calls in this sequence. If this is
-		 *            going to be the last call in this sequence (i.e. the user
-		 *            just stopped pressing the button), the value will be -1.
-		 */
-		void onRepeat(View v, long duration, int repeatcount);
-	}
-
 	private long mStartTime;
+
 	private int mRepeatCount;
 	private RepeatListener mListener;
-
 	private long mInterval = 500;
 
 	private Runnable mRepeater = new Runnable() {
@@ -159,5 +139,25 @@ public class RepeatingImageButton extends ImageButton {
 		if (mListener != null) {
 			mListener.onRepeat(this, now - mStartTime, last ? -1 : mRepeatCount++);
 		}
+	}
+
+	public interface RepeatListener {
+
+		/**
+		 * This method will be called repeatedly at roughly the interval
+		 * specified in setRepeatListener(), for as long as the button is
+		 * pressed.
+		 * 
+		 * @param v
+		 *            The button as a View.
+		 * @param duration
+		 *            The number of milliseconds the button has been pressed so
+		 *            far.
+		 * @param repeatcount
+		 *            The number of previous calls in this sequence. If this is
+		 *            going to be the last call in this sequence (i.e. the user
+		 *            just stopped pressing the button), the value will be -1.
+		 */
+		void onRepeat(View v, long duration, int repeatcount);
 	}
 }

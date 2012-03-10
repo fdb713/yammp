@@ -19,19 +19,15 @@ import android.widget.TextView;
 
 public class TextScrollView extends ScrollView implements OnLongClickListener {
 
-	public interface OnLineSelectedListener {
-
-		void onLineSelected(int id);
-	}
-
 	// Namespaces to read attributes
 	private static final String ANDROID_NS = "http://schemas.android.com/apk/res/android";
+
 	private static final String ATTR_TEXTSIZE = "textSize";
 	private static final String ATTR_SHADOWCOLOR = "shadowColor";
 	private static final String ATTR_SHADOWDX = "shadowDx";
 	private static final String ATTR_SHADOWDY = "shadowDy";
-
 	private static final String ATTR_SHADOWRADIUS = "shadowRadius";
+
 	private LinearLayout mScrollContainer;
 	private LinearLayout mContentContainer, mContentEmptyView;
 	private boolean mSmoothScrolling = false;
@@ -42,7 +38,6 @@ public class TextScrollView extends ScrollView implements OnLongClickListener {
 	private String[] mContent;
 	private final int TIMEOUT = 1;
 	public OnLineSelectedListener mListener;
-
 	private Context mContext;
 
 	public Handler mHandler = new Handler() {
@@ -272,6 +267,11 @@ public class TextScrollView extends ScrollView implements OnLongClickListener {
 			return Float.parseFloat(value.replaceAll("sp", ""));
 		else
 			throw new IllegalArgumentException("Value " + value + " is not valid!");
+	}
+
+	public interface OnLineSelectedListener {
+
+		void onLineSelected(int id);
 	}
 
 }

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<Spinner
+		android:id="@+id/presets"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"/>
+
+	<org.yammp.view.EqualizerView
+		android:id="@+id/equalizer_view"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_above="@+id/bass_boost"
+		android:layout_alignParentLeft="true"
+		android:layout_below="@+id/presets"/>
+
+	<TextView
+		android:id="@+id/label_3d_effect"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignParentBottom="true"
+		android:layout_alignParentLeft="true"
+		android:layout_alignRight="@+id/label_bass_boost"
+		android:layout_alignTop="@+id/effect_3d"
+		android:gravity="center"
+		android:text="3D Effect"/>
+
+	<SeekBar
+		android:id="@+id/effect_3d"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignLeft="@+id/bass_boost"
+		android:layout_alignParentBottom="true"
+		android:layout_alignParentRight="true"/>
+
+	<SeekBar
+		android:id="@+id/bass_boost"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_above="@+id/effect_3d"
+		android:layout_alignParentRight="true"
+		android:layout_toRightOf="@+id/label_3d_effect"/>
+
+	<TextView
+		android:id="@+id/label_bass_boost"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignBottom="@+id/bass_boost"
+		android:layout_alignParentLeft="true"
+		android:layout_alignTop="@+id/bass_boost"
+		android:gravity="center"
+		android:text="Bass Boost"/>
+
+</RelativeLayout>

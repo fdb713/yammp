@@ -182,10 +182,10 @@
 	<string name="version">Version</string>
 	<string name="haptic_feedback">Haptic feedback</string>
 	<string name="haptic_feedback_summary">Vibrate when shake detected</string>
-	<string name="play_toast">Play</string>
-	<string name="pause_toast">Pause</string>
-	<string name="next_toast">Next track</string>
-	<string name="prev_toast">Previous track</string>
+	<string name="play">Play</string>
+	<string name="pause">Pause</string>
+	<string name="next">Next track</string>
+	<string name="prev">Previous track</string>
 	<string name="equalizer">Equalizer</string>
 	<string name="equalizer_presets">Presets</string>
 	<string name="equalizer_reset">Reset</string>

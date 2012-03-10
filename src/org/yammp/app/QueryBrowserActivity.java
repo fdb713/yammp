@@ -20,11 +20,13 @@
 
 package org.yammp.app;
 
-import org.mariotaku.actionbarcompat.app.FragmentActivity;
 import org.yammp.Constants;
 import org.yammp.R;
 import org.yammp.util.MusicUtils;
 import org.yammp.util.ServiceToken;
+
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.MenuItem;
 
 import android.app.SearchManager;
 import android.content.ComponentName;
@@ -36,12 +38,11 @@ import android.os.IBinder;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 
-public class QueryBrowserActivity extends FragmentActivity implements Constants, ServiceConnection,
+public class QueryBrowserActivity extends SherlockFragmentActivity implements Constants, ServiceConnection,
 		TextWatcher {
 
 	private ServiceToken mToken;
@@ -171,10 +172,10 @@ public class QueryBrowserActivity extends FragmentActivity implements Constants,
 
 		setContentView(new FrameLayout(this));
 
-		getActionBarCompat().setCustomView(R.layout.actionbar_query_browser);
-		getActionBarCompat().setDisplayShowTitleEnabled(false);
-		getActionBarCompat().setDisplayShowCustomEnabled(true);
-		mCustomView = getActionBarCompat().getCustomView();
+		getSupportActionBar().setCustomView(R.layout.actionbar_query_browser);
+		getSupportActionBar().setDisplayShowTitleEnabled(false);
+		getSupportActionBar().setDisplayShowCustomEnabled(true);
+		mCustomView = getSupportActionBar().getCustomView();
 
 		if (mCustomView != null) {
 			((EditText) mCustomView.findViewById(R.id.query_editor)).addTextChangedListener(this);

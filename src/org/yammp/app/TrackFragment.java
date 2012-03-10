@@ -28,6 +28,8 @@ import org.yammp.widget.TouchInterceptor;
 import org.yammp.widget.TouchInterceptor.OnDropListener;
 import org.yammp.widget.TouchInterceptor.OnRemoveListener;
 
+import com.actionbarsherlock.app.SherlockListFragment;
+
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -40,7 +42,6 @@ import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
 import android.provider.MediaStore.Audio.Genres;
 import android.provider.MediaStore.Audio.Playlists;
-import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -55,76 +56,10 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class TrackFragment extends ListFragment implements LoaderCallbacks<Cursor>, Constants {
-
-	private class TracksAdapter extends SimpleCursorAdapter {
-
-		private class ViewHolder {
-
-			TextView track_name;
-			TextView artist_name;
-			TextView track_duration;
-
-			public ViewHolder(View view) {
-				track_name = (TextView) view.findViewById(R.id.name);
-				artist_name = (TextView) view.findViewById(R.id.summary);
-				track_duration = (TextView) view.findViewById(R.id.duration);
-			}
-
-		}
-
-		private TracksAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to,
-				int flags) {
-			super(context, layout, cursor, from, to, flags);
-		}
-
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-
-			ViewHolder viewholder = (ViewHolder) view.getTag();
-
-			String track_name = cursor.getString(mTrackIdx);
-			viewholder.track_name.setText(track_name);
-
-			String artist_name = cursor.getString(mArtistIdx);
-			if (artist_name == null || MediaStore.UNKNOWN_STRING.equals(artist_name)) {
-				viewholder.artist_name.setText(R.string.unknown_artist);
-			} else {
-				viewholder.artist_name.setText(artist_name);
-			}
-
-			long secs = cursor.getLong(mDurationIdx) / 1000;
-
-			if (secs <= 0) {
-				viewholder.track_duration.setText("");
-			} else {
-				viewholder.track_duration.setText(MusicUtils.makeTimeString(context, secs));
-			}
-
-			long audio_id = cursor.getLong(mIdIdx);
-
-			long currentaudioid = MusicUtils.getCurrentAudioId();
-			if (currentaudioid == audio_id) {
-				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
-						R.drawable.ic_indicator_nowplaying_small, 0);
-			} else {
-				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-			}
-
-		}
-
-		@Override
-		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-			View view = super.newView(context, cursor, parent);
-			ViewHolder viewholder = new ViewHolder(view);
-			view.setTag(viewholder);
-			return view;
-		}
-
-	}
+public class TrackFragment extends SherlockListFragment implements LoaderCallbacks<Cursor>, Constants, OnDropListener, OnRemoveListener {
 
 	private TracksAdapter mAdapter;
+
 	private Cursor mCursor;
 	private int mSelectedPosition;
 	private long mSelectedId;
@@ -132,7 +67,6 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 	private int mIdIdx, mTrackIdx, mAlbumIdx, mArtistIdx, mDurationIdx;
 	private boolean mEditMode = false;
 	private ListView mListView;
-
 	long mPlaylistId = -1;
 
 	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
@@ -146,36 +80,31 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 
 	};
 
-	// TODO make drag-n-drop move item work.
-	private OnDropListener mDropListener = new OnDropListener() {
 
-		@Override
-		public void onDrop(int from, int to) {
+	@Override
+	public void onDrop(int from, int to) {
 
-			if (mPlaylistId >= 0) {
-				Playlists.Members.moveItem(getActivity().getContentResolver(), mPlaylistId, from,
-						to);
-			} else if (mPlaylistId == PLAYLIST_QUEUE) {
-				MusicUtils.moveQueueItem(from, to);
-				reloadQueueCursor();
-			} else if (mPlaylistId == PLAYLIST_FAVORITES) {
-				long favorites_id = MusicUtils.getFavoritesId(getActivity());
-				Playlists.Members.moveItem(getActivity().getContentResolver(), favorites_id, from,
-						to);
-			}
-
-			mListView.invalidateViews();
+		if (mPlaylistId >= 0) {
+			Playlists.Members.moveItem(getActivity().getContentResolver(), mPlaylistId, from,
+					to);
+		} else if (mPlaylistId == PLAYLIST_QUEUE) {
+			MusicUtils.moveQueueItem(from, to);
+			reloadQueueCursor();
+		} else if (mPlaylistId == PLAYLIST_FAVORITES) {
+			long favorites_id = MusicUtils.getFavoritesId(getActivity());
+			Playlists.Members.moveItem(getActivity().getContentResolver(), favorites_id, from,
+					to);
 		}
-	};
 
-	private OnRemoveListener mRemoveListener = new OnRemoveListener() {
+		mAdapter.notifyDataSetChanged();
+	}
 
-		@Override
-		public void onRemove(int which) {
 
-			removePlaylistItem(which);
-		}
-	};
+	@Override
+	public void onRemove(int which) {
+
+		removePlaylistItem(which);
+	}
 
 	public TrackFragment() {
 
@@ -453,8 +382,8 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 		mAdapter.changeCursor(data);
 
 		if (mEditMode) {
-			((TouchInterceptor) mListView).setDropListener(mDropListener);
-			((TouchInterceptor) mListView).setRemoveListener(mRemoveListener);
+			((TouchInterceptor) mListView).setDropListener(this);
+			((TouchInterceptor) mListView).setRemoveListener(this);
 			mListView.setDivider(null);
 			mListView.setSelector(R.drawable.list_selector_background);
 		}
@@ -558,6 +487,73 @@ public class TrackFragment extends ListFragment implements LoaderCallbacks<Curso
 		}
 
 		mListView.invalidateViews();
+
+	}
+
+	private class TracksAdapter extends SimpleCursorAdapter {
+
+		private TracksAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to,
+				int flags) {
+			super(context, layout, cursor, from, to, flags);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+
+			ViewHolder viewholder = (ViewHolder) view.getTag();
+
+			String track_name = cursor.getString(mTrackIdx);
+			viewholder.track_name.setText(track_name);
+
+			String artist_name = cursor.getString(mArtistIdx);
+			if (artist_name == null || MediaStore.UNKNOWN_STRING.equals(artist_name)) {
+				viewholder.artist_name.setText(R.string.unknown_artist);
+			} else {
+				viewholder.artist_name.setText(artist_name);
+			}
+
+			long secs = cursor.getLong(mDurationIdx) / 1000;
+
+			if (secs <= 0) {
+				viewholder.track_duration.setText("");
+			} else {
+				viewholder.track_duration.setText(MusicUtils.makeTimeString(context, secs));
+			}
+
+			long audio_id = cursor.getLong(mIdIdx);
+
+			long currentaudioid = MusicUtils.getCurrentAudioId();
+			if (currentaudioid == audio_id) {
+				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
+						R.drawable.ic_indicator_nowplaying_small, 0);
+			} else {
+				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+			}
+
+		}
+
+		@Override
+		public View newView(Context context, Cursor cursor, ViewGroup parent) {
+
+			View view = super.newView(context, cursor, parent);
+			ViewHolder viewholder = new ViewHolder(view);
+			view.setTag(viewholder);
+			return view;
+		}
+
+		private class ViewHolder {
+
+			TextView track_name;
+			TextView artist_name;
+			TextView track_duration;
+
+			public ViewHolder(View view) {
+				track_name = (TextView) view.findViewById(R.id.name);
+				artist_name = (TextView) view.findViewById(R.id.summary);
+				track_duration = (TextView) view.findViewById(R.id.duration);
+			}
+
+		}
 
 	}
 

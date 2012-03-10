@@ -36,6 +36,43 @@ import android.support.v4.app.FragmentActivity;
 
 public class ScanningProgress extends FragmentActivity {
 
+	private DialogFragment mFragment;
+
+	private BroadcastReceiver mMountStateReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction())) {
+				startActivity(new Intent(getApplicationContext(), MusicBrowserActivity.class));
+				finish();
+			}
+		}
+
+	};
+
+	@Override
+	public void onCreate(Bundle icicle) {
+
+		super.onCreate(icicle);
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+		mFragment = new ScanningDialogFragment();
+		mFragment.show(getSupportFragmentManager(), "scanning_dialog");
+
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+		registerReceiver(mMountStateReceiver, new IntentFilter(Intent.ACTION_MEDIA_MOUNTED));
+	}
+
+	@Override
+	public void onStop() {
+		unregisterReceiver(mMountStateReceiver);
+		super.onStop();
+	}
+
 	public static class ScanningDialogFragment extends DialogFragment implements OnClickListener,
 			OnCancelListener {
 
@@ -80,42 +117,5 @@ public class ScanningProgress extends FragmentActivity {
 			return builder.create();
 
 		}
-	}
-
-	private DialogFragment mFragment;
-
-	private BroadcastReceiver mMountStateReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction())) {
-				startActivity(new Intent(getApplicationContext(), MusicBrowserActivity.class));
-				finish();
-			}
-		}
-
-	};
-
-	@Override
-	public void onCreate(Bundle icicle) {
-
-		super.onCreate(icicle);
-		setVolumeControlStream(AudioManager.STREAM_MUSIC);
-
-		mFragment = new ScanningDialogFragment();
-		mFragment.show(getSupportFragmentManager(), "scanning_dialog");
-
-	}
-
-	@Override
-	public void onStart() {
-		super.onStart();
-		registerReceiver(mMountStateReceiver, new IntentFilter(Intent.ACTION_MEDIA_MOUNTED));
-	}
-
-	@Override
-	public void onStop() {
-		unregisterReceiver(mMountStateReceiver);
-		super.onStop();
 	}
 }

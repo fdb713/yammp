@@ -45,101 +45,11 @@ import android.widget.TextView;
 
 public class PlaylistFragment extends ListFragment implements LoaderCallbacks<Cursor>, Constants {
 
-	private class PlaylistsAdapter extends CursorAdapter {
-
-		private class ViewHolder {
-
-			TextView playlist_name;
-
-			public ViewHolder(View view) {
-				playlist_name = (TextView) view.findViewById(R.id.playlist_name);
-			}
-		}
-
-		private PlaylistsAdapter(Context context, Cursor cursor, boolean autoRequery) {
-			super(context, cursor, autoRequery);
-		}
-
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-
-			ViewHolder viewholder = (ViewHolder) ((Object[]) view.getTag())[0];
-
-			String playlist_name = cursor.getString(mNameIdx);
-			viewholder.playlist_name.setText(playlist_name);
-
-		}
-
-		@Override
-		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-			View view = LayoutInflater.from(context).inflate(R.layout.playlist_list_item, null);
-			ViewHolder viewholder = new ViewHolder(view);
-			view.setTag(new Object[] { viewholder, cursor.getLong(mIdIdx) });
-			return view;
-		}
-
-	}
-
-	private class SmartPlaylistsAdapter extends ArrayAdapter<Long> {
-
-		private class ViewHolder {
-
-			TextView playlist_name;
-
-			public ViewHolder(View view) {
-				playlist_name = (TextView) view.findViewById(R.id.playlist_name);
-			}
-		}
-
-		Long[] playlists = new Long[] {};
-
-		private SmartPlaylistsAdapter(Context context, int resid, Long[] playlists) {
-			super(context, resid, playlists);
-			this.playlists = playlists;
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-
-			View view = convertView;
-			ViewHolder viewholder = view != null ? (ViewHolder) ((Object[]) view.getTag())[0]
-					: null;
-
-			if (viewholder == null) {
-				view = getLayoutInflater(getArguments()).inflate(R.layout.playlist_list_item, null);
-				viewholder = new ViewHolder(view);
-				view.setTag(new Object[] { viewholder, playlists[position] });
-			}
-
-			switch (playlists[position].intValue()) {
-				case (int) PLAYLIST_FAVORITES:
-					viewholder.playlist_name.setText(R.string.favorites);
-					viewholder.playlist_name.setCompoundDrawablesWithIntrinsicBounds(
-							R.drawable.ic_mp_list_playlist_favorite, 0, 0, 0);
-					break;
-				case (int) PLAYLIST_RECENTLY_ADDED:
-					viewholder.playlist_name.setText(R.string.recently_added);
-					viewholder.playlist_name.setCompoundDrawablesWithIntrinsicBounds(
-							R.drawable.ic_mp_list_playlist_recent, 0, 0, 0);
-					break;
-				case (int) PLAYLIST_PODCASTS:
-					viewholder.playlist_name.setText(R.string.podcasts);
-					viewholder.playlist_name.setCompoundDrawablesWithIntrinsicBounds(
-							R.drawable.ic_mp_list_playlist_podcast, 0, 0, 0);
-					break;
-			}
-
-			return view;
-
-		}
-	}
-
 	private PlaylistsAdapter mPlaylistsAdapter;
+
 	private SmartPlaylistsAdapter mSmartPlaylistsAdapter;
 
 	private SeparatedListAdapter mAdapter;
-
 	private Long[] mSmartPlaylists = new Long[] { PLAYLIST_FAVORITES, PLAYLIST_RECENTLY_ADDED,
 			PLAYLIST_PODCASTS };
 
@@ -257,6 +167,96 @@ public class PlaylistFragment extends ListFragment implements LoaderCallbacks<Cu
 			Intent intent = new Intent(getActivity(), TrackBrowserActivity.class);
 			intent.putExtras(bundle);
 			startActivity(intent);
+		}
+	}
+
+	private class PlaylistsAdapter extends CursorAdapter {
+
+		private PlaylistsAdapter(Context context, Cursor cursor, boolean autoRequery) {
+			super(context, cursor, autoRequery);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+
+			ViewHolder viewholder = (ViewHolder) ((Object[]) view.getTag())[0];
+
+			String playlist_name = cursor.getString(mNameIdx);
+			viewholder.playlist_name.setText(playlist_name);
+
+		}
+
+		@Override
+		public View newView(Context context, Cursor cursor, ViewGroup parent) {
+
+			View view = LayoutInflater.from(context).inflate(R.layout.playlist_list_item, null);
+			ViewHolder viewholder = new ViewHolder(view);
+			view.setTag(new Object[] { viewholder, cursor.getLong(mIdIdx) });
+			return view;
+		}
+
+		private class ViewHolder {
+
+			TextView playlist_name;
+
+			public ViewHolder(View view) {
+				playlist_name = (TextView) view.findViewById(R.id.playlist_name);
+			}
+		}
+
+	}
+
+	private class SmartPlaylistsAdapter extends ArrayAdapter<Long> {
+
+		Long[] playlists = new Long[] {};
+
+		private SmartPlaylistsAdapter(Context context, int resid, Long[] playlists) {
+			super(context, resid, playlists);
+			this.playlists = playlists;
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+
+			View view = convertView;
+			ViewHolder viewholder = view != null ? (ViewHolder) ((Object[]) view.getTag())[0]
+					: null;
+
+			if (viewholder == null) {
+				view = getLayoutInflater(getArguments()).inflate(R.layout.playlist_list_item, null);
+				viewholder = new ViewHolder(view);
+				view.setTag(new Object[] { viewholder, playlists[position] });
+			}
+
+			switch (playlists[position].intValue()) {
+				case (int) PLAYLIST_FAVORITES:
+					viewholder.playlist_name.setText(R.string.favorites);
+					viewholder.playlist_name.setCompoundDrawablesWithIntrinsicBounds(
+							R.drawable.ic_mp_list_playlist_favorite, 0, 0, 0);
+					break;
+				case (int) PLAYLIST_RECENTLY_ADDED:
+					viewholder.playlist_name.setText(R.string.recently_added);
+					viewholder.playlist_name.setCompoundDrawablesWithIntrinsicBounds(
+							R.drawable.ic_mp_list_playlist_recent, 0, 0, 0);
+					break;
+				case (int) PLAYLIST_PODCASTS:
+					viewholder.playlist_name.setText(R.string.podcasts);
+					viewholder.playlist_name.setCompoundDrawablesWithIntrinsicBounds(
+							R.drawable.ic_mp_list_playlist_podcast, 0, 0, 0);
+					break;
+			}
+
+			return view;
+
+		}
+
+		private class ViewHolder {
+
+			TextView playlist_name;
+
+			public ViewHolder(View view) {
+				playlist_name = (TextView) view.findViewById(R.id.playlist_name);
+			}
 		}
 	}
 

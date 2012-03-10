@@ -11,49 +11,10 @@ import android.os.Message;
 
 public class VisualizerCompatAudioFX extends VisualizerCompat {
 
-	private class VisualizerTimer extends TimerTask {
-
-		@Override
-		public void run() {
-			byte[] wave_data = new byte[mVisualizer.getCaptureSize()];
-			byte[] fft_data = new byte[mVisualizer.getCaptureSize()];
-			if (mWaveEnabled) {
-				int ret = Visualizer.ERROR;
-				try {
-					ret = mVisualizer.getWaveForm(wave_data);
-				} catch (IllegalStateException e) {
-
-				}
-				if (ret == Visualizer.SUCCESS && wave_data != null) {
-					Message msg = new Message();
-					msg.what = WAVE_CHANGED;
-					msg.obj = new Object[] { wave_data, wave_data.length };
-					mVisualizerHandler.sendMessage(msg);
-				}
-			}
-			if (mFftEnabled) {
-				int ret = Visualizer.ERROR;
-				try {
-					ret = mVisualizer.getFft(fft_data);
-				} catch (IllegalStateException e) {
-
-				}
-				if (ret == Visualizer.SUCCESS && fft_data != null) {
-					Message msg = new Message();
-					msg.what = FFT_CHANGED;
-					msg.obj = new Object[] { fft_data, fft_data.length };
-					mVisualizerHandler.sendMessage(msg);
-				}
-			}
-
-		}
-
-	}
-
 	private OnDataChangedListener mListener;
+
 	private Timer mTimer;
 	private boolean mWaveEnabled, mFftEnabled;
-
 	private Visualizer mVisualizer;
 
 	private Handler mVisualizerHandler = new Handler() {
@@ -134,6 +95,45 @@ public class VisualizerCompatAudioFX extends VisualizerCompat {
 	@Override
 	public void setWaveFormEnabled(boolean wave) {
 		mWaveEnabled = wave;
+
+	}
+
+	private class VisualizerTimer extends TimerTask {
+
+		@Override
+		public void run() {
+			byte[] wave_data = new byte[mVisualizer.getCaptureSize()];
+			byte[] fft_data = new byte[mVisualizer.getCaptureSize()];
+			if (mWaveEnabled) {
+				int ret = Visualizer.ERROR;
+				try {
+					ret = mVisualizer.getWaveForm(wave_data);
+				} catch (IllegalStateException e) {
+
+				}
+				if (ret == Visualizer.SUCCESS && wave_data != null) {
+					Message msg = new Message();
+					msg.what = WAVE_CHANGED;
+					msg.obj = new Object[] { wave_data, wave_data.length };
+					mVisualizerHandler.sendMessage(msg);
+				}
+			}
+			if (mFftEnabled) {
+				int ret = Visualizer.ERROR;
+				try {
+					ret = mVisualizer.getFft(fft_data);
+				} catch (IllegalStateException e) {
+
+				}
+				if (ret == Visualizer.SUCCESS && fft_data != null) {
+					Message msg = new Message();
+					msg.what = FFT_CHANGED;
+					msg.obj = new Object[] { fft_data, fft_data.length };
+					mVisualizerHandler.sendMessage(msg);
+				}
+			}
+
+		}
 
 	}
 

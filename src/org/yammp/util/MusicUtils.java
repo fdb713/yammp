@@ -72,88 +72,6 @@ import android.widget.Toast;
 
 public class MusicUtils implements Constants {
 
-	// A really simple BitmapDrawable-like class, that doesn't do
-	// scaling, dithering or filtering.
-	private static class FastBitmapDrawable extends Drawable {
-
-		private Bitmap mBitmap;
-
-		public FastBitmapDrawable(Bitmap b) {
-			mBitmap = b;
-		}
-
-		@Override
-		public void draw(Canvas canvas) {
-			if (mBitmap == null) return;
-			canvas.drawBitmap(mBitmap, 0, 0, null);
-		}
-
-		@Override
-		public int getOpacity() {
-			return PixelFormat.OPAQUE;
-		}
-
-		@Override
-		public void setAlpha(int alpha) {
-		}
-
-		@Override
-		public void setColorFilter(ColorFilter cf) {
-		}
-	}
-
-	private static class ServiceBinder implements ServiceConnection {
-
-		ServiceConnection mCallback;
-
-		ServiceBinder(ServiceConnection callback) {
-
-			mCallback = callback;
-		}
-
-		@Override
-		public void onServiceConnected(ComponentName className, android.os.IBinder service) {
-
-			mService = IMusicPlaybackService.Stub.asInterface(service);
-			initAlbumArtCache();
-			if (mCallback != null) {
-				mCallback.onServiceConnected(className, service);
-			}
-		}
-
-		@Override
-		public void onServiceDisconnected(ComponentName className) {
-
-			if (mCallback != null) {
-				mCallback.onServiceDisconnected(className);
-			}
-			mService = null;
-		}
-	}
-
-	static class LogEntry {
-
-		Object item;
-		long time;
-
-		LogEntry(Object o) {
-
-			item = o;
-			time = System.currentTimeMillis();
-		}
-
-		void dump(PrintWriter out) {
-
-			mTime.set(time);
-			out.print(mTime.toString() + " : ");
-			if (item instanceof Exception) {
-				((Exception) item).printStackTrace(out);
-			} else {
-				out.println(item);
-			}
-		}
-	}
-
 	public static IMusicPlaybackService mService = null;
 
 	private static HashMap<Context, ServiceBinder> mConnectionMap = new HashMap<Context, ServiceBinder>();
@@ -208,7 +126,7 @@ public class MusicUtils implements Constants {
 
 		if (mService == null) return;
 		try {
-			mService.enqueue(list, MusicPlaybackService.LAST);
+			mService.enqueue(list, MusicPlaybackService.ACTION_LAST);
 			String message = context.getResources().getQuantityString(
 					R.plurals.NNNtrackstoplaylist, list.length, Integer.valueOf(list.length));
 			Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
@@ -296,16 +214,12 @@ public class MusicUtils implements Constants {
 		return bindToService(context, null);
 	}
 
-	public static ServiceToken bindToService(Activity context, ServiceConnection callback) {
+	public static ServiceToken bindToService(Context context, ServiceConnection callback) {
 
-		Activity realActivity = context.getParent();
-		if (realActivity == null) {
-			realActivity = context;
-		}
-		ContextWrapper cw = new ContextWrapper(realActivity);
+		ContextWrapper cw = new ContextWrapper(context);
 		cw.startService(new Intent(cw, MusicPlaybackService.class));
 		ServiceBinder sb = new ServiceBinder(callback);
-		if (cw.bindService(new Intent().setClass(cw, MusicPlaybackService.class), sb, 0)) {
+		if (cw.bindService(new Intent(cw, MusicPlaybackService.class), sb, 0)) {
 			mConnectionMap.put(cw, sb);
 			return new ServiceToken(cw);
 		}
@@ -1623,7 +1537,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	// get album art for specified file
+	/** get album art for specified file */
 	private static Bitmap getArtworkFromFile(Context context, long songid, long albumid) {
 
 		Bitmap bm = null;
@@ -1767,5 +1681,87 @@ public class MusicUtils implements Constants {
 	static protected Uri getContentURIForPath(String path) {
 
 		return Uri.fromFile(new File(path));
+	}
+
+	// A really simple BitmapDrawable-like class, that doesn't do
+	// scaling, dithering or filtering.
+	private static class FastBitmapDrawable extends Drawable {
+
+		private Bitmap mBitmap;
+
+		public FastBitmapDrawable(Bitmap b) {
+			mBitmap = b;
+		}
+
+		@Override
+		public void draw(Canvas canvas) {
+			if (mBitmap == null) return;
+			canvas.drawBitmap(mBitmap, 0, 0, null);
+		}
+
+		@Override
+		public int getOpacity() {
+			return PixelFormat.OPAQUE;
+		}
+
+		@Override
+		public void setAlpha(int alpha) {
+		}
+
+		@Override
+		public void setColorFilter(ColorFilter cf) {
+		}
+	}
+
+	private static class ServiceBinder implements ServiceConnection {
+
+		ServiceConnection mCallback;
+
+		ServiceBinder(ServiceConnection callback) {
+
+			mCallback = callback;
+		}
+
+		@Override
+		public void onServiceConnected(ComponentName className, android.os.IBinder service) {
+
+			mService = IMusicPlaybackService.Stub.asInterface(service);
+			initAlbumArtCache();
+			if (mCallback != null) {
+				mCallback.onServiceConnected(className, service);
+			}
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName className) {
+
+			if (mCallback != null) {
+				mCallback.onServiceDisconnected(className);
+			}
+			mService = null;
+		}
+	}
+
+	static class LogEntry {
+
+		Object item;
+		long time;
+
+		LogEntry(Object o) {
+
+			item = o;
+			time = System.currentTimeMillis();
+		}
+
+		void dump(PrintWriter out) {
+
+			mTime.set(time);
+			out.print(mTime.toString() + " : ");
+			if (item instanceof Exception) {
+				((Exception) item).printStackTrace(out);
+			} else {
+				out.println(item);
+			}
+		}
 	}
 }

@@ -20,7 +20,7 @@
 
 package org.yammp.app;
 
-import org.mariotaku.actionbarcompat.app.FragmentActivity;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
@@ -28,7 +28,7 @@ import android.support.v4.app.FragmentManager;
 /**
  * Demonstration of the implementation of a custom Loader.
  */
-public class PluginsManagerActivity extends FragmentActivity {
+public class PluginsManagerActivity extends SherlockFragmentActivity {
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {

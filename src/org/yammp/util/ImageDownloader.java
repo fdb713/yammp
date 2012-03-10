@@ -34,6 +34,23 @@ import android.util.Log;
 
 public class ImageDownloader implements Constants {
 
+	public void getArtistImage(String artist) {
+
+		Image[] images = Artist
+				.getImages(artist, LASTFM_APIKEY)
+				.getPageResults()
+				.toArray(new Image[Artist.getImages(artist, LASTFM_APIKEY).getPageResults().size()]);
+		for (Image image : images) {
+			Log.d("ImageDownloader", "url = " + image.getImageURL(ImageSize.ORIGINAL));
+		}
+	}
+
+	public String getArtistQueryURL(String mArtistTitle, int limit) {
+
+		return "http://ws.audioscrobbler.com/2.0/?method=artist.getimages&artist="
+				+ URLEncoder.encode(mArtistTitle) + "&api_key=" + LASTFM_APIKEY + "&limit=" + limit;
+	}
+
 	public static Bitmap getCoverBitmap(String urlString) {
 
 		try {
@@ -61,22 +78,5 @@ public class ImageDownloader implements Constants {
 
 		Album albumInfo = Album.getInfo(artist, album, LASTFM_APIKEY);
 		return albumInfo.getImageURL(ImageSize.MEGA);
-	}
-
-	public void getArtistImage(String artist) {
-
-		Image[] images = Artist
-				.getImages(artist, LASTFM_APIKEY)
-				.getPageResults()
-				.toArray(new Image[Artist.getImages(artist, LASTFM_APIKEY).getPageResults().size()]);
-		for (Image image : images) {
-			Log.d("ImageDownloader", "url = " + image.getImageURL(ImageSize.ORIGINAL));
-		}
-	}
-
-	public String getArtistQueryURL(String mArtistTitle, int limit) {
-
-		return "http://ws.audioscrobbler.com/2.0/?method=artist.getimages&artist="
-				+ URLEncoder.encode(mArtistTitle) + "&api_key=" + LASTFM_APIKEY + "&limit=" + limit;
 	}
 }

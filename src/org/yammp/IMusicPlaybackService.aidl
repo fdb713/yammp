@@ -20,11 +20,10 @@
 
 package org.yammp;
 
-import android.graphics.Bitmap;
 import android.net.Uri;
 
 interface IMusicPlaybackService {
-
+	
 	void reloadLyrics();
 	void refreshLyrics();
 	void openFile(String path);
@@ -54,7 +53,6 @@ interface IMusicPlaybackService {
 	void setQueueId(long id);
 	String getPath();
 	long getAudioId();
-	Bitmap getAlbumArt();
 	Uri getArtworkUri();
 	String [] getLyrics();
 	int getLyricsStatus();
@@ -77,5 +75,21 @@ interface IMusicPlaybackService {
 	void addToFavorites(long id);
 	void removeFromFavorites(long id);
 	boolean isFavorite(long id);
+	boolean togglePause();
+	
+	int eqGetNumberOfBands();
+	int[] eqGetBandLevelRange();
+	void eqSetBandLevel(int band, int level);
+	int eqGetBandLevel(int band);
+	int eqGetCenterFreq(int band);
+	int[] eqGetBandFreqRange(int band);
+	int eqGetBand(int frequency);
+	int eqGetCurrentPreset();
+	void eqUsePreset(int preset);
+	int eqGetNumberOfPresets();
+	String eqGetPresetName(int preset);
+	int eqSetEnabled(boolean enabled);
+	void eqRelease();
+	void eqReset();
 
 }

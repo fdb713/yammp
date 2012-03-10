@@ -20,11 +20,13 @@
 
 package org.yammp.app;
 
-import org.mariotaku.actionbarcompat.app.FragmentActivity;
 import org.yammp.Constants;
 import org.yammp.R;
 import org.yammp.util.MusicUtils;
 import org.yammp.util.ServiceToken;
+
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.MenuItem;
 
 import android.content.ComponentName;
 import android.content.Intent;
@@ -33,9 +35,8 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore.Audio;
-import android.view.MenuItem;
 
-public class TrackBrowserActivity extends FragmentActivity implements Constants, ServiceConnection {
+public class TrackBrowserActivity extends SherlockFragmentActivity implements Constants, ServiceConnection {
 
 	private ServiceToken mToken;
 	private Intent intent;

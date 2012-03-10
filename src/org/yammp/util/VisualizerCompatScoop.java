@@ -11,39 +11,10 @@ import android.os.Message;
 
 public class VisualizerCompatScoop extends VisualizerCompat {
 
-	private class VisualizerTimer extends TimerTask {
-
-		@Override
-		public void run() {
-			short[] wave_data = new short[1024];
-			short[] fft_data = new short[1024];
-			if (mWaveEnabled) {
-				int len = snoop(wave_data, 0);
-				if (len != 0) {
-					Message msg = new Message();
-					msg.what = WAVE_CHANGED;
-					msg.obj = new Object[] { wave_data, len };
-					mVisualizerHandler.sendMessage(msg);
-				}
-			}
-			if (mFftEnabled) {
-				int len = snoop(fft_data, 1);
-				if (len != 0) {
-					Message msg = new Message();
-					msg.what = FFT_CHANGED;
-					msg.obj = new Object[] { fft_data, len };
-					mVisualizerHandler.sendMessage(msg);
-				}
-			}
-
-		}
-
-	}
-
 	private OnDataChangedListener mListener;
+
 	private boolean mWaveEnabled, mFftEnabled;
 	private boolean mVisualizerEnabled;
-
 	private Timer mTimer;
 
 	private Handler mVisualizerHandler = new Handler() {
@@ -152,6 +123,35 @@ public class VisualizerCompatScoop extends VisualizerCompat {
 			result[i] = (byte) temp;
 		}
 		return result;
+	}
+
+	private class VisualizerTimer extends TimerTask {
+
+		@Override
+		public void run() {
+			short[] wave_data = new short[1024];
+			short[] fft_data = new short[1024];
+			if (mWaveEnabled) {
+				int len = snoop(wave_data, 0);
+				if (len != 0) {
+					Message msg = new Message();
+					msg.what = WAVE_CHANGED;
+					msg.obj = new Object[] { wave_data, len };
+					mVisualizerHandler.sendMessage(msg);
+				}
+			}
+			if (mFftEnabled) {
+				int len = snoop(fft_data, 1);
+				if (len != 0) {
+					Message msg = new Message();
+					msg.what = FFT_CHANGED;
+					msg.obj = new Object[] { fft_data, len };
+					mVisualizerHandler.sendMessage(msg);
+				}
+			}
+
+		}
+
 	}
 
 }

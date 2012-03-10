@@ -39,26 +39,10 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 public class LyricsDownloader {
 
-	public interface OnProgressChangeListener {
-
-		void onProgressChange(int progress, int total);
-	}
-
 	private final static char[] digit = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
 			'B', 'C', 'D', 'E', 'F' };
 
 	private final static String UTF_8 = "utf-8";
-
-	private static String urlDownload(int id, String code) {
-
-		return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?dl?Id=" + id + "&Code=" + code;
-	}
-
-	private static String urlSearch(String artist, String track) {
-
-		return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?sh?Artist=" + artist + "&Title="
-				+ track + "&Flags=0";
-	}
 
 	private List<Integer> mIdList = new ArrayList<Integer>();
 
@@ -341,5 +325,21 @@ public class LyricsDownloader {
 			e.printStackTrace();
 			return "";
 		}
+	}
+
+	private static String urlDownload(int id, String code) {
+
+		return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?dl?Id=" + id + "&Code=" + code;
+	}
+
+	private static String urlSearch(String artist, String track) {
+
+		return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?sh?Artist=" + artist + "&Title="
+				+ track + "&Flags=0";
+	}
+
+	public interface OnProgressChangeListener {
+
+		void onProgressChange(int progress, int total);
 	}
 }

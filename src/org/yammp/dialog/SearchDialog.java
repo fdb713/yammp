@@ -53,6 +53,295 @@ import android.widget.Toast;
 
 public class SearchDialog extends Activity implements Constants, TextWatcher, OnCancelListener {
 
+	private ProgressDialog mProgress = null;
+
+	private LinearLayout mLinearLayout;
+
+	private AlertDialog mSearchDialog, mLyricsChooser, mLyricsConfirm, mAlbumArtConfirm;
+
+	private ProgressDialog mSearchProgress, mDownloadProgress;
+
+	private boolean restore_lyrics_chooser, restore_lyrics_confirm,
+			restore_albumart_confirm = false;
+
+	LyricsDownloader mDownloader;
+
+	LyricsSearchTask mLyricsSearchTask;
+	LyricsDownloadTask mLyricsDownloadTask;
+
+	AlbumArtSearchTask mAlbumArtSearchTask;
+	AlbumArtDownloadTask mAlbumArtDownloadTask;
+
+	private String action;
+	private LinearLayout mContainer;
+	private TextView mKeywordSummary1, mKeywordSummary2;
+	private EditText mSearchKeyword1, mSearchKeyword2;
+	private String mKeyword1, mKeyword2 = "";
+	private String mPath = null;
+
+	private View.OnClickListener mSearchLyricsOnClickListener = new View.OnClickListener() {
+
+		@Override
+		public void onClick(View view) {
+
+			String mTypedKeyword1 = mSearchKeyword1.getText().toString();
+			String mTypedKeyword2 = mSearchKeyword2.getText().toString();
+			mLyricsSearchTask = new LyricsSearchTask();
+			mLyricsSearchTask.execute(mTypedKeyword1, mTypedKeyword2, mPath);
+		}
+	};
+
+	private View.OnClickListener mSearchAlbumArtOnClickListener = new View.OnClickListener() {
+
+		@Override
+		public void onClick(View view) {
+
+			String mTypedKeyword1 = mSearchKeyword1.getText().toString();
+			String mTypedKeyword2 = mSearchKeyword2.getText().toString();
+			mAlbumArtSearchTask = new AlbumArtSearchTask();
+			mAlbumArtSearchTask.execute(mTypedKeyword1, mTypedKeyword2, mPath);
+		}
+	};
+
+	@Override
+	public void afterTextChanged(Editable s) {
+
+		// don't care about this one
+	}
+
+	@Override
+	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+		// don't care about this one
+	}
+
+	@Override
+	public void onCancel(DialogInterface dialog) {
+
+		if (dialog == mSearchDialog) {
+			finish();
+		}
+		if (dialog == mSearchProgress) {
+			if (mLyricsSearchTask != null) {
+				mLyricsSearchTask.cancel(true);
+			}
+			if (mAlbumArtSearchTask != null) {
+				mAlbumArtSearchTask.cancel(true);
+			}
+		}
+		if (dialog == mDownloadProgress) {
+			if (mLyricsDownloadTask != null) {
+				mLyricsDownloadTask.cancel(true);
+			}
+			if (mAlbumArtDownloadTask != null) {
+				mAlbumArtDownloadTask.cancel(true);
+			}
+		}
+
+		return;
+	}
+
+	@Override
+	public void onCreate(Bundle icicle) {
+
+		super.onCreate(icicle);
+
+		mLinearLayout = new LinearLayout(this);
+		mLinearLayout.setOrientation(LinearLayout.VERTICAL);
+
+		setContentView(mLinearLayout);
+
+		action = getIntent().getAction();
+
+		DisplayMetrics dm = new DisplayMetrics();
+		dm = getResources().getDisplayMetrics();
+
+		mSearchDialog = new AlertDialog.Builder(this).create();
+		mSearchDialog.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+		if (INTENT_SEARCH_ALBUMART.equals(action) || INTENT_SEARCH_LYRICS.equals(action)) {
+
+			mPath = icicle != null ? icicle.getString(INTENT_KEY_PATH) : getIntent()
+					.getStringExtra(INTENT_KEY_PATH);
+
+			mContainer = new LinearLayout(this);
+			mContainer.setOrientation(LinearLayout.VERTICAL);
+
+			mKeywordSummary1 = new TextView(this);
+			mKeywordSummary1.setTextAppearance(this, android.R.attr.textAppearanceSmall);
+			mKeywordSummary1.setText(R.string.artist);
+			mContainer.addView(mKeywordSummary1);
+
+			mKeyword1 = icicle != null ? icicle.getString(INTENT_KEY_ARTIST) : getIntent()
+					.getStringExtra(INTENT_KEY_ARTIST);
+			mSearchKeyword1 = new EditText(this);
+			mSearchKeyword1.setSingleLine(true);
+			mSearchKeyword1.addTextChangedListener(this);
+			mContainer.addView(mSearchKeyword1);
+
+			mKeywordSummary2 = new TextView(this);
+			mKeywordSummary2.setTextAppearance(this, android.R.attr.textAppearanceSmall);
+
+			if (INTENT_SEARCH_ALBUMART.equals(action)) {
+				mKeyword2 = icicle != null ? icicle.getString(INTENT_KEY_ALBUM) : getIntent()
+						.getStringExtra(INTENT_KEY_ALBUM);
+				mKeywordSummary2.setText(R.string.album);
+			} else if (INTENT_SEARCH_LYRICS.equals(action)) {
+				mKeyword2 = icicle != null ? icicle.getString(INTENT_KEY_TRACK) : getIntent()
+						.getStringExtra(INTENT_KEY_TRACK);
+				mKeywordSummary2.setText(R.string.track);
+			}
+			mContainer.addView(mKeywordSummary2);
+
+			mSearchKeyword2 = new EditText(this);
+			mSearchKeyword2.setSingleLine(true);
+			mSearchKeyword2.addTextChangedListener(this);
+			mContainer.addView(mSearchKeyword2);
+
+			mSearchDialog.setIcon(android.R.drawable.ic_dialog_info);
+
+			if (INTENT_SEARCH_ALBUMART.equals(action)) {
+				mSearchDialog.setTitle(R.string.search_albumart);
+			} else if (INTENT_SEARCH_LYRICS.equals(action)) {
+				mSearchDialog.setTitle(R.string.search_lyrics);
+			}
+			mSearchDialog.setView(mContainer, (int) (8 * dm.density), (int) (4 * dm.density),
+					(int) (8 * dm.density), (int) (4 * dm.density));
+			mSearchDialog.setButton(Dialog.BUTTON_POSITIVE, getString(android.R.string.search_go),
+					new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+
+							// Do nothing here. We override the onClick
+						}
+					});
+			mSearchDialog.setButton(Dialog.BUTTON_NEGATIVE, getString(android.R.string.cancel),
+					new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+
+							finish();
+						}
+					});
+			mSearchDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+
+				@Override
+				public void onShow(DialogInterface dialog) {
+
+					Button mButton = mSearchDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+					if (INTENT_SEARCH_ALBUMART.equals(action)) {
+						mButton.setOnClickListener(mSearchAlbumArtOnClickListener);
+					} else if (INTENT_SEARCH_LYRICS.equals(action)) {
+						mButton.setOnClickListener(mSearchLyricsOnClickListener);
+					}
+				}
+			});
+			mSearchDialog.setOnCancelListener(this);
+
+			mProgress = new ProgressDialog(this);
+			mProgress.setCancelable(true);
+			mProgress.setOnCancelListener(this);
+
+			mSearchDialog.show();
+			mSearchKeyword1.setText(mKeyword1);
+			mSearchKeyword2.setText(mKeyword2);
+			setSaveButton();
+		} else {
+			Toast.makeText(this, R.string.error_bad_parameters, Toast.LENGTH_SHORT).show();
+			finish();
+		}
+
+	}
+
+	@Override
+	public void onPause() {
+
+		if (mSearchDialog != null && mSearchDialog.isShowing()) {
+			mSearchDialog.dismiss();
+		}
+		if (mLyricsChooser != null && mLyricsChooser.isShowing()) {
+			restore_lyrics_chooser = true;
+			mLyricsChooser.dismiss();
+		}
+		if (mLyricsConfirm != null && mLyricsConfirm.isShowing()) {
+			restore_lyrics_confirm = true;
+			mLyricsConfirm.dismiss();
+		}
+		if (mAlbumArtConfirm != null && mAlbumArtConfirm.isShowing()) {
+			restore_albumart_confirm = true;
+			mAlbumArtConfirm.dismiss();
+		}
+		if ((mLyricsSearchTask != null || mAlbumArtSearchTask != null
+				|| mLyricsDownloadTask != null || mAlbumArtDownloadTask != null)
+				&& mProgress.isShowing()) {
+			mProgress.dismiss();
+		}
+		super.onPause();
+	};
+
+	@Override
+	public void onSaveInstanceState(Bundle outcicle) {
+
+		if (INTENT_SEARCH_ALBUMART.equals(action)) {
+			outcicle.putString(INTENT_KEY_ALBUM, mSearchKeyword2.getText().toString());
+		} else if (INTENT_SEARCH_LYRICS.equals(action)) {
+			outcicle.putString(INTENT_KEY_TRACK, mSearchKeyword2.getText().toString());
+		}
+		outcicle.putString(INTENT_KEY_PATH, mPath);
+		outcicle.putString(INTENT_KEY_ARTIST, mSearchKeyword1.getText().toString());
+	}
+
+	@Override
+	public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+		setSaveButton();
+	}
+
+	private void setSaveButton() {
+
+		String mTypedKeyword1 = mSearchKeyword1.getText().toString();
+		String mTypedKeyword2 = mSearchKeyword2.getText().toString();
+		Button button = mSearchDialog.getButton(Dialog.BUTTON_POSITIVE);
+		if (mTypedKeyword1.trim().length() == 0 || mTypedKeyword2.trim().length() == 0) {
+			button.setEnabled(false);
+		} else {
+			button.setEnabled(true);
+		}
+		button.invalidate();
+	}
+
+	@Override
+	protected void onResume() {
+
+		super.onResume();
+		if (mSearchDialog != null && !mSearchDialog.isShowing()) {
+			mSearchDialog.show();
+		}
+		if (mLyricsChooser != null && restore_lyrics_chooser) {
+			mLyricsChooser.show();
+		}
+		if (mLyricsConfirm != null && restore_lyrics_confirm) {
+			mLyricsConfirm.show();
+		}
+		if (mAlbumArtConfirm != null && restore_albumart_confirm) {
+			mAlbumArtConfirm.show();
+		}
+		if (mLyricsSearchTask != null && mLyricsSearchTask.getStatus().equals(Status.RUNNING)
+				|| mAlbumArtSearchTask != null
+				&& !mAlbumArtSearchTask.getStatus().equals(Status.RUNNING)) {
+			mProgress.setMessage(getString(R.string.searching_please_wait));
+			mProgress.show();
+		}
+		if (mLyricsDownloadTask != null && mLyricsDownloadTask.getStatus().equals(Status.RUNNING)
+				|| mAlbumArtDownloadTask != null
+				&& !mAlbumArtDownloadTask.getStatus().equals(Status.RUNNING)) {
+			mProgress.setMessage(getString(R.string.downloading_please_wait));
+			mProgress.show();
+		}
+	}
+
 	private class AlbumArtDownloadTask extends AsyncTask<String, Void, Bitmap> {
 
 		String albumArtPath;
@@ -310,295 +599,6 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 			mProgress.show();
 		}
 
-	}
-
-	private ProgressDialog mProgress = null;
-
-	private LinearLayout mLinearLayout;
-
-	private AlertDialog mSearchDialog, mLyricsChooser, mLyricsConfirm, mAlbumArtConfirm;
-	private ProgressDialog mSearchProgress, mDownloadProgress;
-
-	private boolean restore_lyrics_chooser, restore_lyrics_confirm,
-			restore_albumart_confirm = false;
-	LyricsDownloader mDownloader;
-
-	LyricsSearchTask mLyricsSearchTask;
-	LyricsDownloadTask mLyricsDownloadTask;
-	AlbumArtSearchTask mAlbumArtSearchTask;
-	AlbumArtDownloadTask mAlbumArtDownloadTask;
-	private String action;
-	private LinearLayout mContainer;
-
-	private TextView mKeywordSummary1, mKeywordSummary2;
-
-	private EditText mSearchKeyword1, mSearchKeyword2;
-
-	private String mKeyword1, mKeyword2 = "";
-
-	private String mPath = null;
-
-	private View.OnClickListener mSearchLyricsOnClickListener = new View.OnClickListener() {
-
-		@Override
-		public void onClick(View view) {
-
-			String mTypedKeyword1 = mSearchKeyword1.getText().toString();
-			String mTypedKeyword2 = mSearchKeyword2.getText().toString();
-			mLyricsSearchTask = new LyricsSearchTask();
-			mLyricsSearchTask.execute(mTypedKeyword1, mTypedKeyword2, mPath);
-		}
-	};
-
-	private View.OnClickListener mSearchAlbumArtOnClickListener = new View.OnClickListener() {
-
-		@Override
-		public void onClick(View view) {
-
-			String mTypedKeyword1 = mSearchKeyword1.getText().toString();
-			String mTypedKeyword2 = mSearchKeyword2.getText().toString();
-			mAlbumArtSearchTask = new AlbumArtSearchTask();
-			mAlbumArtSearchTask.execute(mTypedKeyword1, mTypedKeyword2, mPath);
-		}
-	};
-
-	@Override
-	public void afterTextChanged(Editable s) {
-
-		// don't care about this one
-	};
-
-	@Override
-	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-		// don't care about this one
-	}
-
-	@Override
-	public void onCancel(DialogInterface dialog) {
-
-		if (dialog == mSearchDialog) {
-			finish();
-		}
-		if (dialog == mSearchProgress) {
-			if (mLyricsSearchTask != null) {
-				mLyricsSearchTask.cancel(true);
-			}
-			if (mAlbumArtSearchTask != null) {
-				mAlbumArtSearchTask.cancel(true);
-			}
-		}
-		if (dialog == mDownloadProgress) {
-			if (mLyricsDownloadTask != null) {
-				mLyricsDownloadTask.cancel(true);
-			}
-			if (mAlbumArtDownloadTask != null) {
-				mAlbumArtDownloadTask.cancel(true);
-			}
-		}
-
-		return;
-	}
-
-	@Override
-	public void onCreate(Bundle icicle) {
-
-		super.onCreate(icicle);
-
-		mLinearLayout = new LinearLayout(this);
-		mLinearLayout.setOrientation(LinearLayout.VERTICAL);
-
-		setContentView(mLinearLayout);
-
-		action = getIntent().getAction();
-
-		DisplayMetrics dm = new DisplayMetrics();
-		dm = getResources().getDisplayMetrics();
-
-		mSearchDialog = new AlertDialog.Builder(this).create();
-		mSearchDialog.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-
-		if (INTENT_SEARCH_ALBUMART.equals(action) || INTENT_SEARCH_LYRICS.equals(action)) {
-
-			mPath = icicle != null ? icicle.getString(INTENT_KEY_PATH) : getIntent()
-					.getStringExtra(INTENT_KEY_PATH);
-
-			mContainer = new LinearLayout(this);
-			mContainer.setOrientation(LinearLayout.VERTICAL);
-
-			mKeywordSummary1 = new TextView(this);
-			mKeywordSummary1.setTextAppearance(this, android.R.attr.textAppearanceSmall);
-			mKeywordSummary1.setText(R.string.artist);
-			mContainer.addView(mKeywordSummary1);
-
-			mKeyword1 = icicle != null ? icicle.getString(INTENT_KEY_ARTIST) : getIntent()
-					.getStringExtra(INTENT_KEY_ARTIST);
-			mSearchKeyword1 = new EditText(this);
-			mSearchKeyword1.setSingleLine(true);
-			mSearchKeyword1.addTextChangedListener(this);
-			mContainer.addView(mSearchKeyword1);
-
-			mKeywordSummary2 = new TextView(this);
-			mKeywordSummary2.setTextAppearance(this, android.R.attr.textAppearanceSmall);
-
-			if (INTENT_SEARCH_ALBUMART.equals(action)) {
-				mKeyword2 = icicle != null ? icicle.getString(INTENT_KEY_ALBUM) : getIntent()
-						.getStringExtra(INTENT_KEY_ALBUM);
-				mKeywordSummary2.setText(R.string.album);
-			} else if (INTENT_SEARCH_LYRICS.equals(action)) {
-				mKeyword2 = icicle != null ? icicle.getString(INTENT_KEY_TRACK) : getIntent()
-						.getStringExtra(INTENT_KEY_TRACK);
-				mKeywordSummary2.setText(R.string.track);
-			}
-			mContainer.addView(mKeywordSummary2);
-
-			mSearchKeyword2 = new EditText(this);
-			mSearchKeyword2.setSingleLine(true);
-			mSearchKeyword2.addTextChangedListener(this);
-			mContainer.addView(mSearchKeyword2);
-
-			mSearchDialog.setIcon(android.R.drawable.ic_dialog_info);
-
-			if (INTENT_SEARCH_ALBUMART.equals(action)) {
-				mSearchDialog.setTitle(R.string.search_albumart);
-			} else if (INTENT_SEARCH_LYRICS.equals(action)) {
-				mSearchDialog.setTitle(R.string.search_lyrics);
-			}
-			mSearchDialog.setView(mContainer, (int) (8 * dm.density), (int) (4 * dm.density),
-					(int) (8 * dm.density), (int) (4 * dm.density));
-			mSearchDialog.setButton(Dialog.BUTTON_POSITIVE, getString(android.R.string.search_go),
-					new DialogInterface.OnClickListener() {
-
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-
-							// Do nothing here. We override the onClick
-						}
-					});
-			mSearchDialog.setButton(Dialog.BUTTON_NEGATIVE, getString(android.R.string.cancel),
-					new DialogInterface.OnClickListener() {
-
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-
-							finish();
-						}
-					});
-			mSearchDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-
-				@Override
-				public void onShow(DialogInterface dialog) {
-
-					Button mButton = mSearchDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-					if (INTENT_SEARCH_ALBUMART.equals(action)) {
-						mButton.setOnClickListener(mSearchAlbumArtOnClickListener);
-					} else if (INTENT_SEARCH_LYRICS.equals(action)) {
-						mButton.setOnClickListener(mSearchLyricsOnClickListener);
-					}
-				}
-			});
-			mSearchDialog.setOnCancelListener(this);
-
-			mProgress = new ProgressDialog(this);
-			mProgress.setCancelable(true);
-			mProgress.setOnCancelListener(this);
-
-			mSearchDialog.show();
-			mSearchKeyword1.setText(mKeyword1);
-			mSearchKeyword2.setText(mKeyword2);
-			setSaveButton();
-		} else {
-			Toast.makeText(this, R.string.error_bad_parameters, Toast.LENGTH_SHORT).show();
-			finish();
-		}
-
-	}
-
-	@Override
-	public void onPause() {
-
-		if (mSearchDialog != null && mSearchDialog.isShowing()) {
-			mSearchDialog.dismiss();
-		}
-		if (mLyricsChooser != null && mLyricsChooser.isShowing()) {
-			restore_lyrics_chooser = true;
-			mLyricsChooser.dismiss();
-		}
-		if (mLyricsConfirm != null && mLyricsConfirm.isShowing()) {
-			restore_lyrics_confirm = true;
-			mLyricsConfirm.dismiss();
-		}
-		if (mAlbumArtConfirm != null && mAlbumArtConfirm.isShowing()) {
-			restore_albumart_confirm = true;
-			mAlbumArtConfirm.dismiss();
-		}
-		if ((mLyricsSearchTask != null || mAlbumArtSearchTask != null
-				|| mLyricsDownloadTask != null || mAlbumArtDownloadTask != null)
-				&& mProgress.isShowing()) {
-			mProgress.dismiss();
-		}
-		super.onPause();
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle outcicle) {
-
-		if (INTENT_SEARCH_ALBUMART.equals(action)) {
-			outcicle.putString(INTENT_KEY_ALBUM, mSearchKeyword2.getText().toString());
-		} else if (INTENT_SEARCH_LYRICS.equals(action)) {
-			outcicle.putString(INTENT_KEY_TRACK, mSearchKeyword2.getText().toString());
-		}
-		outcicle.putString(INTENT_KEY_PATH, mPath);
-		outcicle.putString(INTENT_KEY_ARTIST, mSearchKeyword1.getText().toString());
-	}
-
-	@Override
-	public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-		setSaveButton();
-	}
-
-	private void setSaveButton() {
-
-		String mTypedKeyword1 = mSearchKeyword1.getText().toString();
-		String mTypedKeyword2 = mSearchKeyword2.getText().toString();
-		Button button = mSearchDialog.getButton(Dialog.BUTTON_POSITIVE);
-		if (mTypedKeyword1.trim().length() == 0 || mTypedKeyword2.trim().length() == 0) {
-			button.setEnabled(false);
-		} else {
-			button.setEnabled(true);
-		}
-		button.invalidate();
-	}
-
-	@Override
-	protected void onResume() {
-
-		super.onResume();
-		if (mSearchDialog != null && !mSearchDialog.isShowing()) {
-			mSearchDialog.show();
-		}
-		if (mLyricsChooser != null && restore_lyrics_chooser) {
-			mLyricsChooser.show();
-		}
-		if (mLyricsConfirm != null && restore_lyrics_confirm) {
-			mLyricsConfirm.show();
-		}
-		if (mAlbumArtConfirm != null && restore_albumart_confirm) {
-			mAlbumArtConfirm.show();
-		}
-		if (mLyricsSearchTask != null && mLyricsSearchTask.getStatus().equals(Status.RUNNING)
-				|| mAlbumArtSearchTask != null
-				&& !mAlbumArtSearchTask.getStatus().equals(Status.RUNNING)) {
-			mProgress.setMessage(getString(R.string.searching_please_wait));
-			mProgress.show();
-		}
-		if (mLyricsDownloadTask != null && mLyricsDownloadTask.getStatus().equals(Status.RUNNING)
-				|| mAlbumArtDownloadTask != null
-				&& !mAlbumArtDownloadTask.getStatus().equals(Status.RUNNING)) {
-			mProgress.setMessage(getString(R.string.downloading_please_wait));
-			mProgress.show();
-		}
 	}
 
 }

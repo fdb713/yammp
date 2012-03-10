@@ -24,6 +24,8 @@ import org.yammp.Constants;
 import org.yammp.R;
 import org.yammp.util.MusicUtils;
 
+import com.actionbarsherlock.app.SherlockFragment;
+
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -57,119 +59,11 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class AlbumFragment extends Fragment implements Constants, ListView.OnScrollListener,
+public class AlbumFragment extends SherlockFragment implements Constants, ListView.OnScrollListener,
 		OnItemClickListener, LoaderCallbacks<Cursor> {
 
-	private class AlbumsAdapter extends SimpleCursorAdapter {
-
-		private class ViewHolder {
-
-			TextView album_name;
-			TextView artist_name;
-			ImageView album_art;
-
-			public ViewHolder(View view) {
-				album_name = (TextView) view.findViewById(R.id.album_name);
-				artist_name = (TextView) view.findViewById(R.id.artist_name);
-				album_art = (ImageView) view.findViewById(R.id.album_art);
-			}
-
-		}
-
-		private AlbumsAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to,
-				int flags) {
-			super(context, layout, cursor, from, to, flags);
-		}
-
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-
-			ViewHolder viewholder = (ViewHolder) view.getTag();
-
-			String album_name = cursor.getString(mAlbumIdx);
-			if (album_name == null || MediaStore.UNKNOWN_STRING.equals(album_name)) {
-				viewholder.album_name.setText(R.string.unknown_album);
-			} else {
-				viewholder.album_name.setText(album_name);
-			}
-
-			String artist_name = cursor.getString(mArtistIdx);
-			if (artist_name == null || MediaStore.UNKNOWN_STRING.equals(artist_name)) {
-				viewholder.artist_name.setText(R.string.unknown_artist);
-			} else {
-				viewholder.artist_name.setText(artist_name);
-			}
-
-			// We don't actually need the path to the thumbnail file,
-			// we just use it to see if there is album art or not
-			long aid = cursor.getLong(mIdIdx);
-			int width = view.getWidth();
-			int height = view.getHeight();
-
-			Log.i("Debug", "usedMemory: " + Debug.getNativeHeapSize() / 1024);
-
-			// if (viewholder != null && viewholder.album_art != null) {
-			//
-			// String art = cursor.getString(mArtIdx);
-			//
-			// if (art == null || art.length() == 0) {
-			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			// } else {
-			// Drawable d = MusicUtils.getCachedArtwork(context, aid, width,
-			// height);
-			// viewholder.album_art.setImageDrawable(d);
-			// d = null;
-			// }
-
-			// if (cursor.getPosition() >= mFirstVisible - 1
-			// && cursor.getPosition() <= mLastVisible + 1) {
-			// Bitmap result =
-			// MusicUtils.getCachedArtworkBitmap(getActivity(), aid,
-			// width, height);
-			// Bitmap result = MusicUtils.getArtworkQuick(getActivity(),
-			// aid, width, height);
-			// if (result != null) {
-			// viewholder.album_art.setImageBitmap(result);
-			// } else {
-			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			// }
-			// } else {
-			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			// }
-			// Log.d("debug", "mBusy = " + mBusy + ", position = " +
-			// cursor.getPosition());
-			// if (mBusy) {
-			// viewholder.album_art.setVisibility(View.INVISIBLE);
-			// } else {
-			// viewholder.album_art.setVisibility(View.VISIBLE);
-			//
-			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			// }
-
-			// }
-
-			long currentalbumid = MusicUtils.getCurrentAlbumId();
-			if (currentalbumid == aid) {
-				viewholder.album_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
-						R.drawable.ic_indicator_nowplaying_small, 0);
-			} else {
-				viewholder.album_name.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-			}
-
-		}
-
-		@Override
-		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-			View view = super.newView(context, cursor, parent);
-			ViewHolder viewholder = new ViewHolder(view);
-			view.setTag(viewholder);
-			return view;
-		}
-
-	}
-
 	private AlbumsAdapter mAdapter;
+
 	private GridView mGridView;
 	private Cursor mCursor;
 	private int mSelectedPosition;
@@ -177,7 +71,6 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 	private String mCurrentAlbumName, mCurrentArtistNameForAlbum;
 	private int mIdIdx, mAlbumIdx, mArtistIdx, mArtIdx;
 	private boolean mBusy = false;
-
 	private int mFirstVisible, mLastVisible;
 
 	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
@@ -204,7 +97,7 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 		// We have a menu item to show in action bar.
 		setHasOptionsMenu(true);
 
-		mAdapter = new AlbumsAdapter(getActivity(), R.layout.album_grid_item, null,
+		mAdapter = new AlbumsAdapter(getSherlockActivity(), R.layout.album_grid_item, null,
 				new String[] {}, new int[] {}, 0);
 
 		View fragmentView = getView();
@@ -229,8 +122,8 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 		switch (item.getItemId()) {
 			case PLAY_SELECTION:
 				int position = mSelectedPosition;
-				long[] list = MusicUtils.getSongListForAlbum(getActivity(), mSelectedId);
-				MusicUtils.playAll(getActivity(), list, position);
+				long[] list = MusicUtils.getSongListForAlbum(getSherlockActivity(), mSelectedId);
+				MusicUtils.playAll(getSherlockActivity(), list, position);
 				return true;
 			case DELETE_ITEMS:
 				intent = new Intent(INTENT_DELETE_ITEMS);
@@ -254,7 +147,7 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 
 		if (mCursor == null) return;
 
-		getActivity().getMenuInflater().inflate(R.menu.music_browser_item, menu);
+		getSherlockActivity().getMenuInflater().inflate(R.menu.music_browser_item, menu);
 
 		AdapterContextMenuInfo adapterinfo = (AdapterContextMenuInfo) info;
 		mSelectedPosition = adapterinfo.position;
@@ -278,7 +171,7 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 		String[] cols = new String[] { Audio.Albums._ID, Audio.Albums.ALBUM, Audio.Albums.ARTIST,
 				Audio.Albums.ALBUM_ART };
 		Uri uri = Audio.Albums.EXTERNAL_CONTENT_URI;
-		return new CursorLoader(getActivity(), uri, cols, null, null,
+		return new CursorLoader(getSherlockActivity(), uri, cols, null, null,
 				Audio.Albums.DEFAULT_SORT_ORDER);
 	}
 
@@ -302,7 +195,7 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
 
 		if (data == null) {
-			getActivity().finish();
+			getSherlockActivity().finish();
 			return;
 		}
 
@@ -355,12 +248,12 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(BROADCAST_META_CHANGED);
 		filter.addAction(BROADCAST_QUEUE_CHANGED);
-		getActivity().registerReceiver(mMediaStatusReceiver, filter);
+		getSherlockActivity().registerReceiver(mMediaStatusReceiver, filter);
 	}
 
 	@Override
 	public void onStop() {
-		getActivity().unregisterReceiver(mMediaStatusReceiver);
+		getSherlockActivity().unregisterReceiver(mMediaStatusReceiver);
 		super.onStop();
 	}
 
@@ -396,7 +289,7 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 		bundle.putString(INTENT_KEY_TYPE, MediaStore.Audio.Albums.CONTENT_TYPE);
 		bundle.putLong(Audio.Albums._ID, id);
 
-		View detailsFrame = getActivity().findViewById(R.id.frame_details);
+		View detailsFrame = getSherlockActivity().findViewById(R.id.frame_details);
 		boolean mDualPane = detailsFrame != null && detailsFrame.getVisibility() == View.VISIBLE
 				&& getResources().getBoolean(R.bool.dual_pane);
 
@@ -413,10 +306,119 @@ public class AlbumFragment extends Fragment implements Constants, ListView.OnScr
 
 		} else {
 			Intent intent = new Intent(Intent.ACTION_VIEW);
-			intent.setClass(getActivity(), TrackBrowserActivity.class);
+			intent.setClass(getSherlockActivity(), TrackBrowserActivity.class);
 			intent.putExtras(bundle);
 			startActivity(intent);
 		}
+	}
+
+	private class AlbumsAdapter extends SimpleCursorAdapter {
+
+		private AlbumsAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to,
+				int flags) {
+			super(context, layout, cursor, from, to, flags);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+
+			ViewHolder viewholder = (ViewHolder) view.getTag();
+
+			String album_name = cursor.getString(mAlbumIdx);
+			if (album_name == null || MediaStore.UNKNOWN_STRING.equals(album_name)) {
+				viewholder.album_name.setText(R.string.unknown_album);
+			} else {
+				viewholder.album_name.setText(album_name);
+			}
+
+			String artist_name = cursor.getString(mArtistIdx);
+			if (artist_name == null || MediaStore.UNKNOWN_STRING.equals(artist_name)) {
+				viewholder.artist_name.setText(R.string.unknown_artist);
+			} else {
+				viewholder.artist_name.setText(artist_name);
+			}
+
+			// We don't actually need the path to the thumbnail file,
+			// we just use it to see if there is album art or not
+			long aid = cursor.getLong(mIdIdx);
+			int width = view.getWidth();
+			int height = view.getHeight();
+
+			Log.i("Debug", "usedMemory: " + Debug.getNativeHeapSize() / 1024);
+
+			// if (viewholder != null && viewholder.album_art != null) {
+			//
+			// String art = cursor.getString(mArtIdx);
+			//
+			// if (art == null || art.length() == 0) {
+			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			// } else {
+			// Drawable d = MusicUtils.getCachedArtwork(context, aid, width,
+			// height);
+			// viewholder.album_art.setImageDrawable(d);
+			// d = null;
+			// }
+
+			// if (cursor.getPosition() >= mFirstVisible - 1
+			// && cursor.getPosition() <= mLastVisible + 1) {
+			// Bitmap result =
+			// MusicUtils.getCachedArtworkBitmap(getSherlockActivity(), aid,
+			// width, height);
+			// Bitmap result = MusicUtils.getArtworkQuick(getSherlockActivity(),
+			// aid, width, height);
+			// if (result != null) {
+			// viewholder.album_art.setImageBitmap(result);
+			// } else {
+			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			// }
+			// } else {
+			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			// }
+			// Log.d("debug", "mBusy = " + mBusy + ", position = " +
+			// cursor.getPosition());
+			// if (mBusy) {
+			// viewholder.album_art.setVisibility(View.INVISIBLE);
+			// } else {
+			// viewholder.album_art.setVisibility(View.VISIBLE);
+			//
+			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			// }
+
+			// }
+
+			long currentalbumid = MusicUtils.getCurrentAlbumId();
+			if (currentalbumid == aid) {
+				viewholder.album_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
+						R.drawable.ic_indicator_nowplaying_small, 0);
+			} else {
+				viewholder.album_name.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+			}
+
+		}
+
+		@Override
+		public View newView(Context context, Cursor cursor, ViewGroup parent) {
+
+			View view = super.newView(context, cursor, parent);
+			ViewHolder viewholder = new ViewHolder(view);
+			view.setTag(viewholder);
+			return view;
+		}
+
+		private class ViewHolder {
+
+			TextView album_name;
+			TextView artist_name;
+			ImageView album_art;
+
+			public ViewHolder(View view) {
+				album_name = (TextView) view.findViewById(R.id.album_name);
+				artist_name = (TextView) view.findViewById(R.id.artist_name);
+				album_art = (ImageView) view.findViewById(R.id.album_art);
+			}
+
+		}
+
 	}
 
 }

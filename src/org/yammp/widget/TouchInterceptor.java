@@ -37,24 +37,12 @@ import android.widget.ListView;
 
 public class TouchInterceptor extends ListView {
 
-	public interface OnDragListener {
-
-		void onDrag(int from, int to);
-	}
-
-	public interface OnDropListener {
-
-		void onDrop(int from, int to);
-	}
-
-	public interface OnRemoveListener {
-
-		void onRemove(int which);
-	}
-
 	private ImageView mDragView;
+
 	private WindowManager mWindowManager;
+
 	private WindowManager.LayoutParams mWindowParams;
+
 	private int mDragPos;
 	private int mSrcDragPos;
 	private int mDragPointX;
@@ -73,11 +61,8 @@ public class TouchInterceptor extends ListView {
 	private final int mTouchSlop;
 	private int mItemHeightNormal;
 	private int mItemHeightExpanded;
-
 	private int mItemHeightHalf;
-
 	private int mStartX, mStartY = 0;
-
 	private boolean mSortDragging, mRemoveDragging = false;
 
 	public TouchInterceptor(Context context, AttributeSet attrs) {
@@ -225,19 +210,19 @@ public class TouchInterceptor extends ListView {
 		return super.onTouchEvent(ev);
 	}
 
-	public void setDragListener(OnDragListener l) {
+	public void setDragListener(OnDragListener listener) {
 
-		mDragListener = l;
+		mDragListener = listener;
 	}
 
-	public void setDropListener(OnDropListener l) {
+	public void setDropListener(OnDropListener listener) {
 
-		mDropListener = l;
+		mDropListener = listener;
 	}
 
-	public void setRemoveListener(OnRemoveListener l) {
+	public void setRemoveListener(OnRemoveListener listener) {
 
-		mRemoveListener = l;
+		mRemoveListener = listener;
 	}
 
 	private void adjustScrollBounds(int y) {
@@ -443,5 +428,20 @@ public class TouchInterceptor extends ListView {
 			v.setLayoutParams(params);
 			v.setVisibility(View.VISIBLE);
 		}
+	}
+
+	public interface OnDragListener {
+
+		void onDrag(int from, int to);
+	}
+
+	public interface OnDropListener {
+
+		void onDrop(int from, int to);
+	}
+
+	public interface OnRemoveListener {
+
+		void onRemove(int which);
 	}
 }

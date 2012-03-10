@@ -30,12 +30,8 @@ import android.view.View;
 
 public class VerticalTextSpinner extends View {
 
-	public interface OnChangedListener {
-
-		void onChanged(VerticalTextSpinner spinner, int oldPos, int newPos, String[] items);
-	}
-
 	private static final int SELECTOR_ARROW_HEIGHT = 15;
+
 	private static int TEXT_SPACING;
 	private static int TEXT_MARGIN_RIGHT;
 	private static int TEXT_SIZE;
@@ -44,23 +40,23 @@ public class VerticalTextSpinner extends View {
 	private static int TEXT3_Y;
 	private static int TEXT4_Y;
 	private static int TEXT5_Y;
-
 	private static int SCROLL_DISTANCE;
+
 	private static final int SCROLL_MODE_NONE = 0;
 	private static final int SCROLL_MODE_UP = 1;
-
 	private static final int SCROLL_MODE_DOWN = 2;
-	private static final long DEFAULT_SCROLL_INTERVAL_MS = 400;
 
+	private static final long DEFAULT_SCROLL_INTERVAL_MS = 400;
 	private static final int MIN_ANIMATIONS = 4;
+
 	private final Drawable mBackgroundFocused;
 	private final int mSelectorDefaultY;
 	private final int mSelectorMinY;
 	private final int mSelectorMaxY;
 	private final int mSelectorHeight;
 	private final TextPaint mTextPaintDark;
-
 	private final TextPaint mTextPaintLight;
+
 	private int mSelectorY;
 	private Drawable mSelector;
 	private int mDownY;
@@ -69,22 +65,21 @@ public class VerticalTextSpinner extends View {
 	private long mScrollInterval;
 	private boolean mIsAnimationRunning;
 	private boolean mStopAnimation;
-
 	private boolean mWrapAround = true;
+
 	private int mTotalAnimatedDistance;
 	private int mNumberOfAnimations;
 	private long mDelayBetweenAnimations;
-
 	private int mDistanceOfEachAnimation;
+
 	private String[] mTextList;
 	private int mCurrentSelectedPos;
-
 	private OnChangedListener mListener;
+
 	private String mText1;
 	private String mText2;
 	private String mText3;
 	private String mText4;
-
 	private String mText5;
 
 	public VerticalTextSpinner(Context context) {
@@ -461,5 +456,10 @@ public class VerticalTextSpinner extends View {
 				invalidate();
 			}
 		}
+	}
+
+	public interface OnChangedListener {
+
+		void onChanged(VerticalTextSpinner spinner, int oldPos, int newPos, String[] items);
 	}
 }

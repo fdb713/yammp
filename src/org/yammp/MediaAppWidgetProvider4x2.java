@@ -97,12 +97,10 @@ public class MediaAppWidgetProvider4x2 extends AppWidgetProvider implements Cons
 		if (isPlaying) {
 			pendingIntent = PendingIntent.getActivity(context, 0,
 					new Intent(INTENT_PLAYBACK_VIEWER), 0);
-			// views.setOnClickPendingIntent(R.id.album_art, pendingIntent);
 			views.setOnClickPendingIntent(R.id.widget, pendingIntent);
 		} else {
 			pendingIntent = PendingIntent.getActivity(context, 0, new Intent(INTENT_MUSIC_BROWSER),
 					0);
-			// views.setOnClickPendingIntent(R.id.album_art, pendingIntent);
 			views.setOnClickPendingIntent(R.id.widget, pendingIntent);
 		}
 

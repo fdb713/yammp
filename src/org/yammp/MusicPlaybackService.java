@@ -61,6 +61,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.telephony.PhoneStateListener;
@@ -76,510 +77,6 @@ import android.widget.Toast;
 public class MusicPlaybackService extends Service implements Constants, OnShakeListener {
 
 	/**
-	 * Provides a unified interface for dealing with midi files and other media
-	 * files.
-	 */
-	private class MultiPlayer {
-
-		private MediaPlayer mMediaPlayer = new MediaPlayer();
-		private Handler mHandler;
-		private boolean mIsInitialized = false;
-
-		private MediaPlayer.OnCompletionListener listener = new MediaPlayer.OnCompletionListener() {
-
-			@Override
-			public void onCompletion(MediaPlayer mp) {
-
-				// Acquire a temporary wakelock, since when we return from
-				// this callback the MediaPlayer will release its wakelock
-				// and allow the device to go to sleep.
-				// This temporary wakelock is released when the RELEASE_WAKELOCK
-				// message is processed, but just in case, put a timeout on it.
-				mWakeLock.acquire(30000);
-				mHandler.sendEmptyMessage(TRACK_ENDED);
-				mHandler.sendEmptyMessage(RELEASE_WAKELOCK);
-			}
-		};
-
-		private MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener() {
-
-			@Override
-			public boolean onError(MediaPlayer mp, int what, int extra) {
-
-				switch (what) {
-					case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
-						mIsInitialized = false;
-						mMediaPlayer.release();
-						// Creating a new MediaPlayer and settings its wakemode
-						// does
-						// not
-						// require the media service, so it's OK to do this now,
-						// while the
-						// service is still being restarted
-						mMediaPlayer = new MediaPlayer();
-						mMediaPlayer.setWakeMode(MusicPlaybackService.this,
-								PowerManager.PARTIAL_WAKE_LOCK);
-						mHandler.sendMessageDelayed(mHandler.obtainMessage(SERVER_DIED), 2000);
-						return true;
-					default:
-						Log.d("MultiPlayer", "Error: " + what + "," + extra);
-						break;
-				}
-				return false;
-			}
-		};
-
-		public MultiPlayer() {
-
-			mMediaPlayer.setWakeMode(MusicPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
-		}
-
-		public long duration() {
-
-			return mMediaPlayer.getDuration();
-		}
-
-		public int getAudioSessionId() {
-
-			try {
-				return (Integer) mMediaPlayer.getClass()
-						.getMethod("getAudioSessionId", new Class[] {})
-						.invoke(mMediaPlayer, new Object[] {});
-			} catch (Exception e) {
-				return 0;
-			}
-		}
-
-		public boolean isInitialized() {
-
-			return mIsInitialized;
-		}
-
-		public boolean isPlaying() {
-
-			return mMediaPlayer.isPlaying();
-		}
-
-		public void pause() {
-
-			mMediaPlayer.pause();
-		}
-
-		public long position() {
-
-			return mMediaPlayer.getCurrentPosition();
-		}
-
-		/**
-		 * You CANNOT use this player anymore after calling release()
-		 */
-		public void release() {
-
-			stop();
-			mMediaPlayer.release();
-		}
-
-		public long seek(long whereto) {
-
-			mMediaPlayer.seekTo((int) whereto);
-			return whereto;
-		}
-
-		public void setDataSource(String path) {
-
-			try {
-				mMediaPlayer.reset();
-				mMediaPlayer.setOnPreparedListener(null);
-				if (path.startsWith("content://")) {
-					mMediaPlayer.setDataSource(MusicPlaybackService.this, Uri.parse(path));
-				} else {
-					mMediaPlayer.setDataSource(path);
-				}
-				mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-				mMediaPlayer.prepare();
-			} catch (IOException ex) {
-				mIsInitialized = false;
-				return;
-			} catch (IllegalArgumentException ex) {
-				mIsInitialized = false;
-				return;
-			}
-			mMediaPlayer.setOnCompletionListener(listener);
-			mMediaPlayer.setOnErrorListener(errorListener);
-			mIsInitialized = true;
-		}
-
-		public void setHandler(Handler handler) {
-
-			mHandler = handler;
-		}
-
-		public void setVolume(float vol) {
-
-			mMediaPlayer.setVolume(vol, vol);
-			mCurrentVolume = vol;
-		}
-
-		public void start() {
-
-			MusicUtils.debugLog(new Exception("MultiPlayer.start called"));
-			mMediaPlayer.start();
-		}
-
-		public void stop() {
-
-			mMediaPlayer.reset();
-			mIsInitialized = false;
-		}
-
-	}
-
-	// A simple variation of Random that makes sure that the
-	// value it returns is not equal to the value it returned
-	// previously, unless the interval is 1.
-	private class Shuffler {
-
-		private int mPrevious;
-		private Random mRandom = new Random();
-
-		public int shuffle(int interval) {
-
-			int ret;
-			long ret_id;
-			do {
-				ret = mRandom.nextInt(interval);
-				ret_id = mPlayList[ret];
-			} while (ret == mPrevious && interval > 1 || !isFavorite(ret_id)
-					&& mHistory.contains(ret_id));
-
-			mPrevious = ret;
-			return ret;
-		}
-	}
-
-	/*
-	 * By making this a static class with a WeakReference to the Service, we
-	 * ensure that the Service can be GCd even when the system process still has
-	 * a remote reference to the stub.
-	 */
-	static class ServiceStub extends IMusicPlaybackService.Stub {
-
-		WeakReference<MusicPlaybackService> mService;
-
-		ServiceStub(MusicPlaybackService service) {
-
-			mService = new WeakReference<MusicPlaybackService>(service);
-		}
-
-		@Override
-		public void addToFavorites(long id) {
-			mService.get().addToFavorites(id);
-		}
-
-		@Override
-		public void cycleRepeat() {
-
-			mService.get().cycleRepeat();
-		}
-
-		@Override
-		public long duration() {
-
-			return mService.get().duration();
-		}
-
-		@Override
-		public void enqueue(long[] list, int action) {
-
-			mService.get().enqueue(list, action);
-		}
-
-		@Override
-		public Bitmap getAlbumArt() {
-
-			return mService.get().getAlbumArt();
-		}
-
-		@Override
-		public long getAlbumId() {
-
-			return mService.get().getAlbumId();
-		}
-
-		@Override
-		public String getAlbumName() {
-
-			return mService.get().getAlbumName();
-		}
-
-		@Override
-		public long getArtistId() {
-
-			return mService.get().getArtistId();
-		}
-
-		@Override
-		public String getArtistName() {
-
-			return mService.get().getArtistName();
-		}
-
-		@Override
-		public Uri getArtworkUri() {
-
-			return mService.get().getArtworkUri();
-		}
-
-		@Override
-		public long getAudioId() {
-
-			return mService.get().getAudioId();
-		}
-
-		@Override
-		public int getAudioSessionId() {
-
-			return mService.get().getAudioSessionId();
-		}
-
-		@Override
-		public int getCurrentLyricsId() {
-
-			return mService.get().getCurrentLyricsId();
-		}
-
-		@Override
-		public String[] getLyrics() {
-
-			return mService.get().getLyrics();
-		}
-
-		@Override
-		public int getLyricsStatus() {
-
-			return mService.get().getLyricsStatus();
-		}
-
-		@Override
-		public int getMediaMountedCount() {
-
-			return mService.get().getMediaMountedCount();
-		}
-
-		@Override
-		public String getMediaPath() {
-
-			return mService.get().getMediaPath();
-		}
-
-		@Override
-		public String getPath() {
-
-			return mService.get().getPath();
-		}
-
-		@Override
-		public long getPositionByLyricsId(int id) {
-
-			return mService.get().getPositionByLyricsId(id);
-		}
-
-		@Override
-		public long[] getQueue() {
-
-			return mService.get().getQueue();
-		}
-
-		@Override
-		public int getQueuePosition() {
-
-			return mService.get().getQueuePosition();
-		}
-
-		@Override
-		public int getRepeatMode() {
-
-			return mService.get().getRepeatMode();
-		}
-
-		@Override
-		public int getShuffleMode() {
-
-			return mService.get().getShuffleMode();
-		}
-
-		@Override
-		public long getSleepTimerRemained() {
-
-			return mService.get().getSleepTimerRemained();
-		}
-
-		@Override
-		public String getTrackName() {
-
-			return mService.get().getTrackName();
-		}
-
-		@Override
-		public boolean isFavorite(long id) {
-			return mService.get().isFavorite(id);
-		}
-
-		@Override
-		public boolean isPlaying() {
-
-			return mService.get().isPlaying();
-		}
-
-		@Override
-		public void moveQueueItem(int from, int to) {
-
-			mService.get().moveQueueItem(from, to);
-		}
-
-		@Override
-		public void next() {
-
-			mService.get().next(true);
-		}
-
-		@Override
-		public void open(long[] list, int position) {
-
-			mService.get().open(list, position);
-		}
-
-		@Override
-		public void openFile(String path) {
-
-			mService.get().open(path);
-		}
-
-		@Override
-		public void pause() {
-
-			mService.get().pause();
-		}
-
-		@Override
-		public void play() {
-
-			mService.get().play();
-		}
-
-		@Override
-		public long position() {
-
-			return mService.get().position();
-		}
-
-		@Override
-		public void prev() {
-
-			mService.get().prev();
-		}
-
-		@Override
-		public void refreshLyrics() {
-
-			mService.get().notifyLyricsChange(BROADCAST_LYRICS_REFRESHED);
-		}
-
-		@Override
-		public void reloadEqualizer() {
-
-			mService.get().reloadEqualizer();
-		}
-
-		@Override
-		public void reloadLyrics() {
-
-			mService.get().reloadLyrics();
-		}
-
-		@Override
-		public void reloadSettings() {
-
-			mService.get().reloadSettings();
-		}
-
-		@Override
-		public void removeFromFavorites(long id) {
-			mService.get().removeFromFavorites(id);
-		}
-
-		@Override
-		public int removeTrack(long id) {
-
-			return mService.get().removeTrack(id);
-		}
-
-		@Override
-		public int removeTracks(int first, int last) {
-
-			return mService.get().removeTracks(first, last);
-		}
-
-		@Override
-		public long seek(long pos) {
-
-			return mService.get().seek(pos);
-		}
-
-		@Override
-		public void setQueueId(long id) {
-			mService.get().setQueueId(id);
-		}
-
-		@Override
-		public void setQueuePosition(int index) {
-
-			mService.get().setQueuePosition(index);
-		}
-
-		@Override
-		public void setRepeatMode(int repeatmode) {
-
-			mService.get().setRepeatMode(repeatmode);
-		}
-
-		@Override
-		public void setShuffleMode(int shufflemode) {
-
-			mService.get().setShuffleMode(shufflemode);
-		}
-
-		@Override
-		public void startSleepTimer(long milliseconds, boolean gentle) {
-
-			mService.get().startSleepTimer(milliseconds, gentle);
-		}
-
-		@Override
-		public void stop() {
-
-			mService.get().stop();
-		}
-
-		@Override
-		public void stopSleepTimer() {
-
-			mService.get().stopSleepTimer();
-		}
-
-		@Override
-		public void toggleFavorite() {
-			mService.get().toggleFavorite();
-		}
-
-		@Override
-		public void toggleShuffle() {
-
-			mService.get().toggleShuffle();
-		}
-	}
-
-	/**
 	 * used to specify whether enqueue() should start playing the new list of
 	 * files right away, next or once all the currently queued files have been
 	 * played
@@ -588,30 +85,34 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	private static final int TRACK_ENDED = 1;
 	private static final int RELEASE_WAKELOCK = 2;
 	private static final int SERVER_DIED = 3;
-
 	private static final int FOCUSCHANGE = 4;
 	private static final int FADEDOWN = 5;
 	private static final int FADEUP = 6;
+
 	private static final int NEW_LYRICS_LOADED = 1;
 	private static final int POSITION_CHANGED = 2;
-
 	private static final int LYRICS_REFRESHED = 3;
 	private static final int LYRICS_PAUSED = 4;
-
 	private static final int LYRICS_RESUMED = 5;
+	
 	private static final int START_SLEEP_TIMER = 1;
 	private static final int STOP_SLEEP_TIMER = 2;
+
 	private MultiPlayer mPlayer;
+
 	private String mFileToPlay;
 	private NotificationManager mNotification;
 	private int mShuffleMode = SHUFFLE_NONE;
+
 	private int mRepeatMode = REPEAT_NONE;
 	private int mMediaMountedCount = 0;
 	private long[] mPlayList = null;
 	private int mPlayListLen = 0;
 	private Vector<Integer> mHistory = new Vector<Integer>();
+
 	private Cursor mCursor;
 	private int mPlayPos = -1;
+
 	private final Shuffler mShuffler = new Shuffler();
 	private int mOpenFailedCounter = 0;
 	private String[] mCursorCols = new String[] { "audio._id AS _id",
@@ -631,44 +132,38 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	private boolean mIsSupposedToBePlaying = false;
 	private boolean mQuietMode = false;
 	private AudioManager mAudioManager;
-
 	private boolean mQueueIsSaveable = true;
 	// used to track what type of audio focus loss caused the playback to pause
 	private boolean mPausedByTransientLossOfFocus = false;
-
 	// used to track current volume
 	private float mCurrentVolume = 1.0f;
-
 	private PreferencesEditor mPrefs;
 	// We use this to distinguish between different cards when saving/restoring
 	// playlists.
 	// This will have to change if we want to support multiple simultaneous
 	// cards.
 	private int mCardId;
-
 	// interval after which we stop the service when idle
 	private static final int IDLE_DELAY = 60000;
 	private boolean mGentleSleepTimer, mSleepTimerTimedUp;
-
 	private long mCurrentTimestamp, mStopTimestamp;
 	private EqualizerWrapper mEqualizer = null;
 	private boolean mEqualizerSupported = EqualizerWrapper.isSupported();
 	private LyricsParser mLyricsParser = new LyricsParser();
-
 	private int mLyricsStatus = 0;
 	private int mLyricsId = -1;
 	private String[] mLyrics = new String[] {};
-	private ShakeListener mShakeDetector;
 
+	private ShakeListener mShakeDetector;
 	private boolean mShakeEnabled;
+
 	private String mShakingBehavior;
 
 	private float mShakingThreshold = DEFAULT_SHAKING_THRESHOLD;
-
 	private boolean mScrobbleEnabled = false;
+	private boolean mExternalAudioDeviceConnected = false;
 
 	private Intent mPlaybackIntent;
-
 	private Handler mMediaplayerHandler = new Handler() {
 
 		@Override
@@ -833,7 +328,19 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			}
 		}
 	};
-
+	
+	private BroadcastReceiver mExternalAudioDeviceStatusReceiver = new BroadcastReceiver() {
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if (Intent.ACTION_HEADSET_PLUG.equals(action)) {
+				int state = intent.getIntExtra("state", 0);
+				mExternalAudioDeviceConnected = (state == 1);
+			}
+		}
+	};
+	
 	private BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
 
 		@Override
@@ -873,7 +380,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			}
 		}
 	};
-
 	private OnAudioFocusChangeListener mAudioFocusListener = new OnAudioFocusChangeListener() {
 
 		@Override
@@ -882,7 +388,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			mMediaplayerHandler.obtainMessage(FOCUSCHANGE, focusChange, 0).sendToTarget();
 		}
 	};
-
 	private PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
 
 		@Override
@@ -910,7 +415,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 	private final char hexdigits[] = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 			'a', 'b', 'c', 'd', 'e', 'f' };
-
 	private Handler mDelayedStopHandler = new Handler() {
 
 		@Override
@@ -926,7 +430,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			stopSelf(mServiceStartId);
 		}
 	};
-
 	private Handler mSleepTimerHandler = new Handler() {
 
 		@Override
@@ -956,7 +459,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			}
 		}
 	};
-
 	private final IBinder mBinder = new ServiceStub(this);
 
 	public MusicPlaybackService() {
@@ -1024,7 +526,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public void enqueue(long[] list, int action) {
 
 		synchronized (this) {
-			if (action == NEXT && mPlayPos + 1 < mPlayListLen) {
+			if (action == ACTION_NEXT && mPlayPos + 1 < mPlayListLen) {
 				addToPlayList(list, mPlayPos + 1);
 				notifyChange(BROADCAST_QUEUE_CHANGED);
 			} else {
@@ -1032,7 +534,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				// mPlayListLen
 				addToPlayList(list, Integer.MAX_VALUE);
 				notifyChange(BROADCAST_QUEUE_CHANGED);
-				if (action == NOW) {
+				if (action == ACTION_NOW) {
 					mPlayPos = mPlayListLen - list.length;
 					openCurrent();
 					play();
@@ -1046,6 +548,85 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				play();
 				notifyChange(BROADCAST_META_CHANGED);
 			}
+		}
+	}
+
+	public int eqGetBand(int frequency) {
+		if (!mEqualizerSupported || mEqualizer == null) return 0;
+		return mEqualizer.getBand(frequency);
+	}
+
+	public int[] eqGetBandFreqRange(short band) {
+		if (!mEqualizerSupported || mEqualizer == null) return null;
+		return mEqualizer.getBandFreqRange(band);
+	}
+
+	public short eqGetBandLevel(short band) {
+		if (mEqualizerSupported && mEqualizer != null) {
+			return mEqualizer.getBandLevel(band);
+		}
+		return (short) 0;
+	}
+
+	public short[] eqGetBandLevelRange() {
+		if (!mEqualizerSupported || mEqualizer == null) return null;
+		return mEqualizer.getBandLevelRange();
+	}
+
+	public int eqGetCenterFreq(short band) {
+		if (!mEqualizerSupported || mEqualizer == null) return 0;
+		return mEqualizer.getCenterFreq(band);
+	}
+
+	public short eqGetCurrentPreset() {
+		if (!mEqualizerSupported || mEqualizer == null) return 0;
+		return mEqualizer.getCurrentPreset();
+	}
+
+	public short eqGetNumberOfBands() {
+		if (!mEqualizerSupported || mEqualizer == null) return 0;
+		return mEqualizer.getNumberOfBands();
+	}
+
+	public short eqGetNumberOfPresets() {
+		if (!mEqualizerSupported || mEqualizer == null) return 0;
+		return mEqualizer.getNumberOfPresets();
+	}
+
+	public String eqGetPresetName(short preset) {
+		if (!mEqualizerSupported || mEqualizer == null) return null;
+		return mEqualizer.getPresetName(preset);
+	}
+
+	public void eqRelease() {
+		if (!mEqualizerSupported || mEqualizer == null) return;
+		mEqualizer.release();
+	}
+	
+	public void eqReset() {
+		if (!mEqualizerSupported || mEqualizer == null) return;
+
+		for (short i = 0; i < eqGetNumberOfBands(); i++) {
+			eqSetBandLevel(i, (short) 0);
+		}
+	}
+
+	public void eqSetBandLevel(short band, short level) {
+		if (!mEqualizerSupported || mEqualizer == null) return;
+		mEqualizer.setBandLevel(band, level);
+		mPrefs.setEqualizerSetting(band, level);
+	}
+
+	public int eqSetEnabled(boolean enabled) {
+		if (!mEqualizerSupported || mEqualizer == null) return 0;
+		return mEqualizer.setEnabled(enabled);
+	}
+
+	public void eqUsePreset(short preset) {
+		if (!mEqualizerSupported || mEqualizer == null) return;
+		mEqualizer.usePreset(preset);
+		for (short i = 0; i < eqGetNumberOfBands(); i++) {
+			mPrefs.setEqualizerSetting(i, eqGetBandLevel(i));
 		}
 	}
 
@@ -1440,6 +1021,8 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		commandFilter.addAction(TOGGLESHUFFLE_ACTION);
 		commandFilter.addAction(BROADCAST_PLAYSTATUS_REQUEST);
 		registerReceiver(mIntentReceiver, commandFilter);
+		
+		registerReceiver(mExternalAudioDeviceStatusReceiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
 
 		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, this.getClass().getName());
@@ -1485,6 +1068,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		unregisterReceiver(mIntentReceiver);
 		unregisterReceiver(mA2dpReceiver);
+		unregisterReceiver(mExternalAudioDeviceStatusReceiver);
 		if (mUnmountReceiver != null) {
 			unregisterReceiver(mUnmountReceiver);
 			mUnmountReceiver = null;
@@ -1500,6 +1084,40 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		mDelayedStopHandler.removeCallbacksAndMessages(null);
 		mServiceInUse = true;
+	}
+
+	@Override
+	public void onShake() {
+
+		mShakingBehavior = mPrefs.getStringPref(KEY_SHAKING_BEHAVIOR, DEFAULT_SHAKING_BEHAVIOR);
+
+		if (!BEHAVIOR_PLAY_PAUSE.equals(mShakingBehavior)
+				|| !BEHAVIOR_NEXT_SONG.equals(mShakingBehavior)) return;
+
+		if (mPlayer.isInitialized()) {
+			if (BEHAVIOR_PLAY_PAUSE.equals(mShakingBehavior)) {
+				if (isPlaying()) {
+					pause();
+					Toast.makeText(this, R.string.pause, Toast.LENGTH_SHORT).show();
+				} else {
+					play();
+					Toast.makeText(this, R.string.play, Toast.LENGTH_SHORT).show();
+				}
+			} else if (BEHAVIOR_NEXT_SONG.equals(mShakingBehavior)) {
+				if (isPlaying()) {
+					next(true);
+					Toast.makeText(this, R.string.next, Toast.LENGTH_SHORT).show();
+				} else {
+					play();
+					Toast.makeText(this, R.string.play, Toast.LENGTH_SHORT).show();
+				}
+
+			}
+		} else {
+			MusicUtils.shuffleAll(getApplicationContext());
+			Toast.makeText(this, R.string.shuffle_all, Toast.LENGTH_SHORT).show();
+		}
+
 	}
 
 	/*
@@ -1524,40 +1142,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	 * random track will be picked again. If at any time user disables shuffling
 	 * the next/previous track will be picked in sequential order again.
 	 */
-
-	@Override
-	public void onShake() {
-
-		mShakingBehavior = mPrefs.getStringPref(KEY_SHAKING_BEHAVIOR, DEFAULT_SHAKING_BEHAVIOR);
-
-		if (!BEHAVIOR_PLAY_PAUSE.equals(mShakingBehavior)
-				|| !BEHAVIOR_NEXT_SONG.equals(mShakingBehavior)) return;
-
-		if (mPlayer.isInitialized()) {
-			if (BEHAVIOR_PLAY_PAUSE.equals(mShakingBehavior)) {
-				if (isPlaying()) {
-					pause();
-					Toast.makeText(this, R.string.pause_toast, Toast.LENGTH_SHORT).show();
-				} else {
-					play();
-					Toast.makeText(this, R.string.play_toast, Toast.LENGTH_SHORT).show();
-				}
-			} else if (BEHAVIOR_NEXT_SONG.equals(mShakingBehavior)) {
-				if (isPlaying()) {
-					next(true);
-					Toast.makeText(this, R.string.next_toast, Toast.LENGTH_SHORT).show();
-				} else {
-					play();
-					Toast.makeText(this, R.string.play_toast, Toast.LENGTH_SHORT).show();
-				}
-
-			}
-		} else {
-			MusicUtils.shuffleAll(getApplicationContext());
-			Toast.makeText(this, R.string.shuffle_all, Toast.LENGTH_SHORT).show();
-		}
-
-	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -1841,7 +1425,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			// something.
 			setShuffleMode(SHUFFLE_NORMAL);
 		}
-	};
+	}
 
 	/**
 	 * Returns the current playback position in milliseconds
@@ -1850,7 +1434,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		if (mPlayer.isInitialized()) return mPlayer.position();
 		return -1;
-	}
+	};
 
 	public void prev() {
 
@@ -2680,5 +2264,594 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		writer.println("actual: " + mPlayer.isPlaying());
 		writer.println("shuffle mode: " + mShuffleMode);
 		MusicUtils.debugDump(writer);
+	}
+
+	/**
+	 * Provides a unified interface for dealing with midi files and other media
+	 * files.
+	 */
+	private class MultiPlayer {
+
+		private MediaPlayer mMediaPlayer = new MediaPlayer();
+		private Handler mHandler;
+		private boolean mIsInitialized = false;
+
+		private MediaPlayer.OnCompletionListener listener = new MediaPlayer.OnCompletionListener() {
+
+			@Override
+			public void onCompletion(MediaPlayer mp) {
+
+				// Acquire a temporary wakelock, since when we return from
+				// this callback the MediaPlayer will release its wakelock
+				// and allow the device to go to sleep.
+				// This temporary wakelock is released when the RELEASE_WAKELOCK
+				// message is processed, but just in case, put a timeout on it.
+				mWakeLock.acquire(30000);
+				mHandler.sendEmptyMessage(TRACK_ENDED);
+				mHandler.sendEmptyMessage(RELEASE_WAKELOCK);
+			}
+		};
+
+		private MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener() {
+
+			@Override
+			public boolean onError(MediaPlayer mp, int what, int extra) {
+
+				switch (what) {
+					case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+						mIsInitialized = false;
+						mMediaPlayer.release();
+						// Creating a new MediaPlayer and settings its wakemode
+						// does
+						// not
+						// require the media service, so it's OK to do this now,
+						// while the
+						// service is still being restarted
+						mMediaPlayer = new MediaPlayer();
+						mMediaPlayer.setWakeMode(MusicPlaybackService.this,
+								PowerManager.PARTIAL_WAKE_LOCK);
+						mHandler.sendMessageDelayed(mHandler.obtainMessage(SERVER_DIED), 2000);
+						return true;
+					default:
+						Log.d("MultiPlayer", "Error: " + what + "," + extra);
+						break;
+				}
+				return false;
+			}
+		};
+
+		public MultiPlayer() {
+
+			mMediaPlayer.setWakeMode(MusicPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
+		}
+
+		public long duration() {
+
+			return mMediaPlayer.getDuration();
+		}
+
+		public int getAudioSessionId() {
+
+			try {
+				return (Integer) mMediaPlayer.getClass()
+						.getMethod("getAudioSessionId", new Class[] {})
+						.invoke(mMediaPlayer, new Object[] {});
+			} catch (Exception e) {
+				return 0;
+			}
+		}
+
+		public boolean isInitialized() {
+
+			return mIsInitialized;
+		}
+
+		public boolean isPlaying() {
+
+			return mMediaPlayer.isPlaying();
+		}
+
+		public void pause() {
+
+			mMediaPlayer.pause();
+		}
+
+		public long position() {
+
+			return mMediaPlayer.getCurrentPosition();
+		}
+
+		/**
+		 * You CANNOT use this player anymore after calling release()
+		 */
+		public void release() {
+
+			stop();
+			mMediaPlayer.release();
+		}
+
+		public long seek(long whereto) {
+
+			mMediaPlayer.seekTo((int) whereto);
+			return whereto;
+		}
+
+		public void setDataSource(String path) {
+
+			try {
+				mMediaPlayer.reset();
+				mMediaPlayer.setOnPreparedListener(null);
+				if (path.startsWith("content://")) {
+					mMediaPlayer.setDataSource(MusicPlaybackService.this, Uri.parse(path));
+				} else {
+					mMediaPlayer.setDataSource(path);
+				}
+				mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+				mMediaPlayer.prepare();
+			} catch (IOException ex) {
+				mIsInitialized = false;
+				return;
+			} catch (IllegalArgumentException ex) {
+				mIsInitialized = false;
+				return;
+			}
+			mMediaPlayer.setOnCompletionListener(listener);
+			mMediaPlayer.setOnErrorListener(errorListener);
+			mIsInitialized = true;
+		}
+
+		public void setHandler(Handler handler) {
+
+			mHandler = handler;
+		}
+
+		public void setVolume(float vol) {
+
+			mMediaPlayer.setVolume(vol, vol);
+			mCurrentVolume = vol;
+		}
+
+		public void start() {
+
+			MusicUtils.debugLog(new Exception("MultiPlayer.start called"));
+			mMediaPlayer.start();
+		}
+
+		public void stop() {
+
+			mMediaPlayer.reset();
+			mIsInitialized = false;
+		}
+
+	}
+
+	// A simple variation of Random that makes sure that the
+	// value it returns is not equal to the value it returned
+	// previously, unless the interval is 1.
+	private class Shuffler {
+
+		private int mPrevious;
+		private Random mRandom = new Random();
+
+		public int shuffle(int interval) {
+
+			int ret;
+			long ret_id;
+			do {
+				ret = mRandom.nextInt(interval);
+				ret_id = mPlayList[ret];
+			} while (ret == mPrevious && interval > 1 || !isFavorite(ret_id)
+					&& mHistory.contains(ret_id));
+
+			mPrevious = ret;
+			return ret;
+		}
+	}
+
+	/*
+	 * By making this a static class with a WeakReference to the Service, we
+	 * ensure that the Service can be GCd even when the system process still has
+	 * a remote reference to the stub.
+	 */
+	static class ServiceStub extends IMusicPlaybackService.Stub {
+
+		WeakReference<MusicPlaybackService> mService;
+
+		ServiceStub(MusicPlaybackService service) {
+
+			mService = new WeakReference<MusicPlaybackService>(service);
+		}
+
+		@Override
+		public void addToFavorites(long id) {
+			mService.get().addToFavorites(id);
+		}
+
+		@Override
+		public void cycleRepeat() {
+
+			mService.get().cycleRepeat();
+		}
+
+		@Override
+		public long duration() {
+
+			return mService.get().duration();
+		}
+
+		@Override
+		public void enqueue(long[] list, int action) {
+
+			mService.get().enqueue(list, action);
+		}
+
+		@Override
+		public int eqGetBand(int frequency) {
+			return mService.get().eqGetBand(frequency);
+		}
+
+		@Override
+		public int[] eqGetBandFreqRange(int band) {
+			return mService.get().eqGetBandFreqRange((short) band);
+		}
+
+		@Override
+		public int eqGetBandLevel(int band) {
+			return mService.get().eqGetBandLevel((short) band);
+		}
+
+		@Override
+		public int[] eqGetBandLevelRange() {
+			short[] value = mService.get().eqGetBandLevelRange();
+			if (value == null) return null;
+			int[] result = new int[value.length];
+			for (short i = 0; i < value.length; i++) {
+				result[i] = value[i];
+			}
+			return result;
+		}
+
+		@Override
+		public int eqGetCenterFreq(int band) {
+			return mService.get().eqGetCenterFreq((short) band);
+		}
+
+		@Override
+		public int eqGetCurrentPreset() {
+			return mService.get().eqGetCurrentPreset();
+		}
+
+		@Override
+		public int eqGetNumberOfBands() {
+			return mService.get().eqGetNumberOfBands();
+		}
+
+		@Override
+		public int eqGetNumberOfPresets() {
+			return mService.get().eqGetNumberOfPresets();
+		}
+
+		@Override
+		public String eqGetPresetName(int preset) {
+			return mService.get().eqGetPresetName((short) preset);
+		}
+
+		@Override
+		public void eqRelease() {
+			mService.get().eqRelease();
+		}
+		
+		@Override
+		public void eqReset() {
+			mService.get().eqReset();
+		}
+
+		@Override
+		public void eqSetBandLevel(int band, int level) {
+			mService.get().eqSetBandLevel((short) band, (short) level);
+
+		}
+
+		@Override
+		public int eqSetEnabled(boolean enabled) {
+			return mService.get().eqSetEnabled(enabled);
+		}
+
+		@Override
+		public void eqUsePreset(int preset) {
+			mService.get().eqUsePreset((short) preset);
+		}
+
+		@Override
+		public long getAlbumId() {
+
+			return mService.get().getAlbumId();
+		}
+
+		@Override
+		public String getAlbumName() {
+
+			return mService.get().getAlbumName();
+		}
+
+		@Override
+		public long getArtistId() {
+
+			return mService.get().getArtistId();
+		}
+
+		@Override
+		public String getArtistName() {
+
+			return mService.get().getArtistName();
+		}
+
+		@Override
+		public Uri getArtworkUri() {
+
+			return mService.get().getArtworkUri();
+		}
+
+		@Override
+		public long getAudioId() {
+
+			return mService.get().getAudioId();
+		}
+
+		@Override
+		public int getAudioSessionId() {
+
+			return mService.get().getAudioSessionId();
+		}
+
+		@Override
+		public int getCurrentLyricsId() {
+
+			return mService.get().getCurrentLyricsId();
+		}
+
+		@Override
+		public String[] getLyrics() {
+
+			return mService.get().getLyrics();
+		}
+
+		@Override
+		public int getLyricsStatus() {
+
+			return mService.get().getLyricsStatus();
+		}
+
+		@Override
+		public int getMediaMountedCount() {
+
+			return mService.get().getMediaMountedCount();
+		}
+
+		@Override
+		public String getMediaPath() {
+
+			return mService.get().getMediaPath();
+		}
+
+		@Override
+		public String getPath() {
+
+			return mService.get().getPath();
+		}
+
+		@Override
+		public long getPositionByLyricsId(int id) {
+
+			return mService.get().getPositionByLyricsId(id);
+		}
+
+		@Override
+		public long[] getQueue() {
+
+			return mService.get().getQueue();
+		}
+
+		@Override
+		public int getQueuePosition() {
+
+			return mService.get().getQueuePosition();
+		}
+
+		@Override
+		public int getRepeatMode() {
+
+			return mService.get().getRepeatMode();
+		}
+
+		@Override
+		public int getShuffleMode() {
+
+			return mService.get().getShuffleMode();
+		}
+
+		@Override
+		public long getSleepTimerRemained() {
+
+			return mService.get().getSleepTimerRemained();
+		}
+
+		@Override
+		public String getTrackName() {
+
+			return mService.get().getTrackName();
+		}
+
+		@Override
+		public boolean isFavorite(long id) {
+			return mService.get().isFavorite(id);
+		}
+
+		@Override
+		public boolean isPlaying() {
+
+			return mService.get().isPlaying();
+		}
+
+		@Override
+		public void moveQueueItem(int from, int to) {
+
+			mService.get().moveQueueItem(from, to);
+		}
+
+		@Override
+		public void next() {
+
+			mService.get().next(true);
+		}
+
+		@Override
+		public void open(long[] list, int position) {
+
+			mService.get().open(list, position);
+		}
+
+		@Override
+		public void openFile(String path) {
+
+			mService.get().open(path);
+		}
+
+		@Override
+		public void pause() {
+
+			mService.get().pause();
+		}
+
+		@Override
+		public void play() {
+
+			mService.get().play();
+		}
+
+		@Override
+		public long position() {
+
+			return mService.get().position();
+		}
+
+		@Override
+		public void prev() {
+
+			mService.get().prev();
+		}
+
+		@Override
+		public void refreshLyrics() {
+
+			mService.get().notifyLyricsChange(BROADCAST_LYRICS_REFRESHED);
+		}
+
+		@Override
+		public void reloadEqualizer() {
+
+			mService.get().reloadEqualizer();
+		}
+
+		@Override
+		public void reloadLyrics() {
+
+			mService.get().reloadLyrics();
+		}
+
+		@Override
+		public void reloadSettings() {
+
+			mService.get().reloadSettings();
+		}
+
+		@Override
+		public void removeFromFavorites(long id) {
+			mService.get().removeFromFavorites(id);
+		}
+
+		@Override
+		public int removeTrack(long id) {
+
+			return mService.get().removeTrack(id);
+		}
+
+		@Override
+		public int removeTracks(int first, int last) {
+
+			return mService.get().removeTracks(first, last);
+		}
+
+		@Override
+		public long seek(long pos) {
+
+			return mService.get().seek(pos);
+		}
+
+		@Override
+		public void setQueueId(long id) {
+			mService.get().setQueueId(id);
+		}
+
+		@Override
+		public void setQueuePosition(int index) {
+
+			mService.get().setQueuePosition(index);
+		}
+
+		@Override
+		public void setRepeatMode(int repeatmode) {
+
+			mService.get().setRepeatMode(repeatmode);
+		}
+
+		@Override
+		public void setShuffleMode(int shufflemode) {
+
+			mService.get().setShuffleMode(shufflemode);
+		}
+
+		@Override
+		public void startSleepTimer(long milliseconds, boolean gentle) {
+
+			mService.get().startSleepTimer(milliseconds, gentle);
+		}
+
+		@Override
+		public void stop() {
+
+			mService.get().stop();
+		}
+
+		@Override
+		public void stopSleepTimer() {
+
+			mService.get().stopSleepTimer();
+		}
+
+		@Override
+		public void toggleFavorite() {
+			mService.get().toggleFavorite();
+		}
+
+		@Override
+		public void toggleShuffle() {
+
+			mService.get().toggleShuffle();
+		}
+
+		@Override
+		public boolean togglePause() throws RemoteException {
+			return mService.get().togglePause();
+		}
+	}
+
+	public boolean togglePause() {
+		if (isPlaying()) {
+			pause();
+		} else {
+			play();
+		}
+		return isPlaying();
 	}
 }

@@ -22,8 +22,6 @@ package org.yammp.app;
 
 import java.util.ArrayList;
 
-import org.mariotaku.actionbarcompat.app.ActionBarCompat;
-import org.mariotaku.actionbarcompat.app.FragmentActivity;
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.R;
@@ -53,8 +51,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager.LayoutParams;
@@ -64,93 +60,26 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ViewSwitcher;
 
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem;
 import com.viewpagerindicator.TitlePageIndicator;
 import com.viewpagerindicator.TitleProvider;
 
-public class MusicBrowserActivity extends FragmentActivity implements Constants,
+public class MusicBrowserActivity extends SherlockFragmentActivity implements Constants,
 		ViewSwitcher.ViewFactory, ServiceConnection {
 
-	private class AsyncAlbumArtLoader extends AsyncTask<Void, Void, Drawable> {
-
-		@Override
-		public Drawable doInBackground(Void... params) {
-
-			if (mService != null) {
-				try {
-					Bitmap bitmap = MusicUtils.getArtwork(getApplicationContext(),
-							mService.getAudioId(), mService.getAlbumId());
-					if (bitmap == null) return null;
-					int value = 0;
-					if (bitmap.getHeight() <= bitmap.getWidth()) {
-						value = bitmap.getHeight();
-					} else {
-						value = bitmap.getWidth();
-					}
-					Bitmap result = Bitmap.createBitmap(bitmap, (bitmap.getWidth() - value) / 2,
-							(bitmap.getHeight() - value) / 2, value, value);
-					return new BitmapDrawable(getResources(), result);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
-			return null;
-		}
-
-		@Override
-		public void onPostExecute(Drawable result) {
-			if (mAlbumArt != null) {
-				if (result != null) {
-					mAlbumArt.setImageDrawable(result);
-				} else {
-					mAlbumArt.setImageResource(R.drawable.ic_mp_albumart_unknown);
-				}
-			}
-		}
-	}
-
-	private class TabsAdapter extends FragmentPagerAdapter implements TitleProvider {
-
-		private final ArrayList<Fragment> mFragments = new ArrayList<Fragment>();
-		private final ArrayList<String> mTitles = new ArrayList<String>();
-
-		public TabsAdapter(FragmentManager manager) {
-			super(manager);
-		}
-
-		public void addFragment(Fragment fragment, String name) {
-			mFragments.add(fragment);
-			mTitles.add(name);
-			notifyDataSetChanged();
-		}
-
-		@Override
-		public int getCount() {
-			return mFragments.size();
-		}
-
-		@Override
-		public Fragment getItem(int position) {
-			return mFragments.get(position);
-		}
-
-		@Override
-		public String getTitle(int position) {
-			return mTitles.get(position);
-		}
-
-	}
-
+	private ActionBar mActionBar;
 	private ViewPager mViewPager;
+
 	private TabsAdapter mTabsAdapter;
+
 	private ServiceToken mToken;
 	private IMusicPlaybackService mService;
 	private PreferencesEditor mPrefs;
-	private ImageSwitcher mAlbumArt;
-	private TextView mTrackName, mTrackDetail;
 	private ImageButton mPlayPauseButton, mNextButton;
-
 	private AsyncAlbumArtLoader mAlbumArtLoader;
-
 	private TitlePageIndicator mIndicator;
 
 	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
@@ -160,8 +89,9 @@ public class MusicBrowserActivity extends FragmentActivity implements Constants,
 			if (BROADCAST_META_CHANGED.equals(intent.getAction())
 					|| BROADCAST_META_CHANGED.equals(intent.getAction())) {
 				updateNowplaying();
+				invalidateOptionsMenu();
 			} else if (BROADCAST_PLAYSTATE_CHANGED.equals(intent.getAction())) {
-				updatePlayPauseButton();
+				invalidateOptionsMenu();
 			}
 
 		}
@@ -195,7 +125,7 @@ public class MusicBrowserActivity extends FragmentActivity implements Constants,
 			if (mService == null) return;
 			try {
 				if (mService.isPlaying()) {
-					mService.pause();
+					mService.togglePause();
 				} else {
 					mService.play();
 				}
@@ -255,6 +185,8 @@ public class MusicBrowserActivity extends FragmentActivity implements Constants,
 		super.onCreate(icicle);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
+		mActionBar = getSupportActionBar();
+		
 		mPrefs = new PreferencesEditor(getApplicationContext());
 
 		String mount_state = Environment.getExternalStorageState();
@@ -273,15 +205,41 @@ public class MusicBrowserActivity extends FragmentActivity implements Constants,
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 
-		getMenuInflater().inflate(R.menu.music_browser, menu);
+		getSupportMenuInflater().inflate(R.menu.music_browser, menu);
 		return super.onCreateOptionsMenu(menu);
 	}
 
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		MenuItem item = menu.findItem(PLAY_PAUSE);
+		try {
+			if (item != null && mService != null) item.setIcon(mService.isPlaying() ? R.drawable.ic_action_media_pause : R.drawable.ic_action_media_play);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		
+		return super.onPrepareOptionsMenu(menu);
+	}
+	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 
 		Intent intent;
 		switch (item.getItemId()) {
+			case PLAY_PAUSE:
+				try {
+					mService.togglePause();
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+				break;
+			case NEXT:
+				try {
+					mService.next();
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+				break;
 			case GOTO_PLAYBACK:
 				intent = new Intent(INTENT_PLAYBACK_VIEWER);
 				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -306,8 +264,8 @@ public class MusicBrowserActivity extends FragmentActivity implements Constants,
 	}
 
 	@Override
-	public void onServiceConnected(ComponentName name, IBinder service) {
-		mService = IMusicPlaybackService.Stub.asInterface(service);
+	public void onServiceConnected(ComponentName name, IBinder obj) {
+		mService = IMusicPlaybackService.Stub.asInterface(obj);
 		updateNowplaying();
 	}
 
@@ -342,22 +300,12 @@ public class MusicBrowserActivity extends FragmentActivity implements Constants,
 
 		setContentView(R.layout.music_browser);
 
-		ActionBarCompat mActionBar = getActionBarCompat();
-
 		mActionBar.setCustomView(R.layout.actionbar_music_browser);
 
 		View mCustomView = mActionBar.getCustomView();
 
-		mActionBar.setDisplayShowHomeEnabled(false);
-		mActionBar.setDisplayShowTitleEnabled(false);
-		mActionBar.setDisplayShowCustomEnabled(true);
-
 		mCustomView.setOnClickListener(mActionBarClickListener);
 
-		mAlbumArt = (ImageSwitcher) mCustomView.findViewById(R.id.album_art);
-		mAlbumArt.setFactory(this);
-		mTrackName = (TextView) mCustomView.findViewById(R.id.track_name);
-		mTrackDetail = (TextView) mCustomView.findViewById(R.id.track_detail);
 		mPlayPauseButton = (ImageButton) mCustomView.findViewById(R.id.play_pause);
 		mPlayPauseButton.setOnClickListener(mPlayPauseClickListener);
 		mNextButton = (ImageButton) mCustomView.findViewById(R.id.next);
@@ -397,21 +345,21 @@ public class MusicBrowserActivity extends FragmentActivity implements Constants,
 			if (mService.getAudioId() > -1 || mService.getPath() != null) {
 				mPlayPauseButton.setVisibility(View.VISIBLE);
 				mNextButton.setVisibility(View.VISIBLE);
-				mTrackName.setText(mService.getTrackName());
+				setTitle(mService.getTrackName());
 				if (mService.getArtistName() != null
 						&& !MediaStore.UNKNOWN_STRING.equals(mService.getArtistName())) {
-					mTrackDetail.setText(mService.getArtistName());
+					mActionBar.setSubtitle(mService.getArtistName());
 				} else if (mService.getAlbumName() != null
 						&& !MediaStore.UNKNOWN_STRING.equals(mService.getAlbumName())) {
-					mTrackDetail.setText(mService.getAlbumName());
+					mActionBar.setSubtitle(mService.getAlbumName());
 				} else {
-					mTrackDetail.setText(R.string.unknown_artist);
+					mActionBar.setSubtitle(R.string.unknown_artist);
 				}
 			} else {
 				mPlayPauseButton.setVisibility(View.GONE);
 				mNextButton.setVisibility(View.GONE);
-				mTrackName.setText(R.string.music_library);
-				mTrackDetail.setText(R.string.touch_to_shuffle_all);
+				setTitle(R.string.music_library);
+				mActionBar.setSubtitle(R.string.touch_to_shuffle_all);
 			}
 			if (mAlbumArtLoader != null) {
 				mAlbumArtLoader.cancel(true);
@@ -434,5 +382,73 @@ public class MusicBrowserActivity extends FragmentActivity implements Constants,
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private class AsyncAlbumArtLoader extends AsyncTask<Void, Void, Drawable> {
+
+		@Override
+		public Drawable doInBackground(Void... params) {
+
+			if (mService != null) {
+				try {
+					Bitmap bitmap = MusicUtils.getArtwork(getApplicationContext(),
+							mService.getAudioId(), mService.getAlbumId());
+					if (bitmap == null) return null;
+					int value = 0;
+					if (bitmap.getHeight() <= bitmap.getWidth()) {
+						value = bitmap.getHeight();
+					} else {
+						value = bitmap.getWidth();
+					}
+					Bitmap result = Bitmap.createBitmap(bitmap, (bitmap.getWidth() - value) / 2,
+							(bitmap.getHeight() - value) / 2, value, value);
+					return new BitmapDrawable(getResources(), result);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public void onPostExecute(Drawable result) {
+			if (result != null) {
+				getSupportActionBar().setIcon(result);
+			} else {
+				getSupportActionBar().setIcon(R.drawable.ic_launcher_music);
+			}
+		}
+	}
+
+	private class TabsAdapter extends FragmentPagerAdapter implements TitleProvider {
+
+		private final ArrayList<Fragment> mFragments = new ArrayList<Fragment>();
+		private final ArrayList<String> mTitles = new ArrayList<String>();
+
+		public TabsAdapter(FragmentManager manager) {
+			super(manager);
+		}
+
+		public void addFragment(Fragment fragment, String name) {
+			mFragments.add(fragment);
+			mTitles.add(name);
+			notifyDataSetChanged();
+		}
+
+		@Override
+		public int getCount() {
+			return mFragments.size();
+		}
+
+		@Override
+		public Fragment getItem(int position) {
+			return mFragments.get(position);
+		}
+
+		@Override
+		public String getTitle(int position) {
+			return mTitles.get(position);
+		}
+
 	}
 }

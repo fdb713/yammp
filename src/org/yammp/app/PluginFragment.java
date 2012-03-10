@@ -41,65 +41,6 @@ import android.widget.TextView;
 
 public class PluginFragment extends ListFragment implements LoaderCallbacks<List<ApplicationInfo>> {
 
-	public static class AppListLoader extends AsyncTaskLoader<List<ApplicationInfo>> {
-
-		public AppListLoader(Context context) {
-			super(context);
-			mPackageManager = context.getPackageManager();
-		}
-
-		@Override
-		public List<ApplicationInfo> loadInBackground() {
-			return mPackageManager.getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES
-					| PackageManager.GET_DISABLED_COMPONENTS);
-		}
-
-	}
-
-	private class PluginAdapter extends ArrayAdapter<ApplicationInfo> {
-
-		private class ViewHolder {
-
-			ImageView plugin_icon;
-			TextView plugin_name;
-			TextView plugin_description;
-
-			public ViewHolder(View view) {
-
-				plugin_icon = (ImageView) view.findViewById(R.id.plugin_icon);
-				plugin_name = (TextView) view.findViewById(R.id.plugin_name);
-				plugin_description = (TextView) view.findViewById(R.id.plugin_description);
-			}
-		}
-
-		private List<ApplicationInfo> mList;
-
-		public PluginAdapter(Context context, int resource, List<ApplicationInfo> objects) {
-			super(context, resource, objects);
-			mList = objects;
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			View view = convertView;
-			ViewHolder viewholder = view != null ? (ViewHolder) view.getTag() : null;
-
-			if (viewholder == null) {
-				view = getLayoutInflater(getArguments()).inflate(R.layout.playlist_list_item, null);
-				viewholder = new ViewHolder(view);
-				view.setTag(viewholder);
-			}
-
-			viewholder.plugin_icon.setImageDrawable(mList.get(position).loadIcon(mPackageManager));
-			viewholder.plugin_name.setText(mList.get(position).loadLabel(mPackageManager));
-			viewholder.plugin_description.setText(mList.get(position).loadDescription(
-					mPackageManager));
-
-			return view;
-		}
-
-	}
-
 	private static PackageManager mPackageManager;
 
 	private PluginAdapter mAdapter;
@@ -135,6 +76,65 @@ public class PluginFragment extends ListFragment implements LoaderCallbacks<List
 	public void onLoadFinished(Loader<List<ApplicationInfo>> loader, List<ApplicationInfo> data) {
 		mAdapter = new PluginAdapter(getActivity(), R.layout.playlist_list_item, data);
 		setListAdapter(mAdapter);
+
+	}
+
+	public static class AppListLoader extends AsyncTaskLoader<List<ApplicationInfo>> {
+
+		public AppListLoader(Context context) {
+			super(context);
+			mPackageManager = context.getPackageManager();
+		}
+
+		@Override
+		public List<ApplicationInfo> loadInBackground() {
+			return mPackageManager.getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES
+					| PackageManager.GET_DISABLED_COMPONENTS);
+		}
+
+	}
+
+	private class PluginAdapter extends ArrayAdapter<ApplicationInfo> {
+
+		private List<ApplicationInfo> mList;
+
+		public PluginAdapter(Context context, int resource, List<ApplicationInfo> objects) {
+			super(context, resource, objects);
+			mList = objects;
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			View view = convertView;
+			ViewHolder viewholder = view != null ? (ViewHolder) view.getTag() : null;
+
+			if (viewholder == null) {
+				view = getLayoutInflater(getArguments()).inflate(R.layout.playlist_list_item, null);
+				viewholder = new ViewHolder(view);
+				view.setTag(viewholder);
+			}
+
+			viewholder.plugin_icon.setImageDrawable(mList.get(position).loadIcon(mPackageManager));
+			viewholder.plugin_name.setText(mList.get(position).loadLabel(mPackageManager));
+			viewholder.plugin_description.setText(mList.get(position).loadDescription(
+					mPackageManager));
+
+			return view;
+		}
+
+		private class ViewHolder {
+
+			ImageView plugin_icon;
+			TextView plugin_name;
+			TextView plugin_description;
+
+			public ViewHolder(View view) {
+
+				plugin_icon = (ImageView) view.findViewById(R.id.plugin_icon);
+				plugin_name = (TextView) view.findViewById(R.id.plugin_name);
+				plugin_description = (TextView) view.findViewById(R.id.plugin_description);
+			}
+		}
 
 	}
 }

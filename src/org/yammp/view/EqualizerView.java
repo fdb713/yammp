@@ -12,29 +12,30 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Shader;
 import android.text.TextPaint;
+import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
 public class EqualizerView extends View implements OnTouchListener {
 
-	public interface OnBandLevelChangeListener {
-
-		void onBandLevelChange(short band, short level);
-	}
-
 	private short[] mBands = new short[] {};
+
 	private float firstMultiplier = 0.33f;
 	private float secondMultiplier = 1 - firstMultiplier;
 	private Point p1 = new Point(), p3 = new Point();
 	private int GRID_WH = 64;
 	private short MIN_LEVEL = 0, MAX_LEVEL = 0;
 	private HashMap<Short, Integer> mCenterFreqs = new HashMap<Short, Integer>();
-
 	private OnBandLevelChangeListener mListener;
 
 	public EqualizerView(Context context) {
 		super(context);
+		setOnTouchListener(this);
+	}
+
+	public EqualizerView(Context context, AttributeSet attrs) {
+		super(context, attrs);
 		setOnTouchListener(this);
 	}
 
@@ -287,5 +288,10 @@ public class EqualizerView extends View implements OnTouchListener {
 			if (n < x && n + (getWidth() - GRID_WH) / mBands.length > x) return (short) i;
 		}
 		return -1;
+	}
+
+	public interface OnBandLevelChangeListener {
+
+		void onBandLevelChange(short band, short level);
 	}
 }

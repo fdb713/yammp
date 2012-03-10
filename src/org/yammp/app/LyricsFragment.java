@@ -40,7 +40,6 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
-import android.support.v4.app.Fragment;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -48,7 +47,9 @@ import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-public class LyricsFragment extends Fragment implements Constants, OnLineSelectedListener,
+import com.actionbarsherlock.app.SherlockFragment;
+
+public class LyricsFragment extends SherlockFragment implements Constants, OnLineSelectedListener,
 		OnLongClickListener, ServiceConnection {
 
 	private IMusicPlaybackService mService = null;

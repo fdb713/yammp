@@ -2,13 +2,6 @@ package org.yammp.util;
 
 public class VisualizerWrapper {
 
-	public interface OnDataChangedListener {
-
-		public void onFftDataChanged(byte[] data, int len);
-
-		public void onWaveDataChanged(byte[] data, int len, boolean scoop);
-	}
-
 	public static VisualizerCompat getInstance(int audioSessionId, int fps) {
 		if (isAudioFXSupported())
 			return new VisualizerCompatAudioFX(audioSessionId, fps);
@@ -32,6 +25,13 @@ public class VisualizerWrapper {
 			return false;
 		}
 		return true;
+	}
+
+	public interface OnDataChangedListener {
+
+		public void onFftDataChanged(byte[] data, int len);
+
+		public void onWaveDataChanged(byte[] data, int len, boolean scoop);
 	}
 
 }

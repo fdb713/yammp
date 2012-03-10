@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<style name="Theme" parent="@style/Theme.Holo">
-		<item name="android:windowTitleBackgroundStyle">@style/Widget.ActionBar</item>
+	<style name="Theme" parent="@style/Theme.Sherlock">
 		<item name="android:colorBackgroundCacheHint">@null</item>
 		<item name="android:windowShowWallpaper">true</item>
 		<item name="android:windowBackground">@drawable/default_background</item>
+		<item name="absForceOverflow">true</item>
 	</style>
 
 	<style name="Theme.MusicBrowser">

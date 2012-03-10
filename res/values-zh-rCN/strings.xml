@@ -173,10 +173,10 @@
 	<string name="version">版本</string>
 	<string name="haptic_feedback">震动反馈</string>
 	<string name="haptic_feedback_summary">当检测到摇晃行为时震动设备</string>
-	<string name="play_toast">播放</string>
-	<string name="pause_toast">暂停</string>
-	<string name="next_toast">下一曲目</string>
-	<string name="prev_toast">上一曲目</string>
+	<string name="play">播放</string>
+	<string name="pause">暂停</string>
+	<string name="next">下一曲目</string>
+	<string name="prev">上一曲目</string>
 	<string name="equalizer">均衡器</string>
 	<string name="equalizer_presets">预置项</string>
 	<string name="equalizer_reset">重置</string>

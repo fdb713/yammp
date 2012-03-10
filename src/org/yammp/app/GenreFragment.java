@@ -44,42 +44,6 @@ import android.widget.TextView;
 
 public class GenreFragment extends ListFragment implements LoaderCallbacks<Cursor>, Constants {
 
-	private class GenresAdapter extends CursorAdapter {
-
-		private class ViewHolder {
-
-			TextView genre_name;
-
-			public ViewHolder(View view) {
-				genre_name = (TextView) view.findViewById(R.id.playlist_name);
-			}
-		}
-
-		private GenresAdapter(Context context, Cursor cursor, boolean autoRequery) {
-			super(context, cursor, autoRequery);
-		}
-
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-
-			ViewHolder viewholder = (ViewHolder) view.getTag();
-
-			String genre_name = cursor.getString(mNameIdx);
-			viewholder.genre_name.setText(MusicUtils.parseGenreName(genre_name));
-
-		}
-
-		@Override
-		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-
-			View view = LayoutInflater.from(context).inflate(R.layout.playlist_list_item, null);
-			ViewHolder viewholder = new ViewHolder(view);
-			view.setTag(viewholder);
-			return view;
-		}
-
-	}
-
 	private GenresAdapter mAdapter;
 
 	private int mNameIdx;
@@ -180,6 +144,42 @@ public class GenreFragment extends ListFragment implements LoaderCallbacks<Curso
 			intent.putExtras(bundle);
 			startActivity(intent);
 		}
+	}
+
+	private class GenresAdapter extends CursorAdapter {
+
+		private GenresAdapter(Context context, Cursor cursor, boolean autoRequery) {
+			super(context, cursor, autoRequery);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+
+			ViewHolder viewholder = (ViewHolder) view.getTag();
+
+			String genre_name = cursor.getString(mNameIdx);
+			viewholder.genre_name.setText(MusicUtils.parseGenreName(genre_name));
+
+		}
+
+		@Override
+		public View newView(Context context, Cursor cursor, ViewGroup parent) {
+
+			View view = LayoutInflater.from(context).inflate(R.layout.playlist_list_item, null);
+			ViewHolder viewholder = new ViewHolder(view);
+			view.setTag(viewholder);
+			return view;
+		}
+
+		private class ViewHolder {
+
+			TextView genre_name;
+
+			public ViewHolder(View view) {
+				genre_name = (TextView) view.findViewById(R.id.playlist_name);
+			}
+		}
+
 	}
 
 }

@@ -29,21 +29,16 @@ import android.util.FloatMath;
 
 public class ShakeListener implements SensorEventListener, Constants {
 
-	public interface OnShakeListener {
-
-		void onShake();
-	}
-
 	private boolean mFirstSensorUpdate, mFirstDeltaUpdate = true;
+
 	private long mCurrentTimeStamp, mLastShakeTimeStamp;
 	private long mShakeInterval = 250;
 	private long mLastUpdateTime;
 	private float mLastX, mLastY, mLastZ;
-
 	private float mCurrentSpeed, mLastSpeed;
+
 	private SensorManager mSensorManager;
 	private ArrayList<OnShakeListener> mListeners;
-
 	private float mShakeThreshold = DEFAULT_SHAKING_THRESHOLD;
 
 	public ShakeListener(Context context) {
@@ -150,6 +145,11 @@ public class ShakeListener implements SensorEventListener, Constants {
 		for (OnShakeListener listener : mListeners) {
 			listener.onShake();
 		}
+	}
+
+	public interface OnShakeListener {
+
+		void onShake();
 	}
 
 }

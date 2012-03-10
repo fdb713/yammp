@@ -35,22 +35,6 @@ import android.util.Log;
  */
 public class EqualizerWrapper {
 
-	/**
-	 * Detect whether equalizer is supported.
-	 * 
-	 * @return whether equalizer is supported.
-	 */
-	public static boolean isSupported() {
-
-		try {
-			Class.forName("android.media.audiofx.Equalizer");
-		} catch (Exception e) {
-			Log.w("EuqalizerWrapper", "Equalizer is not supported!");
-			return false;
-		}
-		return true;
-	}
-
 	private Object mEqualizer = null;
 
 	/**
@@ -427,6 +411,22 @@ public class EqualizerWrapper {
 				e.getCause().printStackTrace();
 			}
 		}
+	}
+
+	/**
+	 * Detect whether equalizer is supported.
+	 * 
+	 * @return whether equalizer is supported.
+	 */
+	public static boolean isSupported() {
+
+		try {
+			Class.forName("android.media.audiofx.Equalizer");
+		} catch (Exception e) {
+			Log.w("EuqalizerWrapper", "Equalizer is not supported!");
+			return false;
+		}
+		return true;
 	}
 
 }

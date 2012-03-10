@@ -36,7 +36,6 @@
 		android:layout_height="match_parent"
 		android:layout_alignParentRight="true"
 		android:layout_alignParentTop="true"
-		android:background="@drawable/actionbarcompat_menu_button"
 		android:gravity="center_vertical"
 		android:src="@drawable/ic_action_media_next"/>
 
@@ -46,7 +45,6 @@
 		android:layout_height="match_parent"
 		android:layout_alignParentTop="true"
 		android:layout_toLeftOf="@+id/next"
-		android:background="@drawable/actionbarcompat_menu_button"
 		android:gravity="center_vertical"
 		android:src="@drawable/ic_action_media_play"/>
 

@@ -11,16 +11,11 @@ import android.view.View.OnTouchListener;
 
 public class SliderView extends View implements OnGestureListener, OnTouchListener {
 
-	public interface OnValueChangeListener {
-
-		void onValueChanged(int value);
-	}
-
 	private int mHeight = 0;
+
 	private int mMaxValue = 16;
 	private float mDelta = 0;
 	private int mColor = Color.WHITE;
-
 	private GestureDetector mGestureDetector;
 
 	private OnValueChangeListener mListener;
@@ -115,6 +110,11 @@ public class SliderView extends View implements OnGestureListener, OnTouchListen
 		setOnTouchListener(this);
 		mGestureDetector = new GestureDetector(context, this);
 		mHeight = getHeight();
+	}
+
+	public interface OnValueChangeListener {
+
+		void onValueChanged(int value);
 	}
 
 }
