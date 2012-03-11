@@ -1,5 +1,7 @@
 package org.yammp.util;
 
+import java.lang.reflect.InvocationTargetException;
+
 import android.util.Log;
 
 /**
@@ -63,13 +65,21 @@ public class EqualizerWrapper {
 			mEqualizer = Class.forName("android.media.audiofx.Equalizer")
 					.getConstructor(new Class[] { int.class, int.class })
 					.newInstance(new Object[] { priority, audioSession });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+			return;
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
 		}
+		mEqualizer = null;
 	}
 
 	/**
@@ -85,15 +95,18 @@ public class EqualizerWrapper {
 	 */
 	public short getBand(int frequency) {
 
+		if (mEqualizer == null) return 0;
 		try {
 			return (Short) mEqualizer.getClass().getMethod("getBand", new Class[] { int.class })
 					.invoke(mEqualizer, new Object[] { frequency });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return 0;
 	}
@@ -114,16 +127,19 @@ public class EqualizerWrapper {
 	 */
 	public int[] getBandFreqRange(short band) {
 
+		if (mEqualizer == null) return null;
 		try {
 			return (int[]) mEqualizer.getClass()
 					.getMethod("getBandFreqRange", new Class[] { short.class })
 					.invoke(mEqualizer, new Object[] { band });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -141,16 +157,19 @@ public class EqualizerWrapper {
 	 */
 	public short getBandLevel(short band) {
 
+		if (mEqualizer == null) return 0;
 		try {
 			return (Short) mEqualizer.getClass()
 					.getMethod("getBandLevel", new Class[] { short.class })
 					.invoke(mEqualizer, new Object[] { band });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return 0;
 	}
@@ -168,15 +187,18 @@ public class EqualizerWrapper {
 	 */
 	public short[] getBandLevelRange() {
 
+		if (mEqualizer == null) return null;
 		try {
 			return (short[]) mEqualizer.getClass().getMethod("getBandLevelRange", new Class[] {})
 					.invoke(mEqualizer, new Object[] {});
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -195,16 +217,19 @@ public class EqualizerWrapper {
 	 */
 	public int getCenterFreq(short band) {
 
+		if (mEqualizer == null) return 0;
 		try {
 			return (Integer) mEqualizer.getClass()
 					.getMethod("getCenterFreq", new Class[] { short.class })
 					.invoke(mEqualizer, new Object[] { band });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return 0;
 	}
@@ -219,15 +244,18 @@ public class EqualizerWrapper {
 	 */
 	public short getCurrentPreset() {
 
+		if (mEqualizer == null) return 0;
 		try {
 			return (Short) mEqualizer.getClass().getMethod("getCurrentPreset", new Class[] {})
 					.invoke(mEqualizer, new Object[] {});
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return 0;
 	}
@@ -242,15 +270,18 @@ public class EqualizerWrapper {
 	 */
 	public short getNumberOfBands() {
 
+		if (mEqualizer == null) return 0;
 		try {
 			return (Short) mEqualizer.getClass().getMethod("getNumberOfBands", new Class[] {})
 					.invoke(mEqualizer, new Object[] {});
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return 0;
 	}
@@ -266,15 +297,18 @@ public class EqualizerWrapper {
 	 */
 	public short getNumberOfPresets() {
 
+		if (mEqualizer == null) return 0;
 		try {
 			return (Short) mEqualizer.getClass().getMethod("getNumberOfPresets", new Class[] {})
 					.invoke(mEqualizer, new Object[] {});
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return 0;
 	}
@@ -292,16 +326,19 @@ public class EqualizerWrapper {
 	 */
 	public String getPresetName(short preset) {
 
+		if (mEqualizer == null) return null;
 		try {
 			return (String) mEqualizer.getClass()
 					.getMethod("getPresetName", new Class[] { short.class })
 					.invoke(mEqualizer, new Object[] { preset });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -313,15 +350,18 @@ public class EqualizerWrapper {
 	 */
 	public void release() {
 
+		if (mEqualizer == null) return;
 		try {
 			mEqualizer.getClass().getMethod("release", new Class[] {})
 					.invoke(mEqualizer, new Object[] {});
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -342,16 +382,19 @@ public class EqualizerWrapper {
 	 */
 	public void setBandLevel(short band, short level) {
 
+		if (mEqualizer == null) return;
 		try {
 			mEqualizer.getClass()
 					.getMethod("setBandLevel", new Class[] { short.class, short.class })
 					.invoke(mEqualizer, new Object[] { band, level });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -374,16 +417,19 @@ public class EqualizerWrapper {
 	 */
 	public int setEnabled(boolean enabled) {
 
+		if (mEqualizer == null) return -1;
 		try {
 			return (Integer) mEqualizer.getClass()
 					.getMethod("setEnabled", new Class[] { boolean.class })
 					.invoke(mEqualizer, new Object[] { enabled });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 		return -1;
 	}
@@ -401,15 +447,18 @@ public class EqualizerWrapper {
 	 */
 	public void usePreset(short preset) {
 
+		if (mEqualizer == null) return;
 		try {
 			mEqualizer.getClass().getMethod("usePreset", new Class[] { short.class })
 					.invoke(mEqualizer, new Object[] { preset });
-		} catch (Exception e) {
-			if (e.getCause() == null) {
-				e.printStackTrace();
-			} else {
-				e.getCause().printStackTrace();
-			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -422,7 +471,7 @@ public class EqualizerWrapper {
 
 		try {
 			Class.forName("android.media.audiofx.Equalizer");
-		} catch (Exception e) {
+		} catch (ClassNotFoundException e) {
 			Log.w("EuqalizerWrapper", "Equalizer is not supported!");
 			return false;
 		}

@@ -64,11 +64,11 @@ public class TouchPaintView extends View {
 		}
 		int action = event.getAction();
 		mCurDown = action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE;
-//		int N = event.getHistorySize();
-//		for (int i = 0; i < N; i++) {
-//			drawPoint(event.getHistoricalX(i), event.getHistoricalY(i),
-//					event.getHistoricalPressure(i), event.getHistoricalSize(i));
-//		}
+		// int N = event.getHistorySize();
+		// for (int i = 0; i < N; i++) {
+		// drawPoint(event.getHistoricalX(i), event.getHistoricalY(i),
+		// event.getHistoricalPressure(i), event.getHistoricalSize(i));
+		// }
 		drawPoint(event.getX(), event.getY(), event.getPressure(), event.getSize());
 		mFadeSteps = 0;
 		mHandler.sendEmptyMessageDelayed(0, FADE_DELAY);

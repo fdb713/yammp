@@ -17,6 +17,7 @@
 package org.yammp.dialog;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -353,8 +354,9 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 				bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 				fos.flush();
 				fos.close();
-				MusicUtils.clearAlbumArtCache();
-			} catch (Exception e) {
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}

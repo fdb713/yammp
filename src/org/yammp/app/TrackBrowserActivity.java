@@ -36,7 +36,8 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore.Audio;
 
-public class TrackBrowserActivity extends SherlockFragmentActivity implements Constants, ServiceConnection {
+public class TrackBrowserActivity extends SherlockFragmentActivity implements Constants,
+		ServiceConnection {
 
 	private ServiceToken mToken;
 	private Intent intent;

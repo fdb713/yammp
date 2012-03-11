@@ -5,19 +5,12 @@
 		<item name="android:colorBackgroundCacheHint">@null</item>
 		<item name="android:windowShowWallpaper">true</item>
 		<item name="android:windowBackground">@drawable/default_background</item>
-		<item name="absForceOverflow">true</item>
 	</style>
 
-	<style name="Theme.MusicBrowser">
-		<item name="vpiTitlePageIndicatorStyle">@style/Widget.TitlePageIndicator.MusicBrowser</item>
-	</style>
+	<style name="Theme.MusicBrowser"></style>
 
 	<style name="Theme.MusicPlayback">
 		<item name="android:windowBackground">@drawable/music_playback_background</item>
-	</style>
-
-	<style name="Widget.TitlePageIndicator.MusicBrowser" parent="Widget.TitlePageIndicator">
-		<item name="selectedBold">false</item>
 	</style>
 
 	<style name="Widget.ActionBar">

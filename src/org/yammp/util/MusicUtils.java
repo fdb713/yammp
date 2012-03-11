@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -68,6 +69,7 @@ import android.text.format.Time;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 public class MusicUtils implements Constants {
@@ -547,16 +549,25 @@ public class MusicUtils implements Constants {
 		return null;
 	}
 
-	// Get album art for specified album. This method will not try to
-	// fall back to getting artwork directly from the file, nor will
-	// it attempt to repair the database.
+	/**
+	 * Get album art for specified album. This method will not try to fall back
+	 * to getting artwork directly from the file, nor will it attempt to repair
+	 * the database.
+	 * 
+	 * @param context
+	 * @param album_id
+	 * @param w
+	 * @param h
+	 * @return
+	 */
 	public static Bitmap getArtworkQuick(Context context, long album_id, int w, int h) {
 
-		// NOTE: There is in fact a 1 pixel border on the right side in the
-		// ImageView
-		// used to display this drawable. Take it into account now, so we don't
-		// have to
-		// scale later.
+		/*
+		 * NOTE: There is in fact a 1 pixel border on the right side in the
+		 * ImageView used to display this drawable. Take it into account now, so
+		 * we don't have to scale later.
+		 */
+
 		w -= 1;
 		ContentResolver res = context.getContentResolver();
 		Uri uri = ContentUris.withAppendedId(mArtworkUri, album_id);
@@ -619,6 +630,10 @@ public class MusicUtils implements Constants {
 			}
 		}
 		return null;
+	}
+
+	public static Uri getArtworkUri(Context context, long album_id) {
+		return getArtworkUri(context, -1, album_id);
 	}
 
 	public static Uri getArtworkUri(Context context, long song_id, long album_id) {
@@ -949,9 +964,8 @@ public class MusicUtils implements Constants {
 	public static long[] getSongListForPlaylist(Context context, long plid) {
 
 		final String[] ccols = new String[] { MediaStore.Audio.Playlists.Members.AUDIO_ID };
-		Cursor cursor = query(context,
-				MediaStore.Audio.Playlists.Members.getContentUri("external", plid), ccols, null,
-				null, MediaStore.Audio.Playlists.Members.DEFAULT_SORT_ORDER);
+		Cursor cursor = query(context, Playlists.Members.getContentUri("external", plid), ccols,
+				null, null, Playlists.Members.DEFAULT_SORT_ORDER);
 
 		if (cursor != null) {
 			long[] list = getSongListForCursor(cursor);

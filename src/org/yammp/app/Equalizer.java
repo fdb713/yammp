@@ -131,7 +131,6 @@ public class Equalizer extends SherlockFragmentActivity implements Constants, Se
 		super.onStop();
 	}
 
-
 	private void resetEqualizer() {
 
 		if (mService != null) {

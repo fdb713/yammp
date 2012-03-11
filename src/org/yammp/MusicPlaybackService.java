@@ -94,14 +94,14 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	private static final int LYRICS_REFRESHED = 3;
 	private static final int LYRICS_PAUSED = 4;
 	private static final int LYRICS_RESUMED = 5;
-	
+
 	private static final int START_SLEEP_TIMER = 1;
 	private static final int STOP_SLEEP_TIMER = 2;
 
 	private MultiPlayer mPlayer;
 
 	private String mFileToPlay;
-	private NotificationManager mNotification;
+	private NotificationManager mNotificationManager;
 	private int mShuffleMode = SHUFFLE_NONE;
 
 	private int mRepeatMode = REPEAT_NONE;
@@ -328,9 +328,9 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			}
 		}
 	};
-	
+
 	private BroadcastReceiver mExternalAudioDeviceStatusReceiver = new BroadcastReceiver() {
-		
+
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
@@ -340,7 +340,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			}
 		}
 	};
-	
+
 	private BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
 
 		@Override
@@ -443,18 +443,18 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 							mSleepTimerTimedUp = true;
 						} else {
 							pause();
-							mNotification.cancel(SLEEPTIMER_STATUS);
+							mNotificationManager.cancel(ID_NOTIFICATION_SLEEPTIMER);
 						}
 					} else {
 						pause();
-						mNotification.cancel(SLEEPTIMER_STATUS);
+						mNotificationManager.cancel(ID_NOTIFICATION_SLEEPTIMER);
 					}
 					mStopTimestamp = 0;
 					break;
 				case STOP_SLEEP_TIMER:
 					mStopTimestamp = 0;
 					mSleepTimerHandler.removeMessages(START_SLEEP_TIMER, null);
-					mNotification.cancel(SLEEPTIMER_STATUS);
+					mNotificationManager.cancel(ID_NOTIFICATION_SLEEPTIMER);
 					break;
 			}
 		}
@@ -602,7 +602,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		if (!mEqualizerSupported || mEqualizer == null) return;
 		mEqualizer.release();
 	}
-	
+
 	public void eqReset() {
 		if (!mEqualizerSupported || mEqualizer == null) return;
 
@@ -863,7 +863,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		synchronized (this) {
 			if (mSleepTimerTimedUp) {
 				pause();
-				mNotification.cancel(SLEEPTIMER_STATUS);
+				mNotificationManager.cancel(ID_NOTIFICATION_SLEEPTIMER);
 				mSleepTimerTimedUp = false;
 				return;
 			}
@@ -988,7 +988,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		mPrefs = new PreferencesEditor(getApplicationContext());
 
-		mNotification = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mShakeDetector = new ShakeListener(this);
 
 		mCardId = MusicUtils.getCardId(this);
@@ -1021,8 +1021,9 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		commandFilter.addAction(TOGGLESHUFFLE_ACTION);
 		commandFilter.addAction(BROADCAST_PLAYSTATUS_REQUEST);
 		registerReceiver(mIntentReceiver, commandFilter);
-		
-		registerReceiver(mExternalAudioDeviceStatusReceiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+
+		registerReceiver(mExternalAudioDeviceStatusReceiver, new IntentFilter(
+				Intent.ACTION_HEADSET_PLUG));
 
 		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, this.getClass().getName());
@@ -1074,7 +1075,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			mUnmountReceiver = null;
 		}
 		mWakeLock.release();
-		mNotification.cancelAll();
+		mNotificationManager.cancelAll();
 		removeStickyBroadcast(mPlaybackIntent);
 		super.onDestroy();
 	}
@@ -1361,7 +1362,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public void play() {
 
 		CharSequence contentTitle, contentText = null;
-		PendingIntent contentIntent;
+		
 
 		TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 		if (telephonyManager.getCallState() == TelephonyManager.CALL_STATE_OFFHOOK) return;
@@ -1405,14 +1406,13 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				contentText = artist;
 			}
 
-			contentIntent = PendingIntent.getActivity(this, 0, new Intent(INTENT_PLAYBACK_VIEWER),
+			PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(INTENT_PLAYBACK_VIEWER),
 					0);
 
-			Notification status = new Notification(R.drawable.ic_stat_playback, null, 0);
-			status.flags = Notification.FLAG_ONGOING_EVENT;
-			status.icon = R.drawable.ic_stat_playback;
-			status.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
-			mNotification.notify(PLAYBACKSERVICE_STATUS, status);
+			Notification notification = new Notification(R.drawable.ic_stat_playback, null, 0);
+			//notification.flags = Notification.FLAG_ONGOING_EVENT|Notification.FLAG_ONLY_ALERT_ONCE;
+			notification.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
+			mNotificationManager.notify(ID_NOTIFICATION_PLAYBACK, notification);
 
 			if (!mIsSupposedToBePlaying) {
 				mIsSupposedToBePlaying = true;
@@ -1669,6 +1669,10 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public void setRepeatMode(int repeatmode) {
 
 		synchronized (this) {
+			if (mRepeatMode == repeatmode) return;
+			if (mShuffleMode == SHUFFLE_NORMAL && repeatmode == REPEAT_CURRENT) {
+				setShuffleMode(SHUFFLE_NONE);
+			}
 			mRepeatMode = repeatmode;
 			notifyChange(BROADCAST_REPEATMODE_CHANGED);
 			saveQueue(false);
@@ -1678,7 +1682,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public void setShuffleMode(int shufflemode) {
 
 		synchronized (this) {
-			if (mShuffleMode == shufflemode && mPlayListLen > 0) return;
+			if (mShuffleMode == shufflemode || mPlayListLen < 1) return;
 			if (mRepeatMode == REPEAT_CURRENT) {
 				mRepeatMode = REPEAT_NONE;
 			}
@@ -1702,6 +1706,15 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		} else {
 			removeFromFavorites();
 		}
+	}
+
+	public boolean togglePause() {
+		if (isPlaying()) {
+			pause();
+		} else {
+			play();
+		}
+		return isPlaying();
 	}
 
 	public void toggleShuffle() {
@@ -1788,7 +1801,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		mDelayedStopHandler.removeCallbacksAndMessages(null);
 		Message msg = mDelayedStopHandler.obtainMessage();
 		mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
-		mNotification.cancel(PLAYBACKSERVICE_STATUS);
+		mNotificationManager.cancel(ID_NOTIFICATION_PLAYBACK);
 	}
 
 	private boolean isPodcast() {
@@ -2215,7 +2228,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		notification.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
 
 		mGentleSleepTimer = gentle;
-		mNotification.notify(SLEEPTIMER_STATUS, notification);
+		mNotificationManager.notify(ID_NOTIFICATION_SLEEPTIMER, notification);
 		mSleepTimerHandler.sendEmptyMessageDelayed(START_SLEEP_TIMER, milliseconds);
 		Toast.makeText(
 				this,
@@ -2238,7 +2251,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		if (remove_status_icon) {
 			gotoIdleState();
 		} else {
-			mNotification.cancel(PLAYBACKSERVICE_STATUS);
+			mNotificationManager.cancel(ID_NOTIFICATION_PLAYBACK);
 		}
 		if (remove_status_icon) {
 			mIsSupposedToBePlaying = false;
@@ -2540,7 +2553,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		public void eqRelease() {
 			mService.get().eqRelease();
 		}
-		
+
 		@Override
 		public void eqReset() {
 			mService.get().eqReset();
@@ -2835,23 +2848,14 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		}
 
 		@Override
+		public boolean togglePause() throws RemoteException {
+			return mService.get().togglePause();
+		}
+
+		@Override
 		public void toggleShuffle() {
 
 			mService.get().toggleShuffle();
 		}
-
-		@Override
-		public boolean togglePause() throws RemoteException {
-			return mService.get().togglePause();
-		}
-	}
-
-	public boolean togglePause() {
-		if (isPlaying()) {
-			pause();
-		} else {
-			play();
-		}
-		return isPlaying();
 	}
 }

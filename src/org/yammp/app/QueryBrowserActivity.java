@@ -42,8 +42,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 
-public class QueryBrowserActivity extends SherlockFragmentActivity implements Constants, ServiceConnection,
-		TextWatcher {
+public class QueryBrowserActivity extends SherlockFragmentActivity implements Constants,
+		ServiceConnection, TextWatcher {
 
 	private ServiceToken mToken;
 	private Intent intent;

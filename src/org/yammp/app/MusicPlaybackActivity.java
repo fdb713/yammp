@@ -548,7 +548,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 		Intent intent;
 		switch (item.getItemId()) {
-			case ADD_TO_PLAYLIST:
+			case MENU_ADD_TO_PLAYLIST:
 				intent = new Intent(INTENT_ADD_TO_PLAYLIST);
 				long[] list_to_be_added = new long[1];
 				list_to_be_added[0] = MusicUtils.getCurrentAudioId();
@@ -559,7 +559,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 				intent = new Intent(INTENT_EQUALIZER);
 				startActivity(intent);
 				break;
-			case SLEEP_TIMER:
+			case MENU_SLEEP_TIMER:
 				intent = new Intent(INTENT_SLEEP_TIMER);
 				startActivity(intent);
 				break;
@@ -598,7 +598,9 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		if (item != null) item.setVisible(EqualizerWrapper.isSupported());
 		item = menu.findItem(ADD_TO_FAVORITES);
 		try {
-			if (item != null && mService != null) item.setIcon(mService.isFavorite(mService.getAudioId()) ? R.drawable.ic_menu_star : R.drawable.ic_menu_star_off);
+			if (item != null && mService != null)
+				item.setIcon(mService.isFavorite(mService.getAudioId()) ? R.drawable.ic_menu_star
+						: R.drawable.ic_menu_star_off);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -926,9 +928,8 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 					remaining = 500;
 				}
 
-				
-				//Normalize our progress along the progress bar's scale
-	            setSupportProgress((int) ((Window.PROGRESS_END - Window.PROGRESS_START) * pos / mDuration));
+				// Normalize our progress along the progress bar's scale
+				setSupportProgress((int) ((Window.PROGRESS_END - Window.PROGRESS_START) * pos / mDuration));
 			} else {
 				mCurrentTime.setText("--:--");
 				setSupportProgress(Window.PROGRESS_END - Window.PROGRESS_START);
@@ -1117,8 +1118,8 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		}
 	}
 
-	public static class AlbumArtFragment extends SherlockFragment implements ViewSwitcher.ViewFactory,
-			OnClickListener, ServiceConnection {
+	public static class AlbumArtFragment extends SherlockFragment implements
+			ViewSwitcher.ViewFactory, OnClickListener, ServiceConnection {
 
 		private ImageSwitcher mAlbum;
 
@@ -1419,7 +1420,8 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		}
 	}
 
-	public static class LyricsAndQueueFragment extends SherlockFragment implements OnValueChangeListener {
+	public static class LyricsAndQueueFragment extends SherlockFragment implements
+			OnValueChangeListener {
 
 		private SliderView mVolumeSliderLeft, mVolumeSliderRight;
 		private AudioManager mAudioManager;

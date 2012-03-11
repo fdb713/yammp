@@ -20,8 +20,11 @@
 
 package org.yammp.app;
 
+import java.io.File;
+
 import org.yammp.Constants;
 import org.yammp.R;
+import org.yammp.util.LazyImageLoader;
 import org.yammp.util.MusicUtils;
 
 import com.actionbarsherlock.app.SherlockFragment;
@@ -62,8 +65,8 @@ import android.widget.ImageView;
 import android.widget.SimpleCursorTreeAdapter;
 import android.widget.TextView;
 
-public class ArtistFragment extends SherlockFragment implements LoaderManager.LoaderCallbacks<Cursor>,
-		Constants, OnGroupExpandListener {
+public class ArtistFragment extends SherlockFragment implements
+		LoaderManager.LoaderCallbacks<Cursor>, Constants, OnGroupExpandListener {
 
 	private ArtistsAdapter mArtistsAdapter;
 
@@ -75,6 +78,7 @@ public class ArtistFragment extends SherlockFragment implements LoaderManager.Lo
 	private String mCurrentGroupArtistName, mCurrentChildArtistNameForAlbum,
 			mCurrentChildAlbumName;
 	private boolean mGroupSelected, mChildSelected = false;
+	private LazyImageLoader mImageLoader;
 
 	private int mGroupArtistIdIdx, mGroupArtistIdx, mGroupAlbumIdx, mGroupSongIdx;
 
@@ -101,9 +105,12 @@ public class ArtistFragment extends SherlockFragment implements LoaderManager.Lo
 
 		setHasOptionsMenu(true);
 
-		mArtistsAdapter = new ArtistsAdapter(getSherlockActivity(), null, R.layout.artist_list_item_group,
-				new String[] {}, new int[] {}, R.layout.artist_list_item_child, new String[] {},
-				new int[] {});
+		mImageLoader = new LazyImageLoader(getActivity().getApplicationContext(),
+				R.drawable.ic_mp_albumart_unknown);
+
+		mArtistsAdapter = new ArtistsAdapter(getSherlockActivity(), null,
+				R.layout.artist_list_item_group, new String[] {}, new int[] {},
+				R.layout.artist_list_item_child, new String[] {}, new int[] {});
 		mListView = (ExpandableListView) getView().findViewById(R.id.artist_expandable_list);
 		mListView.setAdapter(mArtistsAdapter);
 		mListView.setOnGroupExpandListener(this);
@@ -123,7 +130,8 @@ public class ArtistFragment extends SherlockFragment implements LoaderManager.Lo
 			case PLAY_SELECTION:
 				if (mGroupSelected || !mChildSelected) {
 					int position = mSelectedGroupPosition;
-					long[] list = MusicUtils.getSongListForArtist(getSherlockActivity(), mSelectedGroupId);
+					long[] list = MusicUtils.getSongListForArtist(getSherlockActivity(),
+							mSelectedGroupId);
 					MusicUtils.playAll(getSherlockActivity(), list, position);
 				}
 				return true;
@@ -312,6 +320,8 @@ public class ArtistFragment extends SherlockFragment implements LoaderManager.Lo
 
 			ViewHolderItem viewholder = (ViewHolderItem) view.getTag();
 
+			if (viewholder == null) return;
+
 			String name = cursor.getString(mAlbumIndex);
 			String displayname = name;
 			boolean unknown = name == null || name.equals(MediaStore.UNKNOWN_STRING);
@@ -327,17 +337,7 @@ public class ArtistFragment extends SherlockFragment implements LoaderManager.Lo
 			}
 			viewholder.artist_name.setText(displayname);
 
-			String art = cursor.getString(mAlbumArtIndex);
 			long aid = cursor.getLong(0);
-			if (unknown || art == null || art.length() == 0) {
-				viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			} else {
-				int w = context.getResources().getDimensionPixelSize(R.dimen.gridview_bitmap_width);
-				int h = context.getResources()
-						.getDimensionPixelSize(R.dimen.gridview_bitmap_height);
-				Bitmap bitmap = MusicUtils.getCachedArtworkBitmap(context, aid, w, h);
-				viewholder.album_art.setImageBitmap(bitmap);
-			}
 
 			long currentalbumid = MusicUtils.getCurrentAlbumId();
 			if (currentalbumid == aid) {
@@ -346,6 +346,15 @@ public class ArtistFragment extends SherlockFragment implements LoaderManager.Lo
 			} else {
 				viewholder.album_name.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
 			}
+
+			String art = cursor.getString(mAlbumArtIndex);
+
+			if (art != null && art.toString().length() > 0) {
+				mImageLoader.displayImage(new File(art), viewholder.album_art);
+			} else {
+				viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
+			}
+
 		}
 
 		@Override

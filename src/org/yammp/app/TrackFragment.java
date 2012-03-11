@@ -56,7 +56,8 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class TrackFragment extends SherlockListFragment implements LoaderCallbacks<Cursor>, Constants, OnDropListener, OnRemoveListener {
+public class TrackFragment extends SherlockListFragment implements LoaderCallbacks<Cursor>,
+		Constants, OnDropListener, OnRemoveListener {
 
 	private TracksAdapter mAdapter;
 
@@ -79,32 +80,6 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 		}
 
 	};
-
-
-	@Override
-	public void onDrop(int from, int to) {
-
-		if (mPlaylistId >= 0) {
-			Playlists.Members.moveItem(getActivity().getContentResolver(), mPlaylistId, from,
-					to);
-		} else if (mPlaylistId == PLAYLIST_QUEUE) {
-			MusicUtils.moveQueueItem(from, to);
-			reloadQueueCursor();
-		} else if (mPlaylistId == PLAYLIST_FAVORITES) {
-			long favorites_id = MusicUtils.getFavoritesId(getActivity());
-			Playlists.Members.moveItem(getActivity().getContentResolver(), favorites_id, from,
-					to);
-		}
-
-		mAdapter.notifyDataSetChanged();
-	}
-
-
-	@Override
-	public void onRemove(int which) {
-
-		removePlaylistItem(which);
-	}
 
 	public TrackFragment() {
 
@@ -324,6 +299,22 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 	}
 
 	@Override
+	public void onDrop(int from, int to) {
+
+		if (mPlaylistId >= 0) {
+			Playlists.Members.moveItem(getActivity().getContentResolver(), mPlaylistId, from, to);
+		} else if (mPlaylistId == PLAYLIST_QUEUE) {
+			MusicUtils.moveQueueItem(from, to);
+			reloadQueueCursor();
+		} else if (mPlaylistId == PLAYLIST_FAVORITES) {
+			long favorites_id = MusicUtils.getFavoritesId(getActivity());
+			Playlists.Members.moveItem(getActivity().getContentResolver(), favorites_id, from, to);
+		}
+
+		mAdapter.notifyDataSetChanged();
+	}
+
+	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		if (mCursor == null || mCursor.getCount() == 0) return;
 		// When selecting a track from the queue, just jump there instead of
@@ -388,6 +379,12 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 			mListView.setSelector(R.drawable.list_selector_background);
 		}
 
+	}
+
+	@Override
+	public void onRemove(int which) {
+
+		removePlaylistItem(which);
 	}
 
 	@Override

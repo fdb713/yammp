@@ -25,8 +25,8 @@ public interface Constants {
 	public final static int ACTION_NOW = 1;
 	public final static int ACTION_NEXT = 2;
 	public final static int ACTION_LAST = 3;
-	public final static int PLAYBACKSERVICE_STATUS = 1;
-	public final static int SLEEPTIMER_STATUS = 2;
+	public final static int ID_NOTIFICATION_PLAYBACK = 1;
+	public final static int ID_NOTIFICATION_SLEEPTIMER = 2;
 
 	public final static int SHUFFLE_NONE = 0;
 	public final static int SHUFFLE_NORMAL = 1;
@@ -249,13 +249,13 @@ public interface Constants {
 	public final static String BROADCAST_PLAYSTATUS_REQUEST = "org.yammp.playstatusrequest";
 	public final static String BROADCAST_PLAYSTATUS_RESPONSE = "org.yammp.playstatusresponse";
 
-	public final static int OPEN_URL = R.id.open_url;
-	public final static int ADD_TO_PLAYLIST = R.id.add_to_playlist;
-	public final static int SLEEP_TIMER = R.id.sleep_timer;
-	public final static int SAVE_AS_PLAYLIST = R.id.save_as_playlist;
-	public final static int CLEAR_PLAYLIST = R.id.clear_playlist;
-	public final static int PLAYLIST_SELECTED = R.id.playlist_selected;
-	public final static int NEW_PLAYLIST = R.id.new_playlist;
+	public final static int MENU_OPEN_URL = R.id.open_url;
+	public final static int MENU_ADD_TO_PLAYLIST = R.id.add_to_playlist;
+	public final static int MENU_SLEEP_TIMER = R.id.sleep_timer;
+	public final static int MENU_SAVE_AS_PLAYLIST = R.id.save_as_playlist;
+	public final static int MENU_CLEAR_PLAYLIST = R.id.clear_playlist;
+	public final static int MENU_PLAYLIST_SELECTED = R.id.playlist_selected;
+	public final static int MENU_NEW_PLAYLIST = R.id.new_playlist;
 	public final static int PLAY_SELECTION = R.id.play_selection;
 	public final static int GOTO_PLAYBACK = R.id.goto_playback;
 	public final static int GOTO_HOME = android.R.id.home;

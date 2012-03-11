@@ -20,8 +20,10 @@
 
 package org.yammp.app;
 
+import java.io.File;
 import org.yammp.Constants;
 import org.yammp.R;
+import org.yammp.util.LazyImageLoader;
 import org.yammp.util.MusicUtils;
 
 import com.actionbarsherlock.app.SherlockFragment;
@@ -34,33 +36,29 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Debug;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.animation.AnimationUtils;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 
-public class AlbumFragment extends SherlockFragment implements Constants, ListView.OnScrollListener,
-		OnItemClickListener, LoaderCallbacks<Cursor> {
+public class AlbumFragment extends SherlockFragment implements Constants, OnItemClickListener,
+		LoaderCallbacks<Cursor> {
 
 	private AlbumsAdapter mAdapter;
 
@@ -70,8 +68,7 @@ public class AlbumFragment extends SherlockFragment implements Constants, ListVi
 	private long mSelectedId;
 	private String mCurrentAlbumName, mCurrentArtistNameForAlbum;
 	private int mIdIdx, mAlbumIdx, mArtistIdx, mArtIdx;
-	private boolean mBusy = false;
-	private int mFirstVisible, mLastVisible;
+	private LazyImageLoader mImageLoader;
 
 	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
 
@@ -97,14 +94,16 @@ public class AlbumFragment extends SherlockFragment implements Constants, ListVi
 		// We have a menu item to show in action bar.
 		setHasOptionsMenu(true);
 
+		mImageLoader = new LazyImageLoader(getActivity().getApplicationContext(),
+				R.drawable.ic_mp_albumart_unknown);
+
 		mAdapter = new AlbumsAdapter(getSherlockActivity(), R.layout.album_grid_item, null,
 				new String[] {}, new int[] {}, 0);
 
 		View fragmentView = getView();
-		mGridView = (GridView) fragmentView.findViewById(R.id.album_gridview);
+		mGridView = (GridView) fragmentView.findViewById(android.R.id.list);
 		mGridView.setAdapter(mAdapter);
 		mGridView.setOnItemClickListener(this);
-		mGridView.setOnScrollListener(this);
 		mGridView.setOnCreateContextMenuListener(this);
 		mGridView.setDrawingCacheEnabled(true);
 		mGridView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_AUTO);
@@ -207,8 +206,6 @@ public class AlbumFragment extends SherlockFragment implements Constants, ListVi
 		mArtIdx = data.getColumnIndexOrThrow(Audio.Albums.ALBUM_ART);
 
 		mAdapter.changeCursor(data);
-		mFirstVisible = mGridView.getFirstVisiblePosition();
-		mLastVisible = mGridView.getLastVisiblePosition();
 
 	}
 
@@ -216,29 +213,6 @@ public class AlbumFragment extends SherlockFragment implements Constants, ListVi
 	public void onSaveInstanceState(Bundle outState) {
 		outState.putAll(getArguments() != null ? getArguments() : new Bundle());
 		super.onSaveInstanceState(outState);
-	}
-
-	@Override
-	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount,
-			int totalItemCount) {
-		mFirstVisible = firstVisibleItem;
-		mLastVisible = firstVisibleItem + visibleItemCount;
-	}
-
-	@Override
-	public void onScrollStateChanged(AbsListView view, int state) {
-		switch (state) {
-			case SCROLL_STATE_IDLE:
-				mBusy = false;
-				break;
-			case SCROLL_STATE_TOUCH_SCROLL:
-				mBusy = true;
-				break;
-			case SCROLL_STATE_FLING:
-				mBusy = true;
-				break;
-		}
-
 	}
 
 	@Override
@@ -324,6 +298,8 @@ public class AlbumFragment extends SherlockFragment implements Constants, ListVi
 
 			ViewHolder viewholder = (ViewHolder) view.getTag();
 
+			if (viewholder == null) return;
+
 			String album_name = cursor.getString(mAlbumIdx);
 			if (album_name == null || MediaStore.UNKNOWN_STRING.equals(album_name)) {
 				viewholder.album_name.setText(R.string.unknown_album);
@@ -341,50 +317,6 @@ public class AlbumFragment extends SherlockFragment implements Constants, ListVi
 			// We don't actually need the path to the thumbnail file,
 			// we just use it to see if there is album art or not
 			long aid = cursor.getLong(mIdIdx);
-			int width = view.getWidth();
-			int height = view.getHeight();
-
-			Log.i("Debug", "usedMemory: " + Debug.getNativeHeapSize() / 1024);
-
-			// if (viewholder != null && viewholder.album_art != null) {
-			//
-			// String art = cursor.getString(mArtIdx);
-			//
-			// if (art == null || art.length() == 0) {
-			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			// } else {
-			// Drawable d = MusicUtils.getCachedArtwork(context, aid, width,
-			// height);
-			// viewholder.album_art.setImageDrawable(d);
-			// d = null;
-			// }
-
-			// if (cursor.getPosition() >= mFirstVisible - 1
-			// && cursor.getPosition() <= mLastVisible + 1) {
-			// Bitmap result =
-			// MusicUtils.getCachedArtworkBitmap(getSherlockActivity(), aid,
-			// width, height);
-			// Bitmap result = MusicUtils.getArtworkQuick(getSherlockActivity(),
-			// aid, width, height);
-			// if (result != null) {
-			// viewholder.album_art.setImageBitmap(result);
-			// } else {
-			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			// }
-			// } else {
-			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			// }
-			// Log.d("debug", "mBusy = " + mBusy + ", position = " +
-			// cursor.getPosition());
-			// if (mBusy) {
-			// viewholder.album_art.setVisibility(View.INVISIBLE);
-			// } else {
-			// viewholder.album_art.setVisibility(View.VISIBLE);
-			//
-			// viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
-			// }
-
-			// }
 
 			long currentalbumid = MusicUtils.getCurrentAlbumId();
 			if (currentalbumid == aid) {
@@ -392,6 +324,14 @@ public class AlbumFragment extends SherlockFragment implements Constants, ListVi
 						R.drawable.ic_indicator_nowplaying_small, 0);
 			} else {
 				viewholder.album_name.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+			}
+
+			String art = cursor.getString(mArtIdx);
+
+			if (art != null && art.toString().length() > 0) {
+				mImageLoader.displayImage(new File(art), viewholder.album_art);
+			} else {
+				viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
 			}
 
 		}
