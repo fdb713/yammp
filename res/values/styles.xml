@@ -5,6 +5,10 @@
 		<item name="android:colorBackgroundCacheHint">@null</item>
 		<item name="android:windowShowWallpaper">true</item>
 		<item name="android:windowBackground">@drawable/default_background</item>
+		<item name="vpiTabPageIndicatorStyle">@style/Widget.TabPageIndicator</item>
+		<item name="vpiVerticalTabPageIndicatorStyle">@style/Widget.TabPageIndicator.Vertical</item>
+		<item name="vpiTabTextStyle">@style/Widget.TabPageIndicator.Text</item>
+		<item name="vpiVerticalTabTextStyle">@style/Widget.TabPageIndicator.Text</item>
 	</style>
 
 	<style name="Theme.MusicBrowser"></style>

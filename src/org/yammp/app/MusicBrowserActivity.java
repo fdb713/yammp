@@ -27,7 +27,6 @@ import org.yammp.IMusicPlaybackService;
 import org.yammp.R;
 import org.yammp.dialog.ScanningProgress;
 import org.yammp.util.MusicUtils;
-import org.yammp.util.PreferencesEditor;
 import org.yammp.util.ServiceToken;
 
 import android.content.BroadcastReceiver;
@@ -47,31 +46,24 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.ViewPager;
-import android.support.v4.view.ViewPager.OnPageChangeListener;
+import android.widget.ArrayAdapter;
 
 import com.actionbarsherlock.app.ActionBar;
-import com.actionbarsherlock.app.ActionBar.Tab;
-import com.actionbarsherlock.app.ActionBar.TabListener;
+import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 
 public class MusicBrowserActivity extends SherlockFragmentActivity implements Constants,
-		ServiceConnection, OnPageChangeListener {
+		ServiceConnection {
 
 	private ActionBar mActionBar;
-	private ViewPager mViewPager;
-
-	private TabsAdapter mTabsAdapter;
 
 	private ServiceToken mToken;
 	private IMusicPlaybackService mService;
-	private PreferencesEditor mPrefs;
 	private AsyncAlbumArtLoader mAlbumArtLoader;
+	private PagesAdapter mAdapter;
 
 	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
 
@@ -97,9 +89,7 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 
 		mActionBar = getSupportActionBar();
 
-		mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-
-		mPrefs = new PreferencesEditor(getApplicationContext());
+		mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
 
 		String mount_state = Environment.getExternalStorageState();
 
@@ -109,8 +99,11 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 			finish();
 		}
 
-		configureActivity();
-		configureTabs(icicle);
+		FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+		ft.replace(android.R.id.content, new MusicBrowserFragment()).commit();
+		
+		//mAdapter = new PagesAdapter(mActionBar);
+		//mAdapter.addPage(new MusicBrowserFragment(), "Music Library");
 
 	}
 
@@ -157,23 +150,6 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 		}
 
 		return super.onOptionsItemSelected(item);
-	}
-
-	@Override
-	public void onPageScrolled(int arg0, float arg1, int arg2) {
-
-	}
-
-	@Override
-	public void onPageScrollStateChanged(int arg0) {
-
-	}
-
-	@Override
-	public void onPageSelected(int position) {
-		mActionBar.setSelectedNavigationItem(position);
-		mPrefs.setIntState(STATE_KEY_CURRENTTAB, position);
-
 	}
 
 	@Override
@@ -227,30 +203,6 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 		MusicUtils.unbindFromService(mToken);
 		mService = null;
 		super.onStop();
-	}
-
-	private void configureActivity() {
-
-		setContentView(R.layout.music_browser);
-
-		mTabsAdapter = new TabsAdapter(getSupportFragmentManager());
-		mViewPager = (ViewPager) findViewById(R.id.pager);
-
-	}
-
-	private void configureTabs(Bundle args) {
-
-		mTabsAdapter.addFragment(new ArtistFragment(), getString(R.string.artists).toUpperCase());
-		mTabsAdapter.addFragment(new AlbumFragment(), getString(R.string.albums).toUpperCase());
-		mTabsAdapter.addFragment(new TrackFragment(), getString(R.string.tracks).toUpperCase());
-		mTabsAdapter.addFragment(new PlaylistFragment(), getString(R.string.playlists)
-				.toUpperCase());
-		mTabsAdapter.addFragment(new GenreFragment(), getString(R.string.genres).toUpperCase());
-
-		mViewPager.setAdapter(mTabsAdapter);
-		mViewPager.setOnPageChangeListener(this);
-		int currenttab = mPrefs.getIntState(STATE_KEY_CURRENTTAB, 0);
-		mActionBar.setSelectedNavigationItem(currenttab);
 	}
 
 	private void updateNowplaying() {
@@ -317,47 +269,30 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 		}
 	}
 
-	private class TabsAdapter extends FragmentPagerAdapter implements TabListener {
+	private class PagesAdapter extends ArrayAdapter<String> implements OnNavigationListener {
 
 		private ArrayList<Fragment> mFragments = new ArrayList<Fragment>();
 
-		public TabsAdapter(FragmentManager manager) {
-			super(manager);
+		public PagesAdapter(ActionBar actionbar) {
+			super(actionbar.getThemedContext(), R.layout.sherlock_spinner_item,
+					new ArrayList<String>());
+			setDropDownViewResource(R.layout.sherlock_spinner_dropdown_item);
+			actionbar.setListNavigationCallbacks(this, this);
+
 		}
 
-		public void addFragment(Fragment fragment, String name) {
+		public void addPage(Fragment fragment, String name) {
+			add(name);
 			mFragments.add(fragment);
-			Tab tab = mActionBar.newTab();
-			tab.setText(name);
-			tab.setTabListener(this);
-			mActionBar.addTab(tab);
-			notifyDataSetChanged();
 		}
 
 		@Override
-		public int getCount() {
-			return mFragments.size();
-		}
-
-		@Override
-		public Fragment getItem(int position) {
-			return mFragments.get(position);
-		}
-
-		@Override
-		public void onTabReselected(Tab tab, FragmentTransaction ft) {
-
-		}
-
-		@Override
-		public void onTabSelected(Tab tab, FragmentTransaction ft) {
-			mViewPager.setCurrentItem(tab.getPosition());
-		}
-
-		@Override
-		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
-
+		public boolean onNavigationItemSelected(int position, long id) {
+			FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+			ft.replace(android.R.id.content, mFragments.get(position)).commit();
+			return true;
 		}
 
 	}
+
 }

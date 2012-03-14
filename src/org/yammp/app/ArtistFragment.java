@@ -302,15 +302,10 @@ public class ArtistFragment extends SherlockFragment implements
 
 		private int mArtistIndex;
 		private int mAlbumArtIndex;
-		private final String mUnknownAlbum;
-		private final String mUnknownArtist;
 
 		private AlbumChildAdapter(Context context, int layout, Cursor cursor, String[] from,
 				int[] to, int flags) {
 			super(context, layout, cursor, from, to, flags);
-
-			mUnknownAlbum = context.getString(R.string.unknown_album);
-			mUnknownArtist = context.getString(R.string.unknown_artist);
 
 			getColumnIndices(cursor);
 		}
@@ -326,14 +321,15 @@ public class ArtistFragment extends SherlockFragment implements
 			String displayname = name;
 			boolean unknown = name == null || name.equals(MediaStore.UNKNOWN_STRING);
 			if (unknown) {
-				displayname = mUnknownAlbum;
+				displayname = context.getString(R.string.unknown_album);
+				;
 			}
 			viewholder.album_name.setText(displayname);
 
 			name = cursor.getString(mArtistIndex);
 			displayname = name;
 			if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
-				displayname = mUnknownArtist;
+				displayname = context.getString(R.string.unknown_artist);
 			}
 			viewholder.artist_name.setText(displayname);
 
@@ -360,7 +356,7 @@ public class ArtistFragment extends SherlockFragment implements
 		@Override
 		public View newView(Context context, Cursor cursor, ViewGroup parent) {
 
-			View view = getLayoutInflater(getArguments()).inflate(R.layout.album_grid_item, null);
+			View view = super.newView(context, cursor, parent);
 			ViewHolderItem mViewHolder = new ViewHolderItem(view);
 			view.setTag(mViewHolder);
 			return view;

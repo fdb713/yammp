@@ -1362,7 +1362,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public void play() {
 
 		CharSequence contentTitle, contentText = null;
-		
 
 		TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 		if (telephonyManager.getCallState() == TelephonyManager.CALL_STATE_OFFHOOK) return;
@@ -1406,11 +1405,12 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				contentText = artist;
 			}
 
-			PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(INTENT_PLAYBACK_VIEWER),
-					0);
+			PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(
+					INTENT_PLAYBACK_VIEWER), 0);
 
 			Notification notification = new Notification(R.drawable.ic_stat_playback, null, 0);
-			//notification.flags = Notification.FLAG_ONGOING_EVENT|Notification.FLAG_ONLY_ALERT_ONCE;
+			// notification.flags =
+			// Notification.FLAG_ONGOING_EVENT|Notification.FLAG_ONLY_ALERT_ONCE;
 			notification.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
 			mNotificationManager.notify(ID_NOTIFICATION_PLAYBACK, notification);
 
