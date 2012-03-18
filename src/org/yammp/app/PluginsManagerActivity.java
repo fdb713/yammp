@@ -20,10 +20,10 @@
 
 package org.yammp.app;
 
-import com.actionbarsherlock.app.SherlockFragmentActivity;
-
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+
+import com.actionbarsherlock.app.SherlockFragmentActivity;
 
 /**
  * Demonstration of the implementation of a custom Loader.

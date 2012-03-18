@@ -26,11 +26,6 @@ import org.yammp.util.ServiceToken;
 import org.yammp.view.EqualizerView;
 import org.yammp.view.EqualizerView.OnBandLevelChangeListener;
 
-import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
-import com.actionbarsherlock.view.MenuItem;
-
 import android.content.ComponentName;
 import android.content.ServiceConnection;
 import android.media.AudioManager;
@@ -39,6 +34,11 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 
 public class Equalizer extends SherlockFragmentActivity implements Constants, ServiceConnection,
 		OnBandLevelChangeListener {

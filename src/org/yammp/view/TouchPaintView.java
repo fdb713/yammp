@@ -64,11 +64,6 @@ public class TouchPaintView extends View {
 		}
 		int action = event.getAction();
 		mCurDown = action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE;
-		// int N = event.getHistorySize();
-		// for (int i = 0; i < N; i++) {
-		// drawPoint(event.getHistoricalX(i), event.getHistoricalY(i),
-		// event.getHistoricalPressure(i), event.getHistoricalSize(i));
-		// }
 		drawPoint(event.getX(), event.getY(), event.getPressure(), event.getSize());
 		mFadeSteps = 0;
 		mHandler.sendEmptyMessageDelayed(0, FADE_DELAY);
@@ -82,15 +77,10 @@ public class TouchPaintView extends View {
 		}
 		boolean oldDown = mCurDown;
 		mCurDown = true;
-		int N = event.getHistorySize();
 		int baseX = mCurX;
 		int baseY = mCurY;
 		final float scaleX = event.getXPrecision();
 		final float scaleY = event.getYPrecision();
-		for (int i = 0; i < N; i++) {
-			drawPoint(baseX + event.getHistoricalX(i) * scaleX, baseY + event.getHistoricalY(i)
-					* scaleY, event.getHistoricalPressure(i), event.getHistoricalSize(i));
-		}
 		drawPoint(baseX + event.getX() * scaleX, baseY + event.getY() * scaleY,
 				event.getPressure(), event.getSize());
 		mCurDown = oldDown;

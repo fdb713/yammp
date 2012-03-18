@@ -22,7 +22,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -49,13 +48,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -67,9 +65,7 @@ import android.provider.MediaStore.Audio.Genres;
 import android.provider.MediaStore.Audio.Playlists;
 import android.text.format.Time;
 import android.util.Log;
-import android.view.View;
 import android.view.Window;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 public class MusicUtils implements Constants {
@@ -668,6 +664,28 @@ public class MusicUtils implements Constants {
 			}
 		}
 		return null;
+	}
+
+	public static Drawable getBackgroundImage(Context context, Bitmap bm, int width, int height,
+			float scale) {
+
+		if (bm == null) return null;
+		Bitmap bitmap1 = Bitmap.createScaledBitmap(bm, (int) (width * scale),
+				(int) (height * scale), true);
+		Paint paint = new Paint();
+		paint.setAntiAlias(true);
+		paint.setFilterBitmap(true);
+		paint.setMaskFilter(new BlurMaskFilter(Math.min(width, height) * scale,
+				BlurMaskFilter.Blur.NORMAL));
+
+		Bitmap result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		Canvas c = new Canvas(result);
+		Bitmap bitmap2 = Bitmap.createScaledBitmap(bitmap1, width, height, true);
+		c.drawBitmap(bitmap2, 0, 0, paint);
+		c.drawColor(0xD0000000, PorterDuff.Mode.DARKEN);
+		bitmap1.recycle();
+		bitmap2.recycle();
+		return new BitmapDrawable(context.getResources(), result);
 	}
 
 	public static String getBetterGenresWhereClause(Context context) {
@@ -1425,45 +1443,6 @@ public class MusicUtils implements Constants {
 
 			Toast.makeText(context, R.string.playlist_renamed, Toast.LENGTH_SHORT).show();
 		}
-	}
-
-	public static void setBackground(View v, Bitmap bm) {
-
-		if (bm == null) {
-			v.setBackgroundResource(0);
-			return;
-		}
-
-		int vwidth = v.getWidth();
-		int vheight = v.getHeight();
-		int bwidth = bm.getWidth();
-		int bheight = bm.getHeight();
-		float scalex = (float) vwidth / bwidth;
-		float scaley = (float) vheight / bheight;
-		float scale = Math.max(scalex, scaley) * 1.3f;
-
-		Bitmap.Config config = Bitmap.Config.ARGB_8888;
-		Bitmap bg = Bitmap.createBitmap(vwidth, vheight, config);
-		Canvas c = new Canvas(bg);
-		Paint paint = new Paint();
-		paint.setAntiAlias(true);
-		paint.setFilterBitmap(true);
-		ColorMatrix greymatrix = new ColorMatrix();
-		greymatrix.setSaturation(0);
-		ColorMatrix darkmatrix = new ColorMatrix();
-		darkmatrix.setScale(.3f, .3f, .3f, 1.0f);
-		greymatrix.postConcat(darkmatrix);
-		ColorFilter filter = new ColorMatrixColorFilter(greymatrix);
-		paint.setColorFilter(filter);
-		Matrix matrix = new Matrix();
-		matrix.setTranslate(-bwidth / 2, -bheight / 2); // move bitmap center to
-														// origin
-		matrix.postRotate(10);
-		matrix.postScale(scale, scale);
-		matrix.postTranslate(vwidth / 2, vheight / 2); // Move bitmap center to
-														// view center
-		c.drawBitmap(bm, matrix, paint);
-		v.setBackgroundDrawable(new BitmapDrawable(bg));
 	}
 
 	public static void setQueueId(long id) {

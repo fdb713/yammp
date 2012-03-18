@@ -103,13 +103,12 @@
 	<string name="delete_music">删除曲目</string>
 	<string name="delete_lyrics">删除歌词</string>
 	<string name="touch_to_shuffle_all">轻触此处随机播放所有曲目</string>
-	<string name="delete_confirm">Following items will be deleted from your device:<xliff:g id="content">%s</xliff:g></string>
-	<string name="delete_artist_tracks">All songs by <xliff:g id="artist">%s</xliff:g></string>
-	<string name="delete_artist_lyrics">All lyrics from songs by <xliff:g id="artist">%s</xliff:g></string>
-	<string name="delete_album_tracks">Songs in the album \"<xliff:g id="album">%s</xliff:g>\"</string>
-	<string name="delete_album_lyrics">Lyrics from album \"<xliff:g id="album">%s</xliff:g>\"</string>
-	<string name="delete_song_track">Song \"<xliff:g id="song">%s</xliff:g>\"</string>
-	<string name="delete_song_lyrics">Lyrics of \"<xliff:g id="song">%s</xliff:g>\"</string>
+	<string name="delete_artist_tracks">艺术家“<xliff:g id="artist">%s</xliff:g>”的全部曲目将会从设备中删除。</string>
+	<string name="delete_artist_lyrics">艺术家“<xliff:g id="artist">%s</xliff:g>”的全部歌词将会从设备中删除。</string>
+	<string name="delete_album_tracks">整张专辑“<xliff:g id="album">%s</xliff:g>”将会从设备中删除。</string>
+	<string name="delete_album_lyrics">专辑“<xliff:g id="album">%s</xliff:g>”的全部歌词将会从设备中删除。</string>
+	<string name="delete_song_track">曲目“<xliff:g id="song">%s</xliff:g>”将会从设备中删除。</string>
+	<string name="delete_song_lyrics">曲目“<xliff:g id="song">%s</xliff:g>”的歌词将会从设备中删除。</string>
 	<string name="now_playing">正在播放</string>
 	<string name="music_library">音乐库</string>
 	<string name="artists">艺术家</string>

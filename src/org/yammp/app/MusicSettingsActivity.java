@@ -23,15 +23,15 @@ package org.yammp.app;
 import org.yammp.Constants;
 import org.yammp.R;
 
-import com.actionbarsherlock.app.SherlockPreferenceActivity;
-import com.actionbarsherlock.view.MenuItem;
-
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
+
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+import com.actionbarsherlock.view.MenuItem;
 
 public class MusicSettingsActivity extends SherlockPreferenceActivity implements Constants,
 		OnPreferenceClickListener {

@@ -107,13 +107,12 @@
 	<string name="delete_music">Delete Music</string>
 	<string name="delete_lyrics">Delete Lyrics</string>
 	<string name="touch_to_shuffle_all">Touch to play all songs in shuffle mode.</string>
-	<string name="delete_confirm">Following items will be deleted from your device:<xliff:g id="content">%s</xliff:g></string>
-	<string name="delete_artist_tracks">All songs by <xliff:g id="artist">%s</xliff:g></string>
-	<string name="delete_artist_lyrics">All lyrics from songs by <xliff:g id="artist">%s</xliff:g></string>
-	<string name="delete_album_tracks">Songs in the album \"<xliff:g id="album">%s</xliff:g>\"</string>
-	<string name="delete_album_lyrics">Lyrics from album \"<xliff:g id="album">%s</xliff:g>\"</string>
-	<string name="delete_song_track">Song \"<xliff:g id="song">%s</xliff:g>\"</string>
-	<string name="delete_song_lyrics">Lyrics of \"<xliff:g id="song">%s</xliff:g>\"</string>
+	<string name="delete_artist_tracks">All songs by <xliff:g id="artist">%s</xliff:g> will be deleted from your device.</string>
+	<string name="delete_artist_lyrics">All lyrics from songs by <xliff:g id="artist">%s</xliff:g> will be deleted from your device.</string>
+	<string name="delete_album_tracks">Songs in the album \"<xliff:g id="album">%s</xliff:g>\" will be deleted from your device.</string>
+	<string name="delete_album_lyrics">Lyrics from album \"<xliff:g id="album">%s</xliff:g>\" will be deleted from your device.</string>
+	<string name="delete_song_track">Song \"<xliff:g id="song">%s</xliff:g>\" will be deleted from your device.</string>
+	<string name="delete_song_lyrics">Lyrics of \"<xliff:g id="song">%s</xliff:g>\" will be deleted from your device.</string>
 	<string name="now_playing">Now playing</string>
 	<string name="music_library">Music library</string>
 	<string name="artists">Artists</string>

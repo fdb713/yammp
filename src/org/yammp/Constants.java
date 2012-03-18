@@ -264,6 +264,7 @@ public interface Constants {
 	public final static int SHUFFLE_ALL = R.id.shuffle_all;
 	public final static int PLAY_ALL = R.id.play_all;
 	public final static int DELETE_ITEMS = R.id.delete_items;
+	public final static int DELETE_LYRICS = R.id.delete_lyrics;
 	public final static int EQUALIZER = R.id.equalizer;
 	public final static int EQUALIZER_PRESETS = R.id.equalizer_presets;
 	public final static int EQUALIZER_RESET = R.id.equalizer_reset;

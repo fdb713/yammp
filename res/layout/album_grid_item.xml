@@ -47,7 +47,7 @@
 			android:singleLine="true"
 			android:text="@string/album"
 			android:textAppearance="?android:attr/textAppearanceMedium"
-			android:textColor="@android:color/white"/>
+			android:textColor="#fff"/>
 
 		<TextView
 			android:id="@+id/artist_name"
@@ -58,7 +58,8 @@
 			android:scrollHorizontally="true"
 			android:singleLine="true"
 			android:text="@string/artist"
-			android:textAppearance="?android:attr/textAppearanceSmall"/>
+			android:textAppearance="?android:attr/textAppearanceSmall"
+			android:textColor="#aaa"/>
 	</LinearLayout>
 
 </FrameLayout>

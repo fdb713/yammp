@@ -24,10 +24,9 @@ import java.io.File;
 
 import org.yammp.Constants;
 import org.yammp.R;
+import org.yammp.dialog.DeleteDialogFragment;
 import org.yammp.util.LazyImageLoader;
 import org.yammp.util.MusicUtils;
-
-import com.actionbarsherlock.app.SherlockFragment;
 
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
@@ -35,12 +34,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
-import android.support.v4.app.Fragment;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -55,8 +53,8 @@ import android.view.View;
 import android.view.View.OnCreateContextMenuListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
 import android.widget.ExpandableListView.OnGroupExpandListener;
@@ -65,20 +63,24 @@ import android.widget.ImageView;
 import android.widget.SimpleCursorTreeAdapter;
 import android.widget.TextView;
 
+import com.actionbarsherlock.app.SherlockFragment;
+
 public class ArtistFragment extends SherlockFragment implements
-		LoaderManager.LoaderCallbacks<Cursor>, Constants, OnGroupExpandListener {
+		LoaderManager.LoaderCallbacks<Cursor>, Constants, OnGroupExpandListener,
+		OnItemSelectedListener {
 
 	private ArtistsAdapter mArtistsAdapter;
 
 	private ExpandableListView mListView;
 
-	private int mSelectedGroupPosition, mSelectedChildPosition;
+	private int mSelectedGroupPosition;
 	private long mSelectedGroupId, mSelectedChildId;
-	private Cursor mGroupCursor, mChildCursor;
+	private Cursor mGroupCursor;
 	private String mCurrentGroupArtistName, mCurrentChildArtistNameForAlbum,
 			mCurrentChildAlbumName;
 	private boolean mGroupSelected, mChildSelected = false;
 	private LazyImageLoader mImageLoader;
+	private boolean mContextMenuCreated;
 
 	private int mGroupArtistIdIdx, mGroupArtistIdx, mGroupAlbumIdx, mGroupSongIdx;
 
@@ -106,7 +108,7 @@ public class ArtistFragment extends SherlockFragment implements
 		setHasOptionsMenu(true);
 
 		mImageLoader = new LazyImageLoader(getActivity().getApplicationContext(),
-				R.drawable.ic_mp_albumart_unknown);
+				R.drawable.ic_mp_albumart_unknown, 120);
 
 		mArtistsAdapter = new ArtistsAdapter(getSherlockActivity(), null,
 				R.layout.artist_list_item_group, new String[] {}, new int[] {},
@@ -115,6 +117,9 @@ public class ArtistFragment extends SherlockFragment implements
 		mListView.setAdapter(mArtistsAdapter);
 		mListView.setOnGroupExpandListener(this);
 		mListView.setOnCreateContextMenuListener(this);
+		mListView.setOnItemSelectedListener(this);
+
+		registerForContextMenu(mListView);
 
 		getLoaderManager().initLoader(0, null, this);
 	}
@@ -122,29 +127,45 @@ public class ArtistFragment extends SherlockFragment implements
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 
-		if (mGroupCursor == null) return false;
-
-		Intent intent;
-
-		switch (item.getItemId()) {
-			case PLAY_SELECTION:
-				if (mGroupSelected || !mChildSelected) {
-					int position = mSelectedGroupPosition;
-					long[] list = MusicUtils.getSongListForArtist(getSherlockActivity(),
-							mSelectedGroupId);
-					MusicUtils.playAll(getSherlockActivity(), list, position);
-				}
-				return true;
-			case DELETE_ITEMS:
-				intent = new Intent(INTENT_DELETE_ITEMS);
-				Uri data = Uri.withAppendedPath(Audio.Artists.EXTERNAL_CONTENT_URI,
-						String.valueOf(mSelectedGroupId));
-				intent.setData(data);
-				startActivity(intent);
-				return true;
-			case SEARCH:
-				doSearch();
-				return true;
+		if (item.getGroupId() == hashCode()) {
+			switch (item.getItemId()) {
+				case PLAY_SELECTION:
+					if (mGroupSelected && !mChildSelected) {
+						long[] list = MusicUtils.getSongListForArtist(getSherlockActivity(),
+								mSelectedGroupId);
+						MusicUtils.playAll(getSherlockActivity(), list, 0);
+					} else if (mChildSelected && !mGroupSelected) {
+						long[] list = MusicUtils.getSongListForAlbum(getSherlockActivity(),
+								mSelectedChildId);
+						MusicUtils.playAll(getSherlockActivity(), list, 0);
+					}
+					return true;
+				case DELETE_ITEMS:
+					if (mGroupSelected && !mChildSelected) {
+						DeleteDialogFragment.getInstance(false, mSelectedGroupId,
+								DeleteDialogFragment.ARTIST).show(getFragmentManager(), "dialog");
+					} else if (mChildSelected && !mGroupSelected) {
+						DeleteDialogFragment.getInstance(false, mSelectedChildId,
+								DeleteDialogFragment.ARTIST).show(getFragmentManager(), "dialog");
+					}
+					return true;
+				case DELETE_LYRICS:
+					if (mGroupSelected && !mChildSelected) {
+						DeleteDialogFragment.getInstance(true, mSelectedGroupId,
+								DeleteDialogFragment.ARTIST).show(getFragmentManager(), "dialog");
+					} else if (mChildSelected && !mGroupSelected) {
+						DeleteDialogFragment.getInstance(true, mSelectedChildId,
+								DeleteDialogFragment.ARTIST).show(getFragmentManager(), "dialog");
+					}
+					return true;
+				case SEARCH:
+					if (mGroupSelected && !mChildSelected) {
+						doSearch(mCurrentGroupArtistName, null);
+					} else if (mChildSelected && !mGroupSelected) {
+						doSearch(mCurrentChildArtistNameForAlbum, mCurrentChildAlbumName);
+					}
+					return true;
+			}
 		}
 		return super.onContextItemSelected(item);
 	}
@@ -157,26 +178,29 @@ public class ArtistFragment extends SherlockFragment implements
 		int itemtype = ExpandableListView.getPackedPositionType(mi.packedPosition);
 		mSelectedGroupPosition = ExpandableListView.getPackedPositionGroup(mi.packedPosition);
 		int gpos = mSelectedGroupPosition;
-		mSelectedGroupId = mGroupCursor.getLong(mGroupArtistIdIdx);
 		if (itemtype == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
+
+			mContextMenuCreated = true;
+
 			mGroupSelected = true;
 			mChildSelected = false;
-			getSherlockActivity().getMenuInflater().inflate(R.menu.music_browser_item, menu);
+			mGroupCursor.moveToPosition(gpos);
+			menu.add(hashCode(), PLAY_SELECTION, 0, R.string.play_selection);
+			menu.add(hashCode(), DELETE_ITEMS, 0, R.string.delete_music);
+			menu.add(hashCode(), DELETE_LYRICS, 0, R.string.delete_lyrics);
 			if (gpos == -1) {
 				// this shouldn't happen
 				Log.d("Artist/Album", "no group");
 				return;
 			}
-			gpos = gpos - mListView.getHeaderViewsCount();
-			mGroupCursor.moveToPosition(gpos);
 			mCurrentGroupArtistName = mGroupCursor.getString(mGroupArtistIdx);
-			if (mCurrentGroupArtistName == null
-					|| MediaStore.UNKNOWN_STRING.equals(mCurrentGroupArtistName)) {
-				menu.setHeaderTitle(getString(R.string.unknown_artist));
-				menu.findItem(R.id.search).setEnabled(false);
-				menu.findItem(R.id.search).setVisible(false);
-			} else {
+			mSelectedGroupId = mGroupCursor.getLong(mGroupArtistIdIdx);
+			if (mCurrentGroupArtistName != null
+					&& !MediaStore.UNKNOWN_STRING.equals(mCurrentGroupArtistName)) {
 				menu.setHeaderTitle(mCurrentGroupArtistName);
+				menu.add(hashCode(), SEARCH, 0, R.string.play_selection);
+			} else {
+				menu.setHeaderTitle(getString(R.string.unknown_artist));
 			}
 		}
 	}
@@ -204,6 +228,21 @@ public class ArtistFragment extends SherlockFragment implements
 	}
 
 	@Override
+	public void onItemSelected(AdapterView<?> adapter, View view, int position, long id) {
+
+		if (view.getTag() != null) {
+			if (view.getTag() instanceof ViewHolderGroup) {
+				mListView.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+				mListView.requestFocus();
+			} else if (view.getTag() instanceof ViewHolderChild) {
+				mListView.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+				((ViewHolderChild) view.getTag()).gridview.requestFocus();
+			}
+		}
+
+	}
+
+	@Override
 	public void onLoaderReset(Loader<Cursor> loader) {
 		mArtistsAdapter.setGroupCursor(null);
 	}
@@ -228,6 +267,14 @@ public class ArtistFragment extends SherlockFragment implements
 	}
 
 	@Override
+	public void onNothingSelected(AdapterView<?> arg0) {
+		if (!mListView.isFocused()) {
+			mListView.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+			mListView.requestFocus();
+		}
+	}
+
+	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		outState.putAll(getArguments() != null ? getArguments() : new Bundle());
 		super.onSaveInstanceState(outState);
@@ -249,22 +296,28 @@ public class ArtistFragment extends SherlockFragment implements
 		super.onStop();
 	}
 
-	private void doSearch() {
+	private void doSearch(String artist, String album) {
 
 		CharSequence title = null;
 		String query = null;
 
-		if (mCurrentGroupArtistName == null
-				|| MediaStore.UNKNOWN_STRING.equals(mCurrentGroupArtistName)) return;
+		boolean isUnknownArtist = artist == null || MediaStore.UNKNOWN_STRING.equals(artist);
+		boolean isUnknownAlbum = album == null || MediaStore.UNKNOWN_STRING.equals(album);
+		if (isUnknownArtist && isUnknownAlbum) return;
 
 		Intent i = new Intent();
 		i.setAction(MediaStore.INTENT_ACTION_MEDIA_SEARCH);
 		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-		title = mCurrentGroupArtistName;
+		title = album != null ? album : artist;
+		query = album != null ? album : artist;
 
-		query = mCurrentGroupArtistName;
-		i.putExtra(MediaStore.EXTRA_MEDIA_ARTIST, mCurrentGroupArtistName);
+		if (!isUnknownArtist) {
+			i.putExtra(MediaStore.EXTRA_MEDIA_ARTIST, artist);
+		}
+		if (!isUnknownAlbum) {
+			i.putExtra(MediaStore.EXTRA_MEDIA_ALBUM, album);
+		}
 		i.putExtra(MediaStore.EXTRA_MEDIA_FOCUS, "audio/*");
 		title = getString(R.string.mediasearch, title);
 		i.putExtra(SearchManager.QUERY, query);
@@ -296,7 +349,8 @@ public class ArtistFragment extends SherlockFragment implements
 		}
 	}
 
-	private class AlbumChildAdapter extends SimpleCursorAdapter {
+	private class AlbumChildAdapter extends SimpleCursorAdapter implements
+			OnCreateContextMenuListener {
 
 		private int mAlbumIndex;
 
@@ -313,25 +367,23 @@ public class ArtistFragment extends SherlockFragment implements
 		@Override
 		public void bindView(View view, Context context, Cursor cursor) {
 
+			view.setOnCreateContextMenuListener(this);
 			ViewHolderItem viewholder = (ViewHolderItem) view.getTag();
 
 			if (viewholder == null) return;
 
-			String name = cursor.getString(mAlbumIndex);
-			String displayname = name;
-			boolean unknown = name == null || name.equals(MediaStore.UNKNOWN_STRING);
+			String album_name = cursor.getString(mAlbumIndex);
+			boolean unknown = album_name == null || album_name.equals(MediaStore.UNKNOWN_STRING);
 			if (unknown) {
-				displayname = context.getString(R.string.unknown_album);
-				;
+				album_name = context.getString(R.string.unknown_album);
 			}
-			viewholder.album_name.setText(displayname);
+			viewholder.album_name.setText(album_name);
 
-			name = cursor.getString(mArtistIndex);
-			displayname = name;
-			if (name == null || name.equals(MediaStore.UNKNOWN_STRING)) {
-				displayname = context.getString(R.string.unknown_artist);
+			String artist_name = cursor.getString(mArtistIndex);
+			if (artist_name == null || artist_name.equals(MediaStore.UNKNOWN_STRING)) {
+				artist_name = context.getString(R.string.unknown_artist);
 			}
-			viewholder.artist_name.setText(displayname);
+			viewholder.artist_name.setText(artist_name);
 
 			long aid = cursor.getLong(0);
 
@@ -350,6 +402,9 @@ public class ArtistFragment extends SherlockFragment implements
 			} else {
 				viewholder.album_art.setImageResource(R.drawable.ic_mp_albumart_unknown);
 			}
+			viewholder.album_id = aid;
+			viewholder.album_name_string = album_name;
+			viewholder.artist_name_string = artist_name;
 
 		}
 
@@ -360,6 +415,28 @@ public class ArtistFragment extends SherlockFragment implements
 			ViewHolderItem mViewHolder = new ViewHolderItem(view);
 			view.setTag(mViewHolder);
 			return view;
+		}
+
+		@Override
+		public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo info) {
+
+			mGroupSelected = false;
+			mChildSelected = true;
+			getSherlockActivity().getMenuInflater().inflate(R.menu.music_browser_item, menu);
+			if (v.getTag() == null) return;
+			ViewHolderItem viewholder = (ViewHolderItem) v.getTag();
+			mCurrentChildArtistNameForAlbum = viewholder.artist_name_string;
+			mCurrentChildAlbumName = viewholder.album_name_string;
+			mSelectedChildId = viewholder.album_id;
+			if (mCurrentChildAlbumName == null
+					|| MediaStore.UNKNOWN_STRING.equals(mCurrentChildAlbumName)) {
+				menu.setHeaderTitle(getString(R.string.unknown_artist));
+				menu.findItem(R.id.search).setEnabled(false);
+				menu.findItem(R.id.search).setVisible(false);
+			} else {
+				menu.setHeaderTitle(mCurrentChildAlbumName);
+			}
+
 		}
 
 		private void getColumnIndices(Cursor cursor) {
@@ -377,6 +454,9 @@ public class ArtistFragment extends SherlockFragment implements
 			TextView album_name;
 			TextView artist_name;
 			ImageView album_art;
+			long album_id;
+			String album_name_string;
+			String artist_name_string;
 
 			public ViewHolderItem(View view) {
 				album_name = (TextView) view.findViewById(R.id.album_name);
@@ -387,8 +467,7 @@ public class ArtistFragment extends SherlockFragment implements
 
 	}
 
-	private class ArtistsAdapter extends SimpleCursorTreeAdapter implements OnItemClickListener,
-			OnCreateContextMenuListener {
+	private class ArtistsAdapter extends SimpleCursorTreeAdapter implements OnItemClickListener {
 
 		public ArtistsAdapter(Context context, Cursor cursor, int glayout, String[] gfrom,
 				int[] gto, int clayout, String[] cfrom, int[] cto) {
@@ -402,20 +481,19 @@ public class ArtistFragment extends SherlockFragment implements
 			viewholder.gridview.setAdapter(new AlbumChildAdapter(context, R.layout.album_grid_item,
 					cursor, new String[] {}, new int[] {}, 0));
 			viewholder.gridview.setOnItemClickListener(this);
-			viewholder.gridview.setOnCreateContextMenuListener(this);
 
 			int item_width = getResources().getDimensionPixelOffset(R.dimen.gridview_item_width);
 			int item_height = getResources().getDimensionPixelOffset(R.dimen.gridview_item_height);
 
 			int parent_width = mListView.getWidth();
 			int albums_count = cursor.getCount();
-			int columns_count = (int) (Math.floor(parent_width / item_width) > 0 ? Math
+			int gridview_columns = (int) (Math.floor(parent_width / item_width) > 0 ? Math
 					.floor(parent_width / item_width) : 1);
-			int gridview_rows = (int) Math.ceil((float) albums_count / columns_count);
+			int gridview_rows = (int) Math.ceil((float) albums_count / gridview_columns);
 
 			int default_padding = getResources().getDimensionPixelOffset(
 					R.dimen.default_element_spacing);
-			int paddings_sum = default_padding * (gridview_rows + 2);
+			int paddings_sum = default_padding * (gridview_rows + 1);
 
 			viewholder.gridview.getLayoutParams().height = item_height * gridview_rows
 					+ paddings_sum;
@@ -480,47 +558,6 @@ public class ArtistFragment extends SherlockFragment implements
 		}
 
 		@Override
-		public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo info) {
-
-			mGroupSelected = false;
-			mChildSelected = true;
-
-			// TODO create context menu
-			getSherlockActivity().getMenuInflater().inflate(R.menu.music_browser_item, menu);
-
-			AdapterContextMenuInfo mi = (AdapterContextMenuInfo) info;
-			int cpos = mi.position;
-			int gpos = mSelectedGroupPosition;
-
-			Cursor c = mArtistsAdapter.getChild(gpos, cpos);
-			// c.moveToPosition(cpos);
-			// mSelectedChildId = mi.id;
-			// mCurrentChildAlbumName = c.getString(c
-			// .getColumnIndexOrThrow(Audio.Albums.ALBUM));
-			// gpos = gpos - mListView.getHeaderViewsCount();
-			// mGroupCursor.moveToPosition(gpos);
-			// mCurrentChildArtistNameForAlbum =
-			// mGroupCursor.getString(mGroupCursor
-			// .getColumnIndexOrThrow(Audio.Artists.ARTIST));
-			// boolean mIsUnknownArtist = mCurrentChildArtistNameForAlbum ==
-			// null
-			// || mCurrentChildArtistNameForAlbum
-			// .equals(MediaStore.UNKNOWN_STRING);
-			// boolean mIsUnknownAlbum = mCurrentChildAlbumName == null
-			// || mCurrentChildAlbumName.equals(MediaStore.UNKNOWN_STRING);
-			// if (mIsUnknownAlbum) {
-			// menu.setHeaderTitle(getString(R.string.unknown_album));
-			// } else {
-			// menu.setHeaderTitle(mCurrentChildAlbumName);
-			// }
-			// if (mIsUnknownAlbum && mIsUnknownArtist) {
-			// menu.findItem(SEARCH).setVisible(false);
-			// menu.findItem(SEARCH).setEnabled(false);
-			// }
-
-		}
-
-		@Override
 		public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
 			showDetails(position, id);
 		}
@@ -568,26 +605,26 @@ public class ArtistFragment extends SherlockFragment implements
 			return c;
 		}
 
-		private class ViewHolderChild {
+	}
 
-			GridView gridview;
+	private class ViewHolderChild {
 
-			public ViewHolderChild(View view) {
-				gridview = (GridView) view.findViewById(R.id.artist_child_grid_view);
-			}
+		GridView gridview;
+
+		public ViewHolderChild(View view) {
+			gridview = (GridView) view.findViewById(R.id.artist_child_grid_view);
 		}
+	}
 
-		private class ViewHolderGroup {
+	private class ViewHolderGroup {
 
-			TextView artist_name;
-			TextView album_track_count;
+		TextView artist_name;
+		TextView album_track_count;
 
-			public ViewHolderGroup(View view) {
-				artist_name = (TextView) view.findViewById(R.id.name);
-				album_track_count = (TextView) view.findViewById(R.id.summary);
-			}
+		public ViewHolderGroup(View view) {
+			artist_name = (TextView) view.findViewById(R.id.name);
+			album_track_count = (TextView) view.findViewById(R.id.summary);
 		}
-
 	}
 
 }

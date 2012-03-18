@@ -61,7 +61,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.telephony.PhoneStateListener;
@@ -336,7 +335,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			String action = intent.getAction();
 			if (Intent.ACTION_HEADSET_PLUG.equals(action)) {
 				int state = intent.getIntExtra("state", 0);
-				mExternalAudioDeviceConnected = (state == 1);
+				mExternalAudioDeviceConnected = state == 1;
 			}
 		}
 	};
@@ -368,7 +367,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				mPausedByTransientLossOfFocus = false;
 				seek(0);
 			} else if (CMDCYCLEREPEAT.equals(cmd) || CYCLEREPEAT_ACTION.equals(action)) {
-				cycleRepeat();
+				toggleRepeat();
 			} else if (CMDTOGGLESHUFFLE.equals(cmd) || TOGGLESHUFFLE_ACTION.equals(action)) {
 				toggleShuffle();
 			} else if (CMDTOGGLEFAVORITE.equals(cmd)) {
@@ -489,20 +488,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		notifyChange(BROADCAST_META_CHANGED);
 	}
 
-	public void cycleRepeat() {
-
-		if (mRepeatMode == REPEAT_NONE) {
-			setRepeatMode(REPEAT_ALL);
-		} else if (mRepeatMode == REPEAT_ALL) {
-			setRepeatMode(REPEAT_CURRENT);
-			if (mShuffleMode != SHUFFLE_NONE) {
-				setShuffleMode(SHUFFLE_NONE);
-			}
-		} else {
-			setRepeatMode(REPEAT_NONE);
-		}
-	}
-
 	/**
 	 * Returns the duration of the file in milliseconds. Currently this method
 	 * returns -1 for the duration of MIDI files.
@@ -562,9 +547,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	}
 
 	public short eqGetBandLevel(short band) {
-		if (mEqualizerSupported && mEqualizer != null) {
-			return mEqualizer.getBandLevel(band);
-		}
+		if (mEqualizerSupported && mEqualizer != null) return mEqualizer.getBandLevel(band);
 		return (short) 0;
 	}
 
@@ -1121,29 +1104,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 	}
 
-	/*
-	 * Desired behavior for prev/next/shuffle:
-	 * 
-	 * - NEXT will move to the next track in the list when not shuffling, and to
-	 * a track randomly picked from the not-yet-played tracks when shuffling. If
-	 * all tracks have already been played, pick from the full set, but avoid
-	 * picking the previously played track if possible. - when shuffling, PREV
-	 * will go to the previously played track. Hitting PREV again will go to the
-	 * track played before that, etc. When the start of the history has been
-	 * reached, PREV is a no-op. When not shuffling, PREV will go to the
-	 * sequentially previous track (the difference with the shuffle-case is
-	 * mainly that when not shuffling, the user can back up to tracks that are
-	 * not in the history).
-	 * 
-	 * Example: When playing an album with 10 tracks from the start, and
-	 * enabling shuffle while playing track 5, the remaining tracks (6-10) will
-	 * be shuffled, e.g. the final play order might be 1-2-3-4-5-8-10-6-9-7.
-	 * When hitting 'prev' 8 times while playing track 7 in this example, the
-	 * user will go to tracks 9-6-10-8-5-4-3-2. If the user then hits 'next', a
-	 * random track will be picked again. If at any time user disables shuffling
-	 * the next/previous track will be picked in sequential order again.
-	 */
-
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 
@@ -1180,7 +1140,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 				mPausedByTransientLossOfFocus = false;
 				seek(0);
 			} else if (CMDCYCLEREPEAT.equals(cmd) || CYCLEREPEAT_ACTION.equals(action)) {
-				cycleRepeat();
+				toggleRepeat();
 			} else if (CMDTOGGLESHUFFLE.equals(cmd) || TOGGLESHUFFLE_ACTION.equals(action)) {
 				toggleShuffle();
 			} else if (BROADCAST_PLAYSTATUS_REQUEST.equals(action)) {
@@ -1195,6 +1155,29 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
 		return START_STICKY;
 	}
+
+	/*
+	 * Desired behavior for prev/next/shuffle:
+	 * 
+	 * - NEXT will move to the next track in the list when not shuffling, and to
+	 * a track randomly picked from the not-yet-played tracks when shuffling. If
+	 * all tracks have already been played, pick from the full set, but avoid
+	 * picking the previously played track if possible. - when shuffling, PREV
+	 * will go to the previously played track. Hitting PREV again will go to the
+	 * track played before that, etc. When the start of the history has been
+	 * reached, PREV is a no-op. When not shuffling, PREV will go to the
+	 * sequentially previous track (the difference with the shuffle-case is
+	 * mainly that when not shuffling, the user can back up to tracks that are
+	 * not in the history).
+	 * 
+	 * Example: When playing an album with 10 tracks from the start, and
+	 * enabling shuffle while playing track 5, the remaining tracks (6-10) will
+	 * be shuffled, e.g. the final play order might be 1-2-3-4-5-8-10-6-9-7.
+	 * When hitting 'prev' 8 times while playing track 7 in this example, the
+	 * user will go to tracks 9-6-10-8-5-4-3-2. If the user then hits 'next', a
+	 * random track will be picked again. If at any time user disables shuffling
+	 * the next/previous track will be picked in sequential order again.
+	 */
 
 	@Override
 	public boolean onUnbind(Intent intent) {
@@ -1434,7 +1417,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		if (mPlayer.isInitialized()) return mPlayer.position();
 		return -1;
-	};
+	}
 
 	public void prev() {
 
@@ -1459,7 +1442,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			play();
 			notifyChange(BROADCAST_META_CHANGED);
 		}
-	}
+	};
 
 	public void registerA2dpServiceListener() {
 
@@ -1682,7 +1665,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public void setShuffleMode(int shufflemode) {
 
 		synchronized (this) {
-			if (mShuffleMode == shufflemode || mPlayListLen < 1) return;
+			if (mShuffleMode == shufflemode && mPlayListLen < 1) return;
 			if (mRepeatMode == REPEAT_CURRENT) {
 				mRepeatMode = REPEAT_NONE;
 			}
@@ -1715,6 +1698,20 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			play();
 		}
 		return isPlaying();
+	}
+
+	public void toggleRepeat() {
+
+		if (mRepeatMode == REPEAT_NONE) {
+			setRepeatMode(REPEAT_ALL);
+		} else if (mRepeatMode == REPEAT_ALL) {
+			setRepeatMode(REPEAT_CURRENT);
+			if (mShuffleMode != SHUFFLE_NONE) {
+				setShuffleMode(SHUFFLE_NONE);
+			}
+		} else {
+			setRepeatMode(REPEAT_NONE);
+		}
 	}
 
 	public void toggleShuffle() {
@@ -2481,12 +2478,6 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		}
 
 		@Override
-		public void cycleRepeat() {
-
-			mService.get().cycleRepeat();
-		}
-
-		@Override
 		public long duration() {
 
 			return mService.get().duration();
@@ -2848,8 +2839,14 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		}
 
 		@Override
-		public boolean togglePause() throws RemoteException {
+		public boolean togglePause() {
 			return mService.get().togglePause();
+		}
+
+		@Override
+		public void toggleRepeat() {
+
+			mService.get().toggleRepeat();
 		}
 
 		@Override

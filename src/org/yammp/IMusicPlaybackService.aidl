@@ -35,7 +35,7 @@ interface IMusicPlaybackService {
 	void play();
 	void prev();
 	void next();
-	void cycleRepeat();
+	void toggleRepeat();
 	void toggleShuffle();
 	long duration();
 	long position();

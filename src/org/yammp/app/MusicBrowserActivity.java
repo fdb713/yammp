@@ -20,6 +20,7 @@
 
 package org.yammp.app;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import org.yammp.Constants;
@@ -36,6 +37,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -46,17 +48,22 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
+import android.view.View;
+import android.view.WindowManager.LayoutParams;
 import android.widget.ArrayAdapter;
+import android.widget.ImageSwitcher;
+import android.widget.ImageView;
+import android.widget.ViewSwitcher.ViewFactory;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
+import com.actionbarsherlock.view.Window;
 
 public class MusicBrowserActivity extends SherlockFragmentActivity implements Constants,
-		ServiceConnection {
+		ServiceConnection, ViewFactory {
 
 	private ActionBar mActionBar;
 
@@ -64,6 +71,7 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 	private IMusicPlaybackService mService;
 	private AsyncAlbumArtLoader mAlbumArtLoader;
 	private PagesAdapter mAdapter;
+	private ImageSwitcher mBackground;
 
 	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
 
@@ -81,15 +89,30 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 
 	};
 
+	private AsyncBackgroundEffect mEffect;
+
+	@Override
+	public View makeView() {
+		ImageView view = new ImageView(this);
+		view.setScaleType(ImageView.ScaleType.FIT_XY);
+		view.setLayoutParams(new ImageSwitcher.LayoutParams(LayoutParams.MATCH_PARENT,
+				LayoutParams.MATCH_PARENT));
+		return view;
+	}
+
 	@Override
 	public void onCreate(Bundle icicle) {
 
+		requestWindowFeature(Window.FEATURE_ACTION_BAR_OVERLAY);
 		super.onCreate(icicle);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		setContentView(R.layout.main);
 
 		mActionBar = getSupportActionBar();
 
 		mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+		mBackground = (ImageSwitcher) findViewById(R.id.background);
+		mBackground.setFactory(this);
 
 		String mount_state = Environment.getExternalStorageState();
 
@@ -99,11 +122,9 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 			finish();
 		}
 
-		FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-		ft.replace(android.R.id.content, new MusicBrowserFragment()).commit();
-		
-		//mAdapter = new PagesAdapter(mActionBar);
-		//mAdapter.addPage(new MusicBrowserFragment(), "Music Library");
+		mAdapter = new PagesAdapter(mActionBar);
+		mAdapter.addPage(MusicBrowserFragment.class, "Music Library");
+		mAdapter.addPage(MusicPlaybackFragment.class, "Now Playing");
 
 	}
 
@@ -156,9 +177,10 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		MenuItem item = menu.findItem(PLAY_PAUSE);
 		try {
-			if (item != null && mService != null)
+			if (item != null && mService != null) {
 				item.setIcon(mService.isPlaying() ? R.drawable.ic_action_media_pause
 						: R.drawable.ic_action_media_play);
+			}
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -203,6 +225,14 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 		MusicUtils.unbindFromService(mToken);
 		mService = null;
 		super.onStop();
+	}
+
+	public void setBackground(long song_id, long album_id) {
+		if (mEffect != null) {
+			mEffect.cancel(true);
+		}
+		mEffect = new AsyncBackgroundEffect();
+		mEffect.execute(song_id, album_id);
 	}
 
 	private void updateNowplaying() {
@@ -269,9 +299,40 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 		}
 	}
 
+	private class AsyncBackgroundEffect extends AsyncTask<Long, Void, Drawable> {
+
+		@Override
+		public Drawable doInBackground(Long... params) {
+			Bitmap bitmap;
+			if (params == null || params.length != 2) {
+				bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_music);
+			} else {
+				bitmap = MusicUtils.getArtwork(getApplicationContext(), params[0], params[1]);
+			}
+
+			if (bitmap == null) {
+				bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_music);
+			}
+			float density = getResources().getDisplayMetrics().density;
+			Drawable drawable = MusicUtils.getBackgroundImage(getApplicationContext(), bitmap,
+					mBackground.getWidth(), mBackground.getHeight(), 1.0f / 32 / density);
+			return drawable;
+		}
+
+		@Override
+		public void onPostExecute(Drawable result) {
+			if (result != null) {
+				mBackground.setImageDrawable(result);
+			} else {
+				mBackground.setImageResource(R.drawable.ic_launcher_music);
+			}
+			mEffect = null;
+		}
+	}
+
 	private class PagesAdapter extends ArrayAdapter<String> implements OnNavigationListener {
 
-		private ArrayList<Fragment> mFragments = new ArrayList<Fragment>();
+		private ArrayList<Class<? extends Fragment>> mFragments = new ArrayList<Class<? extends Fragment>>();
 
 		public PagesAdapter(ActionBar actionbar) {
 			super(actionbar.getThemedContext(), R.layout.sherlock_spinner_item,
@@ -281,16 +342,31 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 
 		}
 
-		public void addPage(Fragment fragment, String name) {
+		public void addPage(Class<? extends Fragment> fragment, String name) {
 			add(name);
 			mFragments.add(fragment);
 		}
 
 		@Override
 		public boolean onNavigationItemSelected(int position, long id) {
-			FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-			ft.replace(android.R.id.content, mFragments.get(position)).commit();
-			return true;
+			Fragment instance;
+			try {
+				instance = mFragments.get(position).getConstructor(new Class[] {}).newInstance();
+				getSupportFragmentManager().beginTransaction().replace(R.id.content, instance)
+						.commit();
+				return true;
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (InstantiationException e) {
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			} catch (NoSuchMethodException e) {
+				e.printStackTrace();
+			}
+			return false;
 		}
 
 	}

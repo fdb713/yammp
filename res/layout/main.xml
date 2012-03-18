@@ -17,20 +17,22 @@
 ** limitations under the License.
 */
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:orientation="horizontal">
+	android:layout_height="match_parent">
 
-	<com.viewpagerindicator.VerticalTabPageIndicator
-		android:id="@+id/vertical_indicator"
-		android:layout_width="wrap_content"
-		android:layout_height="match_parent"/>
-
-	<android.support.v4.view.ViewPager
-		android:id="@+id/pager"
-		android:layout_width="0dp"
+	<ImageSwitcher
+		android:id="@+id/background"
+		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:layout_weight="1"/>
+		android:inAnimation="@android:anim/fade_in"
+		android:outAnimation="@android:anim/fade_out"/>
 
-</LinearLayout>
+	<FrameLayout
+		android:id="@+id/content"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:paddingTop="?actionBarSize"/>
+
+</FrameLayout>

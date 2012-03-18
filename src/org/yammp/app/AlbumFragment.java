@@ -21,12 +21,12 @@
 package org.yammp.app;
 
 import java.io.File;
+
 import org.yammp.Constants;
 import org.yammp.R;
+import org.yammp.dialog.DeleteDialogFragment;
 import org.yammp.util.LazyImageLoader;
 import org.yammp.util.MusicUtils;
-
-import com.actionbarsherlock.app.SherlockFragment;
 
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
@@ -45,7 +45,6 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.animation.AnimationUtils;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -53,12 +52,15 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.actionbarsherlock.app.SherlockFragment;
+
 public class AlbumFragment extends SherlockFragment implements Constants, OnItemClickListener,
-		LoaderCallbacks<Cursor> {
+		OnItemSelectedListener, LoaderCallbacks<Cursor> {
 
 	private AlbumsAdapter mAdapter;
 
@@ -95,7 +97,7 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 		setHasOptionsMenu(true);
 
 		mImageLoader = new LazyImageLoader(getActivity().getApplicationContext(),
-				R.drawable.ic_mp_albumart_unknown);
+				R.drawable.ic_mp_albumart_unknown, 120);
 
 		mAdapter = new AlbumsAdapter(getSherlockActivity(), R.layout.album_grid_item, null,
 				new String[] {}, new int[] {}, 0);
@@ -104,9 +106,12 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 		mGridView = (GridView) fragmentView.findViewById(android.R.id.list);
 		mGridView.setAdapter(mAdapter);
 		mGridView.setOnItemClickListener(this);
+		mGridView.setOnItemSelectedListener(this);
 		mGridView.setOnCreateContextMenuListener(this);
 		mGridView.setDrawingCacheEnabled(true);
 		mGridView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_AUTO);
+
+		registerForContextMenu(mGridView);
 
 		getLoaderManager().initLoader(0, null, this);
 	}
@@ -114,29 +119,29 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 
-		if (mCursor == null) return false;
-
-		Intent intent;
-
-		switch (item.getItemId()) {
-			case PLAY_SELECTION:
-				int position = mSelectedPosition;
-				long[] list = MusicUtils.getSongListForAlbum(getSherlockActivity(), mSelectedId);
-				MusicUtils.playAll(getSherlockActivity(), list, position);
-				return true;
-			case DELETE_ITEMS:
-				intent = new Intent(INTENT_DELETE_ITEMS);
-				Bundle bundle = new Bundle();
-				bundle.putString(
-						INTENT_KEY_PATH,
-						Uri.withAppendedPath(Audio.Albums.EXTERNAL_CONTENT_URI,
-								Uri.encode(String.valueOf(mSelectedId))).toString());
-				intent.putExtras(bundle);
-				startActivity(intent);
-				return true;
-			case SEARCH:
-				doSearch();
-				return true;
+		if (item.getGroupId() == hashCode()) {
+			if (mCursor == null) return true;
+			switch (item.getItemId()) {
+				case PLAY_SELECTION:
+					int position = mSelectedPosition;
+					long[] list = MusicUtils
+							.getSongListForAlbum(getSherlockActivity(), mSelectedId);
+					MusicUtils.playAll(getSherlockActivity(), list, position);
+					return true;
+				case DELETE_ITEMS:
+					DeleteDialogFragment
+							.getInstance(false, mSelectedId, DeleteDialogFragment.ALBUM).show(
+									getFragmentManager(), "dialog");
+					return true;
+				case DELETE_LYRICS:
+					DeleteDialogFragment
+							.getInstance(false, mSelectedId, DeleteDialogFragment.ALBUM).show(
+									getFragmentManager(), "dialog");
+					return true;
+				case SEARCH:
+					doSearch();
+					return true;
+			}
 		}
 		return super.onContextItemSelected(item);
 	}
@@ -146,7 +151,9 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 
 		if (mCursor == null) return;
 
-		getSherlockActivity().getMenuInflater().inflate(R.menu.music_browser_item, menu);
+		menu.add(hashCode(), PLAY_SELECTION, 0, R.string.play_selection);
+		menu.add(hashCode(), DELETE_ITEMS, 0, R.string.delete_music);
+		menu.add(hashCode(), DELETE_LYRICS, 0, R.string.delete_lyrics);
 
 		AdapterContextMenuInfo adapterinfo = (AdapterContextMenuInfo) info;
 		mSelectedPosition = adapterinfo.position;
@@ -160,8 +167,13 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 		mCurrentArtistNameForAlbum = mCursor.getString(mArtistIdx);
 
 		mCurrentAlbumName = mCursor.getString(mAlbumIdx);
+		if (mCurrentAlbumName != null && !MediaStore.UNKNOWN_STRING.equals(mCurrentAlbumName)) {
+			menu.add(hashCode(), SEARCH, 0, R.string.play_selection);
+			menu.setHeaderTitle(mCurrentAlbumName);
+		} else {
+			menu.setHeaderTitle(R.string.unknown_album);
+		}
 
-		menu.setHeaderTitle(mCurrentAlbumName);
 	}
 
 	@Override
@@ -182,6 +194,12 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
 		showDetails(position, id);
+	}
+
+	@Override
+	public void onItemSelected(AdapterView<?> adapter, View view, int position, long id) {
+		((MusicBrowserActivity) getSherlockActivity()).setBackground(0, id);
+
 	}
 
 	@Override
@@ -206,6 +224,12 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 		mArtIdx = data.getColumnIndexOrThrow(Audio.Albums.ALBUM_ART);
 
 		mAdapter.changeCursor(data);
+
+	}
+
+	@Override
+	public void onNothingSelected(AdapterView<?> arg0) {
+		// TODO Auto-generated method stub
 
 	}
 

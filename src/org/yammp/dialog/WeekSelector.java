@@ -54,8 +54,7 @@ public class WeekSelector extends FragmentActivity implements Constants {
 		action = getIntent().getAction();
 
 		if (INTENT_WEEK_SELECTOR.equals(action)) {
-			DialogFragment fragment = new WeekSelectorDialogFragment();
-			fragment.show(getSupportFragmentManager(), "dialog");
+			new WeekSelectorDialogFragment().show(getSupportFragmentManager(), "dialog");
 
 		} else {
 			Toast.makeText(this, R.string.error_bad_parameters, Toast.LENGTH_SHORT).show();

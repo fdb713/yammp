@@ -25,9 +25,6 @@ import org.yammp.R;
 import org.yammp.util.MusicUtils;
 import org.yammp.util.ServiceToken;
 
-import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.MenuItem;
-
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -35,6 +32,9 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore.Audio;
+
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.MenuItem;
 
 public class TrackBrowserActivity extends SherlockFragmentActivity implements Constants,
 		ServiceConnection {

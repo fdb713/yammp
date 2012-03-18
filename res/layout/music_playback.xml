@@ -34,7 +34,7 @@
 			<include layout="@layout/visualizer_view"/>
 		</LinearLayout>
 
-		<android.support.v4.view.ViewPager
+		<LinearLayout
 			android:id="@+id/playback_frame"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"/>

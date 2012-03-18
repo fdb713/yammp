@@ -24,14 +24,14 @@
 
 	<org.yammp.view.SliderView
 		android:id="@+id/volume_slider_left"
-		android:layout_width="@dimen/actionbar_control_button_width"
+		android:layout_width="36dip"
 		android:layout_height="match_parent"
 		android:layout_alignParentLeft="true"
 		android:layout_alignParentTop="true"/>
 
 	<org.yammp.view.SliderView
 		android:id="@+id/volume_slider_right"
-		android:layout_width="@dimen/actionbar_control_button_width"
+		android:layout_width="36dip"
 		android:layout_height="match_parent"
 		android:layout_alignParentRight="true"
 		android:layout_alignParentTop="true"/>

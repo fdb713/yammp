@@ -25,9 +25,6 @@ import org.yammp.R;
 import org.yammp.util.MusicUtils;
 import org.yammp.util.ServiceToken;
 
-import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.MenuItem;
-
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -41,6 +38,9 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.MenuItem;
 
 public class QueryBrowserActivity extends SherlockFragmentActivity implements Constants,
 		ServiceConnection, TextWatcher {

@@ -9,7 +9,10 @@
 		android:title="@string/add_to_playlist"/>
 	<item
 		android:id="@id/delete_items"
-		android:title="@string/delete"/>
+		android:title="@string/delete_music"/>
+	<item
+		android:id="@id/delete_lyrics"
+		android:title="@string/delete_lyrics"/>
 	<item
 		android:id="@id/search"
 		android:title="@android:string/search_go"/>

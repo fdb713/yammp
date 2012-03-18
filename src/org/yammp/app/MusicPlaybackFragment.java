@@ -37,7 +37,6 @@ import org.yammp.util.VisualizerWrapper.OnDataChangedListener;
 import org.yammp.view.SliderView;
 import org.yammp.view.SliderView.OnValueChangeListener;
 import org.yammp.view.TouchPaintView;
-import org.yammp.view.TouchPaintView.EventListener;
 import org.yammp.view.VisualizerViewFftSpectrum;
 import org.yammp.view.VisualizerViewWaveForm;
 import org.yammp.widget.RepeatingImageButton;
@@ -51,7 +50,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
@@ -73,11 +71,8 @@ import android.provider.Settings.SettingNotFoundException;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
@@ -88,25 +83,16 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageSwitcher;
 import android.widget.ImageView;
-import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ViewSwitcher;
+import android.widget.ViewSwitcher.ViewFactory;
 
-import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragment;
-import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
-import com.actionbarsherlock.view.Window;
 
-public class MusicPlaybackActivity extends SherlockFragmentActivity implements Constants,
+public class MusicPlaybackFragment extends SherlockFragment implements Constants,
 		OnLongClickListener, ServiceConnection {
-
-	private boolean mSeeking = false;
-
-	private boolean mDeviceHasDpad;
 
 	private long mStartSeekPos = 0;
 
@@ -126,7 +112,6 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 	private int mUIColor = Color.WHITE;
 	private boolean mAutoColor = true;
-	private boolean mBlurBackground = false;
 
 	private VisualizerViewFftSpectrum mVisualizerViewFftSpectrum;
 	private VisualizerViewWaveForm mVisualizerViewWaveForm;
@@ -147,14 +132,10 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 	private boolean paused;
 
 	private static final int REFRESH = 1;
-	private static final int QUIT = 2;
 
 	private TrackFragment mQueueFragment;
 
 	private TextView mCurrentTime, mTotalTime;
-
-	private ViewPager mViewPager;
-	private PagerAdapter mAdapter;
 
 	private OnDataChangedListener mDataChangedListener = new OnDataChangedListener() {
 
@@ -183,55 +164,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 	int mViewWidth = 0;
 	boolean mDraggingLabel = false;
-	private OnSeekBarChangeListener mSeekListener = new OnSeekBarChangeListener() {
 
-		@Override
-		public void onProgressChanged(SeekBar bar, int progress, boolean fromuser) {
-
-			if (!fromuser || mService == null) return;
-			mPosOverride = mDuration * progress / 1000;
-			try {
-				mService.seek(mPosOverride);
-			} catch (RemoteException ex) {
-			}
-
-			refreshNow();
-			// trackball event, allow progress updates
-			if (!mFromTouch) {
-				refreshNow();
-				mPosOverride = -1;
-			}
-		}
-
-		@Override
-		public void onStartTrackingTouch(SeekBar bar) {
-
-			mLastSeekEventTime = 0;
-			mFromTouch = true;
-			mHandler.removeMessages(REFRESH);
-		}
-
-		@Override
-		public void onStopTrackingTouch(SeekBar bar) {
-
-			mPosOverride = -1;
-			mFromTouch = false;
-			// Ensure that progress is properly updated in the future,
-			mHandler.sendEmptyMessage(REFRESH);
-		}
-	};
-	private EventListener mTouchPaintEventListener = new EventListener() {
-
-		@Override
-		public boolean onTouchEvent(MotionEvent event) {
-			return true;
-		}
-
-		@Override
-		public boolean onTrackballEvent(MotionEvent event) {
-			return true;
-		}
-	};
 	private View.OnClickListener mPauseListener = new View.OnClickListener() {
 
 		@Override
@@ -307,12 +240,6 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 					queueNextRefresh(next);
 					break;
 
-				case QUIT:
-					Toast.makeText(getApplicationContext(), R.string.service_start_error_msg,
-							Toast.LENGTH_SHORT);
-					finish();
-					break;
-
 				default:
 					break;
 			}
@@ -329,14 +256,14 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 				// redraw the artist/title info and
 				// set new max for progress bar
 				updateTrackInfo(mShowFadeAnimation);
-				invalidateOptionsMenu();
+				// invalidateOptionsMenu();
 				setPauseButtonImage();
 				queueNextRefresh(1);
 			} else if (BROADCAST_PLAYSTATE_CHANGED.equals(action)) {
 				setPauseButtonImage();
 				setVisualizerView();
 			} else if (BROADCAST_FAVORITESTATE_CHANGED.equals(action)) {
-				invalidateOptionsMenu();
+				// invalidateOptionsMenu();
 			}
 		}
 	};
@@ -352,7 +279,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 					f.addAction(BROADCAST_PLAYSTATE_CHANGED);
 					f.addAction(BROADCAST_META_CHANGED);
 					f.addAction(BROADCAST_FAVORITESTATE_CHANGED);
-					registerReceiver(mStatusListener, new IntentFilter(f));
+					getSherlockActivity().registerReceiver(mStatusListener, new IntentFilter(f));
 					mIntentDeRegistered = false;
 				}
 				updateTrackInfo(false);
@@ -361,13 +288,13 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 				}
 				long next = refreshNow();
 				queueNextRefresh(next);
-				invalidateOptionsMenu();
+				getSherlockActivity().invalidateOptionsMenu();
 			} else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
 				paused = true;
 				disableVisualizer(true);
 				if (!mIntentDeRegistered) {
 					mHandler.removeMessages(REFRESH);
-					unregisterReceiver(mStatusListener);
+					getSherlockActivity().unregisterReceiver(mStatusListener);
 					mIntentDeRegistered = true;
 				}
 			}
@@ -376,134 +303,17 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 	/** Called when the activity is first created. */
 	@Override
-	public void onCreate(Bundle icicle) {
+	public void onActivityCreated(Bundle icicle) {
 
-		super.onCreate(icicle);
-		requestWindowFeature(Window.FEATURE_PROGRESS);
-		setVolumeControlStream(AudioManager.STREAM_MUSIC);
-		mPrefs = new PreferencesEditor(this);
+		super.onActivityCreated(icicle);
+		mPrefs = new PreferencesEditor(getSherlockActivity());
 		configureActivity();
 
 	}
 
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-
-		getSupportMenuInflater().inflate(R.menu.music_playback, menu);
-		return super.onCreateOptionsMenu(menu);
-	}
-
-	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
-
-		int repcnt = event.getRepeatCount();
-
-		switch (keyCode) {
-
-			case KeyEvent.KEYCODE_DPAD_LEFT:
-				if (!useDpadMusicControl()) {
-					break;
-				}
-				if (!mPrevButton.hasFocus()) {
-					mPrevButton.requestFocus();
-				}
-				scanBackward(repcnt, event.getEventTime() - event.getDownTime());
-				return true;
-			case KeyEvent.KEYCODE_DPAD_RIGHT:
-				if (!useDpadMusicControl()) {
-					break;
-				}
-				if (!mNextButton.hasFocus()) {
-					mNextButton.requestFocus();
-				}
-				scanForward(repcnt, event.getEventTime() - event.getDownTime());
-				return true;
-
-				// case KeyEvent.KEYCODE_R:
-				// toggleRepeat();
-				// return true;
-				//
-				// case KeyEvent.KEYCODE_S:
-				// toggleShuffle();
-				// return true;
-
-			case KeyEvent.KEYCODE_N:
-				if (mService != null) {
-					try {
-						mService.next();
-						return true;
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-				} else
-					return false;
-
-			case KeyEvent.KEYCODE_P:
-				if (mService != null) {
-					try {
-						mService.prev();
-						return true;
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-				} else
-					return false;
-
-			case KeyEvent.KEYCODE_DPAD_CENTER:
-			case KeyEvent.KEYCODE_SPACE:
-				doPauseResume();
-				return true;
-		}
-		return super.onKeyDown(keyCode, event);
-	}
-
-	@Override
-	public boolean onKeyUp(int keyCode, KeyEvent event) {
-
-		try {
-			switch (keyCode) {
-				case KeyEvent.KEYCODE_DPAD_LEFT:
-					if (!useDpadMusicControl()) {
-						break;
-					}
-					if (mService != null) {
-						if (!mSeeking && mStartSeekPos >= 0) {
-							mPauseButton.requestFocus();
-							if (mStartSeekPos < 1000) {
-								mService.prev();
-							} else {
-								mService.seek(0);
-							}
-						} else {
-							scanBackward(-1, event.getEventTime() - event.getDownTime());
-							mPauseButton.requestFocus();
-							mStartSeekPos = -1;
-						}
-					}
-					mSeeking = false;
-					mPosOverride = -1;
-					return true;
-				case KeyEvent.KEYCODE_DPAD_RIGHT:
-					if (!useDpadMusicControl()) {
-						break;
-					}
-					if (mService != null) {
-						if (!mSeeking && mStartSeekPos >= 0) {
-							mPauseButton.requestFocus();
-							mService.next();
-						} else {
-							scanForward(-1, event.getEventTime() - event.getDownTime());
-							mPauseButton.requestFocus();
-							mStartSeekPos = -1;
-						}
-					}
-					mSeeking = false;
-					mPosOverride = -1;
-					return true;
-			}
-		} catch (RemoteException ex) {
-		}
-		return super.onKeyUp(keyCode, event);
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		return inflater.inflate(R.layout.music_playback, container, false);
 	}
 
 	@Override
@@ -511,7 +321,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 		// TODO search media info
 
-		String track = getTitle().toString();
+		String track = getSherlockActivity().getTitle().toString();
 		String artist = "";// mArtistNameView.getText().toString();
 		String album = "";// mAlbumNameView.getText().toString();
 
@@ -577,12 +387,6 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 				intent = new Intent(INTENT_APPEARANCE_SETTINGS);
 				startActivity(intent);
 				break;
-			case GOTO_HOME:
-				intent = new Intent(INTENT_MUSIC_BROWSER);
-				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-				startActivity(intent);
-				finish();
-				break;
 			case ADD_TO_FAVORITES:
 				toggleFavorite();
 				break;
@@ -592,7 +396,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 	}
 
 	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
+	public void onPrepareOptionsMenu(Menu menu) {
 		MenuItem item = menu.findItem(EQUALIZER);
 		if (item != null) {
 			item.setVisible(EqualizerWrapper.isSupported());
@@ -606,7 +410,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
-		return super.onPrepareOptionsMenu(menu);
+		super.onPrepareOptionsMenu(menu);
 	}
 
 	@Override
@@ -626,43 +430,33 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		mService = IMusicPlaybackService.Stub.asInterface(obj);
 
 		try {
-			if (mService.getAudioId() >= 0 || mService.isPlaying() || mService.getPath() != null) {
+			updateTrackInfo(false);
+			long next = refreshNow();
+			queueNextRefresh(next);
+			setPauseButtonImage();
+			getSherlockActivity().invalidateOptionsMenu();
 
-				updateTrackInfo(false);
-				long next = refreshNow();
-				queueNextRefresh(next);
-				setPauseButtonImage();
-				invalidateOptionsMenu();
+			mVisualizer = VisualizerWrapper.getInstance(mService.getAudioSessionId(), 50);
+			mDisplayVisualizer = mPrefs.getBooleanState(KEY_DISPLAY_VISUALIZER, false);
+			boolean mFftEnabled = String.valueOf(VISUALIZER_TYPE_FFT_SPECTRUM).equals(
+					mPrefs.getStringPref(KEY_VISUALIZER_TYPE, "1"));
+			boolean mWaveEnabled = String.valueOf(VISUALIZER_TYPE_WAVE_FORM).equals(
+					mPrefs.getStringPref(KEY_VISUALIZER_TYPE, "1"));
 
-				mVisualizer = VisualizerWrapper.getInstance(mService.getAudioSessionId(), 50);
-				mDisplayVisualizer = mPrefs.getBooleanState(KEY_DISPLAY_VISUALIZER, false);
-				boolean mFftEnabled = String.valueOf(VISUALIZER_TYPE_FFT_SPECTRUM).equals(
-						mPrefs.getStringPref(KEY_VISUALIZER_TYPE, "1"));
-				boolean mWaveEnabled = String.valueOf(VISUALIZER_TYPE_WAVE_FORM).equals(
-						mPrefs.getStringPref(KEY_VISUALIZER_TYPE, "1"));
+			mVisualizerView.removeAllViews();
 
-				mVisualizerView.removeAllViews();
-
-				if (mFftEnabled) {
-					mVisualizerView.addView(mVisualizerViewFftSpectrum);
-				}
-				if (mWaveEnabled) {
-					mVisualizerView.addView(mVisualizerViewWaveForm);
-				}
-
-				mVisualizer.setFftEnabled(mFftEnabled);
-				mVisualizer.setWaveFormEnabled(mWaveEnabled);
-				mVisualizer.setOnDataChangedListener(mDataChangedListener);
-
-				setVisualizerView();
-
-			} else {
-				Intent intent = new Intent(Intent.ACTION_MAIN);
-				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				intent.setClass(getApplicationContext(), MusicBrowserActivity.class);
-				startActivity(intent);
-				finish();
+			if (mFftEnabled) {
+				mVisualizerView.addView(mVisualizerViewFftSpectrum);
 			}
+			if (mWaveEnabled) {
+				mVisualizerView.addView(mVisualizerViewWaveForm);
+			}
+
+			mVisualizer.setFftEnabled(mFftEnabled);
+			mVisualizer.setWaveFormEnabled(mWaveEnabled);
+			mVisualizer.setOnDataChangedListener(mDataChangedListener);
+
+			setVisualizerView();
 
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -674,7 +468,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 	public void onServiceDisconnected(ComponentName classname) {
 		mVisualizer.release();
 		mService = null;
-		finish();
+		getSherlockActivity().finish();
 	}
 
 	@Override
@@ -682,28 +476,18 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 		super.onStart();
 		paused = false;
-		mToken = MusicUtils.bindToService(this, this);
-		if (mToken == null) {
-			// something went wrong
-			mHandler.sendEmptyMessage(QUIT);
-		}
+		mToken = MusicUtils.bindToService(getSherlockActivity(), this);
 		loadPreferences();
 
-		if (mBlurBackground) {
-			getWindow().addFlags(LayoutParams.FLAG_BLUR_BEHIND);
-		} else {
-			getWindow().clearFlags(LayoutParams.FLAG_BLUR_BEHIND);
-		}
-
 		if (mLyricsWakelock) {
-			getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+			getSherlockActivity().getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 		} else {
-			getWindow().clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+			getSherlockActivity().getWindow().clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 		}
 
 		try {
-			float mTransitionAnimation = Settings.System.getFloat(getContentResolver(),
-					Settings.System.TRANSITION_ANIMATION_SCALE);
+			float mTransitionAnimation = Settings.System.getFloat(getSherlockActivity()
+					.getContentResolver(), Settings.System.TRANSITION_ANIMATION_SCALE);
 			if (mTransitionAnimation > 0.0) {
 				mShowFadeAnimation = true;
 			} else {
@@ -718,12 +502,12 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		f.addAction(BROADCAST_PLAYSTATE_CHANGED);
 		f.addAction(BROADCAST_META_CHANGED);
 		f.addAction(BROADCAST_FAVORITESTATE_CHANGED);
-		registerReceiver(mStatusListener, new IntentFilter(f));
+		getSherlockActivity().registerReceiver(mStatusListener, new IntentFilter(f));
 
 		IntentFilter s = new IntentFilter();
 		s.addAction(Intent.ACTION_SCREEN_ON);
 		s.addAction(Intent.ACTION_SCREEN_OFF);
-		registerReceiver(mScreenTimeoutListener, new IntentFilter(s));
+		getSherlockActivity().registerReceiver(mScreenTimeoutListener, new IntentFilter(s));
 
 		long next = refreshNow();
 		queueNextRefresh(next);
@@ -735,11 +519,11 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		paused = true;
 		if (!mIntentDeRegistered) {
 			mHandler.removeMessages(REFRESH);
-			unregisterReceiver(mStatusListener);
+			getSherlockActivity().unregisterReceiver(mStatusListener);
 		}
-		unregisterReceiver(mScreenTimeoutListener);
+		getSherlockActivity().unregisterReceiver(mScreenTimeoutListener);
 
-		getWindow().clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+		getSherlockActivity().getWindow().clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		MusicUtils.unbindFromService(mToken);
 		mService = null;
@@ -748,56 +532,61 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 	private void configureActivity() {
 
-		setContentView(R.layout.music_playback);
+		// setContentView(R.layout.music_playback);
 
-		ActionBar mActionBar = getSupportActionBar();
+		// ActionBar mActionBar = getSupportActionBar();
 
-		mActionBar.setCustomView(R.layout.actionbar_music_playback);
-		mActionBar.setDisplayShowCustomEnabled(true);
-		mActionBar.setDisplayShowTitleEnabled(false);
+		// mActionBar.setCustomView(R.layout.actionbar_music_playback);
+		// mActionBar.setDisplayShowCustomEnabled(true);
+		// mActionBar.setDisplayShowTitleEnabled(false);
 
-		View mCustomView = mActionBar.getCustomView();
+		// View mCustomView = mActionBar.getCustomView();
 
-		mTouchPaintView = (TouchPaintView) mCustomView.findViewById(R.id.touch_paint);
-		mTouchPaintView.setEventListener(mTouchPaintEventListener);
+		// mTouchPaintView = (TouchPaintView)
+		// mCustomView.findViewById(R.id.touch_paint);
+		// mTouchPaintView.setEventListener(mTouchPaintEventListener);
 
-		mTrackName = (TextView) mCustomView.findViewById(R.id.track_name);
-		mTrackDetail = (TextView) mCustomView.findViewById(R.id.track_detail);
+		// mTrackName = (TextView) mCustomView.findViewById(R.id.track_name);
+		mTrackName = new TextView(getSherlockActivity());
+		// mTrackDetail = (TextView)
+		// mCustomView.findViewById(R.id.track_detail);
+		mTrackDetail = new TextView(getSherlockActivity());
 
-		mCurrentTime = (TextView) mCustomView.findViewById(R.id.current_time);
-		mTotalTime = (TextView) mCustomView.findViewById(R.id.total_time);
+		// mCurrentTime = (TextView)
+		// mCustomView.findViewById(R.id.current_time);
+		mCurrentTime = new TextView(getSherlockActivity());
+		// mTotalTime = (TextView) mCustomView.findViewById(R.id.total_time);
+		mTotalTime = new TextView(getSherlockActivity());
 
 		/*
 		 * mAlbum.setOnClickListener(mQueueListener);
 		 * mAlbum.setOnLongClickListener(mSearchAlbumArtListener);
 		 */
 
-		mPrevButton = (RepeatingImageButton) findViewById(R.id.prev);
+		mPrevButton = (RepeatingImageButton) getView().findViewById(R.id.prev);
 		mPrevButton.setBackgroundDrawable(new ButtonStateDrawable(new Drawable[] { getResources()
 				.getDrawable(R.drawable.btn_mp_playback) }));
 		mPrevButton.setOnClickListener(mPrevListener);
 		mPrevButton.setRepeatListener(mRewListener, 260);
 
-		mPauseButton = (ImageButton) findViewById(R.id.pause);
+		mPauseButton = (ImageButton) getView().findViewById(R.id.pause);
 		mPauseButton.setBackgroundDrawable(new ButtonStateDrawable(new Drawable[] { getResources()
 				.getDrawable(R.drawable.btn_mp_playback) }));
 		mPauseButton.requestFocus();
 		mPauseButton.setOnClickListener(mPauseListener);
 
-		mNextButton = (RepeatingImageButton) findViewById(R.id.next);
+		mNextButton = (RepeatingImageButton) getView().findViewById(R.id.next);
 		mNextButton.setBackgroundDrawable(new ButtonStateDrawable(new Drawable[] { getResources()
 				.getDrawable(R.drawable.btn_mp_playback) }));
 		mNextButton.setOnClickListener(mNextListener);
 		mNextButton.setRepeatListener(mFfwdListener, 260);
 
-		mDeviceHasDpad = getResources().getConfiguration().navigation == Configuration.NAVIGATION_DPAD;
+		mVisualizerViewFftSpectrum = new VisualizerViewFftSpectrum(getSherlockActivity());
+		mVisualizerViewWaveForm = new VisualizerViewWaveForm(getSherlockActivity());
+		mVisualizerView = (FrameLayout) getView().findViewById(R.id.visualizer_view);
 
-		mVisualizerViewFftSpectrum = new VisualizerViewFftSpectrum(this);
-		mVisualizerViewWaveForm = new VisualizerViewWaveForm(this);
-		mVisualizerView = (FrameLayout) findViewById(R.id.visualizer_view);
-
-		if (findViewById(R.id.albumart_frame) != null) {
-			getSupportFragmentManager().beginTransaction()
+		if (getView().findViewById(R.id.albumart_frame) != null) {
+			getFragmentManager().beginTransaction()
 					.replace(R.id.albumart_frame, new AlbumArtFragment()).commit();
 		}
 
@@ -807,12 +596,8 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		bundle.putLong(MediaStore.Audio.Playlists._ID, PLAYLIST_QUEUE);
 		mQueueFragment.setArguments(bundle);
 
-		mAdapter = new PagerAdapter(getSupportFragmentManager());
-		mAdapter.addFragment(new LyricsAndQueueFragment());
-		mAdapter.addFragment(mQueueFragment);
-
-		mViewPager = (ViewPager) findViewById(R.id.playback_frame);
-		mViewPager.setAdapter(mAdapter);
+		getFragmentManager().beginTransaction()
+				.replace(R.id.playback_frame, new LyricsAndQueueFragment()).commit();
 
 	}
 
@@ -821,12 +606,13 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 			if (mVisualizerView.getVisibility() == View.VISIBLE) {
 				mVisualizerView.setVisibility(View.INVISIBLE);
 				if (mShowFadeAnimation) {
-					mVisualizerView.startAnimation(AnimationUtils.loadAnimation(this,
-							android.R.anim.fade_out));
+					mVisualizerView.startAnimation(AnimationUtils.loadAnimation(
+							getSherlockActivity(), android.R.anim.fade_out));
 				}
 				if (animation) {
 					mVisualizerHandler.sendEmptyMessageDelayed(DISABLE_VISUALIZER, AnimationUtils
-							.loadAnimation(this, android.R.anim.fade_out).getDuration());
+							.loadAnimation(getSherlockActivity(), android.R.anim.fade_out)
+							.getDuration());
 				} else {
 					mVisualizerHandler.sendEmptyMessage(DISABLE_VISUALIZER);
 				}
@@ -881,8 +667,8 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 				mVisualizerView.setVisibility(View.VISIBLE);
 				mVisualizerHandler.sendEmptyMessage(ENABLE_VISUALIZER);
 				if (mShowFadeAnimation) {
-					mVisualizerView.startAnimation(AnimationUtils.loadAnimation(this,
-							android.R.anim.fade_in));
+					mVisualizerView.startAnimation(AnimationUtils.loadAnimation(
+							getSherlockActivity(), android.R.anim.fade_in));
 				}
 			}
 		}
@@ -892,7 +678,6 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 		mLyricsWakelock = mPrefs.getBooleanPref(KEY_LYRICS_WAKELOCK, DEFAULT_LYRICS_WAKELOCK);
 		mAutoColor = mPrefs.getBooleanPref(KEY_AUTO_COLOR, true);
-		mBlurBackground = mPrefs.getBooleanPref(KEY_BLUR_BACKGROUND, false);
 	}
 
 	private void queueNextRefresh(long delay) {
@@ -910,7 +695,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 			long pos = mPosOverride < 0 ? mService.position() : mPosOverride;
 			long remaining = 1000 - pos % 1000;
 			if (pos >= 0 && mDuration > 0) {
-				mCurrentTime.setText(MusicUtils.makeTimeString(this, pos / 1000));
+				mCurrentTime.setText(MusicUtils.makeTimeString(getSherlockActivity(), pos / 1000));
 
 				if (mService.isPlaying()) {
 					mCurrentTime.setVisibility(View.VISIBLE);
@@ -931,10 +716,12 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 				}
 
 				// Normalize our progress along the progress bar's scale
-				setSupportProgress((int) ((Window.PROGRESS_END - Window.PROGRESS_START) * pos / mDuration));
+				// setSupportProgress((int) ((Window.PROGRESS_END -
+				// Window.PROGRESS_START) * pos / mDuration));
 			} else {
 				mCurrentTime.setText("--:--");
-				setSupportProgress(Window.PROGRESS_END - Window.PROGRESS_START);
+				// setSupportProgress(Window.PROGRESS_END -
+				// Window.PROGRESS_START);
 			}
 			// return the number of milliseconds until the next full second, so
 			// the counter can be updated at just the right time
@@ -952,9 +739,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 			if (repcnt == 0) {
 				mStartSeekPos = mService.position();
 				mLastSeekEventTime = 0;
-				mSeeking = false;
 			} else {
-				mSeeking = true;
 				if (delta < 5000) {
 					// seek at 10x speed for the first 5 seconds
 					delta = delta * 10;
@@ -992,9 +777,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 			if (repcnt == 0) {
 				mStartSeekPos = mService.position();
 				mLastSeekEventTime = 0;
-				mSeeking = false;
 			} else {
-				mSeeking = true;
 				if (delta < 5000) {
 					// seek at 10x speed for the first 5 seconds
 					delta = delta * 10;
@@ -1039,9 +822,9 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 
 	private void setUIColor(int color) {
 
-		mVisualizerViewFftSpectrum.setColor(color);
-		mVisualizerViewWaveForm.setColor(color);
-		mTouchPaintView.setColor(color);
+		// mVisualizerViewFftSpectrum.setColor(color);
+		// mVisualizerViewWaveForm.setColor(color);
+		// mTouchPaintView.setColor(color);
 	}
 
 	private void setVisualizerView() {
@@ -1069,7 +852,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 	private void updateTrackInfo(boolean animation) {
 
 		if (mService == null) {
-			finish();
+			getSherlockActivity().finish();
 			return;
 		}
 		try {
@@ -1092,36 +875,15 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 			mColorAnalyser.execute();
 
 			mDuration = mService.duration();
-			mTotalTime.setText(MusicUtils.makeTimeString(this, mDuration / 1000));
+			mTotalTime.setText(MusicUtils.makeTimeString(getSherlockActivity(), mDuration / 1000));
 		} catch (RemoteException e) {
 			e.printStackTrace();
-			finish();
+			// finish();
 		}
 	}
 
-	private boolean useDpadMusicControl() {
-
-		if (mDeviceHasDpad
-				&& (mPrevButton.isFocused() || mNextButton.isFocused() || mPauseButton.isFocused()))
-			return true;
-		return false;
-	}
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-
-		if (resultCode != RESULT_OK) return;
-		switch (requestCode) {
-			case DELETE_ITEMS:
-				if (resultCode == RESULT_DELETE_MUSIC) {
-					finish();
-				}
-				break;
-		}
-	}
-
-	public static class AlbumArtFragment extends SherlockFragment implements
-			ViewSwitcher.ViewFactory, OnClickListener, ServiceConnection {
+	public static class AlbumArtFragment extends SherlockFragment implements ViewFactory,
+			OnClickListener, ServiceConnection {
 
 		private ImageSwitcher mAlbum;
 
@@ -1498,9 +1260,9 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 			if (mService != null) {
 				try {
 					if (mAutoColor) {
-						mUIColor = ColorAnalyser.analyse(MusicUtils.getArtwork(
-								getApplicationContext(), mService.getAudioId(),
-								mService.getAlbumId()));
+						mUIColor = ColorAnalyser
+								.analyse(MusicUtils.getArtwork(getSherlockActivity(),
+										mService.getAudioId(), mService.getAlbumId()));
 					} else {
 						mUIColor = mPrefs.getIntPref(KEY_CUSTOMIZED_COLOR, Color.WHITE);
 					}

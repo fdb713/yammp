@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -44,11 +45,13 @@ public class LazyImageLoader {
 			.synchronizedMap(new WeakHashMap<ImageView, Object>());
 	ExecutorService mExecutorService;
 	private int mFallbackRes;
+	private int mRequiredSize;
 
-	public LazyImageLoader(Context context, int fallback) {
+	public LazyImageLoader(Context context, int fallback, int required_size) {
 		mFileCache = new FileCache(context);
 		mExecutorService = Executors.newFixedThreadPool(5);
 		mFallbackRes = fallback;
+		mRequiredSize = required_size % 2 == 0 ? required_size : required_size + 1;
 	}
 
 	public void clearFileCache() {
@@ -95,7 +98,9 @@ public class LazyImageLoader {
 			byte[] bytes = new byte[buffer_size];
 			for (;;) {
 				int count = is.read(bytes, 0, buffer_size);
-				if (count == -1) break;
+				if (count == -1) {
+					break;
+				}
 				os.write(bytes, 0, count);
 			}
 		} catch (Exception ex) {
@@ -103,7 +108,7 @@ public class LazyImageLoader {
 	}
 
 	// decodes image and scales it to reduce memory consumption
-	private Bitmap decodeFile(File f) {
+	private Bitmap decodeFile(File f, ImageView imageview) {
 		try {
 			// decode image size
 			BitmapFactory.Options options = new BitmapFactory.Options();
@@ -111,11 +116,12 @@ public class LazyImageLoader {
 			BitmapFactory.decodeStream(new FileInputStream(f), null, options);
 
 			// Find the correct scale value. It should be the power of 2.
-			final int REQUIRED_SIZE = 70;
 			int width_tmp = options.outWidth, height_tmp = options.outHeight;
 			int scale = 1;
 			while (true) {
-				if (width_tmp / 2 < REQUIRED_SIZE || height_tmp / 2 < REQUIRED_SIZE) break;
+				if (width_tmp / 2 < mRequiredSize || height_tmp / 2 < mRequiredSize) {
+					break;
+				}
 				width_tmp /= 2;
 				height_tmp /= 2;
 				scale *= 2;
@@ -130,17 +136,17 @@ public class LazyImageLoader {
 		return null;
 	}
 
-	private Bitmap getBitmapFromFile(File file) {
+	private Bitmap getBitmapFromFile(File file, ImageView imageview) {
 		if (file == null) return null;
 		File f = mFileCache.getFile(file);
 
 		// from SD cache
-		Bitmap bitmap = decodeFile(f);
+		Bitmap bitmap = decodeFile(f, imageview);
 
-		if (bitmap != null) {
+		if (bitmap != null)
 			return bitmap;
-		} else {
-			bitmap = decodeFile(file);
+		else {
+			bitmap = decodeFile(file, imageview);
 			if (bitmap == null) return null;
 			try {
 				FileOutputStream fos = new FileOutputStream(f);
@@ -158,12 +164,12 @@ public class LazyImageLoader {
 
 	}
 
-	private Bitmap getBitmapFromWeb(URL url) {
+	private Bitmap getBitmapFromWeb(URL url, ImageView imageview) {
 		if (url == null) return null;
 		File f = mFileCache.getFile(url);
 
 		// from SD cache
-		Bitmap b = decodeFile(f);
+		Bitmap b = decodeFile(f, imageview);
 		if (b != null) return b;
 
 		// from web
@@ -177,7 +183,7 @@ public class LazyImageLoader {
 			OutputStream os = new FileOutputStream(f);
 			copyStream(is, os);
 			os.close();
-			bitmap = decodeFile(f);
+			bitmap = decodeFile(f, imageview);
 			return bitmap;
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -238,7 +244,9 @@ public class LazyImageLoader {
 			} else {
 				cacheDir = context.getCacheDir();
 			}
-			if (!cacheDir.exists()) cacheDir.mkdirs();
+			if (!cacheDir.exists()) {
+				cacheDir.mkdirs();
+			}
 		}
 
 		public void clear() {
@@ -294,7 +302,7 @@ public class LazyImageLoader {
 		@Override
 		public void run() {
 			if (imageViewReused(imagetoload) || imagetoload.file == null) return;
-			Bitmap bmp = getBitmapFromFile(imagetoload.file);
+			Bitmap bmp = getBitmapFromFile(imagetoload.file, imagetoload.imageview);
 			mMemoryCache.put(imagetoload.file, bmp);
 			if (imageViewReused(imagetoload)) return;
 			LocalBitmapDisplayer bd = new LocalBitmapDisplayer(bmp, imagetoload);
@@ -347,7 +355,7 @@ public class LazyImageLoader {
 		@Override
 		public void run() {
 			if (imageViewReused(imagetoload) || imagetoload.url == null) return;
-			Bitmap bmp = getBitmapFromWeb(imagetoload.url);
+			Bitmap bmp = getBitmapFromWeb(imagetoload.url, imagetoload.imageview);
 			mMemoryCache.put(imagetoload.url, bmp);
 			if (imageViewReused(imagetoload)) return;
 			WebBitmapDisplayer bd = new WebBitmapDisplayer(bmp, imagetoload);

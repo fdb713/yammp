@@ -15,6 +15,7 @@
 	<item name="shuffle_all" type="id"/>
 	<item name="play_all" type="id"/>
 	<item name="delete_items" type="id"/>
+	<item name="delete_lyrics" type="id"/>
 	<item name="equalizer" type="id"/>
 	<item name="equalizer_presets" type="id"/>
 	<item name="equalizer_reset" type="id"/>

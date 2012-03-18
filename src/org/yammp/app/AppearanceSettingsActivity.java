@@ -23,12 +23,12 @@ package org.yammp.app;
 import org.yammp.Constants;
 import org.yammp.R;
 
-import com.actionbarsherlock.app.SherlockPreferenceActivity;
-import com.actionbarsherlock.view.MenuItem;
-
 import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
+
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+import com.actionbarsherlock.view.MenuItem;
 
 public class AppearanceSettingsActivity extends SherlockPreferenceActivity implements Constants {
 

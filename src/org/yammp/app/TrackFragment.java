@@ -28,8 +28,6 @@ import org.yammp.widget.TouchInterceptor;
 import org.yammp.widget.TouchInterceptor.OnDropListener;
 import org.yammp.widget.TouchInterceptor.OnRemoveListener;
 
-import com.actionbarsherlock.app.SherlockListFragment;
-
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -55,6 +53,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.actionbarsherlock.app.SherlockListFragment;
 
 public class TrackFragment extends SherlockListFragment implements LoaderCallbacks<Cursor>,
 		Constants, OnDropListener, OnRemoveListener {
