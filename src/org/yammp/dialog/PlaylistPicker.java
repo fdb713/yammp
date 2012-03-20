@@ -6,7 +6,8 @@ import java.util.Map;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -24,6 +25,8 @@ public class PlaylistPicker extends FragmentActivity implements DialogInterface.
 	List<Map<String, String>> mAllPlayLists = new ArrayList<Map<String, String>>();
 	List<String> mPlayListNames = new ArrayList<String>();
 	long[] mList = new long[] {};
+
+	private MediaUtils mUtils;
 
 	@Override
 	public void onCancel(DialogInterface dialog) {
@@ -52,9 +55,9 @@ public class PlaylistPicker extends FragmentActivity implements DialogInterface.
 			setResult(RESULT_OK, intent);
 		} else {
 			if (listId >= 0) {
-				MusicUtils.addToPlaylist(this, mList, listId);
+				mUtils.addToPlaylist(mList, listId);
 			} else if (listId == PLAYLIST_QUEUE) {
-				MusicUtils.addToCurrentPlaylist(this, mList);
+				mUtils.addToCurrentPlaylist(mList);
 			} else if (listId == PLAYLIST_NEW) {
 				intent = new Intent(INTENT_CREATE_PLAYLIST);
 				intent.putExtra(INTENT_KEY_LIST, mList);
@@ -68,7 +71,7 @@ public class PlaylistPicker extends FragmentActivity implements DialogInterface.
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		setContentView(new LinearLayout(this));
 
 		if (getIntent().getAction() != null) {
@@ -76,7 +79,7 @@ public class PlaylistPicker extends FragmentActivity implements DialogInterface.
 			if (INTENT_ADD_TO_PLAYLIST.equals(getIntent().getAction())
 					&& getIntent().getLongArrayExtra(INTENT_KEY_LIST) != null) {
 
-				MusicUtils.makePlaylistList(this, false, mAllPlayLists);
+				mUtils.makePlaylistList(false, mAllPlayLists);
 				mList = getIntent().getLongArrayExtra(INTENT_KEY_LIST);
 				for (int i = 0; i < mAllPlayLists.size(); i++) {
 					mPlayListNames.add(mAllPlayLists.get(i).get(MAP_KEY_NAME));
@@ -86,7 +89,7 @@ public class PlaylistPicker extends FragmentActivity implements DialogInterface.
 						.setItems(mPlayListNames.toArray(new CharSequence[mPlayListNames.size()]),
 								this).setOnCancelListener(this).show();
 			} else if (getIntent().getAction().equals(Intent.ACTION_CREATE_SHORTCUT)) {
-				MusicUtils.makePlaylistList(this, true, mAllPlayLists);
+				mUtils.makePlaylistList(true, mAllPlayLists);
 				for (int i = 0; i < mAllPlayLists.size(); i++) {
 					mPlayListNames.add(mAllPlayLists.get(i).get(MAP_KEY_NAME));
 				}

@@ -22,7 +22,8 @@ package org.yammp.app;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.ServiceToken;
 
 import android.content.ComponentName;
@@ -42,12 +43,13 @@ public class TrackBrowserActivity extends SherlockFragmentActivity implements Co
 	private ServiceToken mToken;
 	private Intent intent;
 	private Bundle bundle;
+	private MediaUtils mUtils;
 
 	@Override
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
 		intent = getIntent();
@@ -101,14 +103,14 @@ public class TrackBrowserActivity extends SherlockFragmentActivity implements Co
 	@Override
 	public void onStart() {
 		super.onStart();
-		mToken = MusicUtils.bindToService(this, this);
+		mToken = mUtils.bindToService(this);
 		setTitle();
 	}
 
 	@Override
 	public void onStop() {
 
-		MusicUtils.unbindFromService(mToken);
+		mUtils.unbindFromService(mToken);
 		super.onStop();
 	}
 
@@ -138,16 +140,16 @@ public class TrackBrowserActivity extends SherlockFragmentActivity implements Co
 					}
 			}
 
-			name = MusicUtils.getPlaylistName(getApplicationContext(), id);
+			name = mUtils.getPlaylistName(id);
 		} else if (Audio.Artists.CONTENT_TYPE.equals(mimeType)) {
 			id = bundle.getLong(Audio.Artists._ID);
-			name = MusicUtils.getArtistName(getApplicationContext(), id, true);
+			name = mUtils.getArtistName(id, true);
 		} else if (Audio.Albums.CONTENT_TYPE.equals(mimeType)) {
 			id = bundle.getLong(Audio.Albums._ID);
-			name = MusicUtils.getAlbumName(getApplicationContext(), id, true);
+			name = mUtils.getAlbumName(id, true);
 		} else if (Audio.Genres.CONTENT_TYPE.equals(mimeType)) {
 			id = bundle.getLong(Audio.Genres._ID);
-			name = MusicUtils.parseGenreName(MusicUtils.getGenreName(getApplicationContext(), id,
+			name = mUtils.parseGenreName(mUtils.getGenreName(id,
 					true));
 		} else {
 			setTitle(R.string.music_library);

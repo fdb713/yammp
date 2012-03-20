@@ -26,8 +26,9 @@ import java.util.ArrayList;
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.R;
+import org.yammp.YAMMPApplication;
 import org.yammp.dialog.ScanningProgress;
-import org.yammp.util.MusicUtils;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.ServiceToken;
 
 import android.content.BroadcastReceiver;
@@ -37,7 +38,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -48,22 +48,15 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
-import android.view.View;
-import android.view.WindowManager.LayoutParams;
 import android.widget.ArrayAdapter;
-import android.widget.ImageSwitcher;
-import android.widget.ImageView;
-import android.widget.ViewSwitcher.ViewFactory;
-
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
-import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.actionbarsherlock.view.Window;
 
-public class MusicBrowserActivity extends SherlockFragmentActivity implements Constants,
-		ServiceConnection, ViewFactory {
+public class MusicBrowserActivity extends YAMMPActivity implements Constants,
+		ServiceConnection {
 
 	private ActionBar mActionBar;
 
@@ -71,7 +64,7 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 	private IMusicPlaybackService mService;
 	private AsyncAlbumArtLoader mAlbumArtLoader;
 	private PagesAdapter mAdapter;
-	private ImageSwitcher mBackground;
+	private MediaUtils mUtils;
 
 	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
 
@@ -89,30 +82,17 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 
 	};
 
-	private AsyncBackgroundEffect mEffect;
-
-	@Override
-	public View makeView() {
-		ImageView view = new ImageView(this);
-		view.setScaleType(ImageView.ScaleType.FIT_XY);
-		view.setLayoutParams(new ImageSwitcher.LayoutParams(LayoutParams.MATCH_PARENT,
-				LayoutParams.MATCH_PARENT));
-		return view;
-	}
-
 	@Override
 	public void onCreate(Bundle icicle) {
 
 		requestWindowFeature(Window.FEATURE_ACTION_BAR_OVERLAY);
 		super.onCreate(icicle);
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		setContentView(R.layout.main);
 
 		mActionBar = getSupportActionBar();
-
 		mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
-		mBackground = (ImageSwitcher) findViewById(R.id.background);
-		mBackground.setFactory(this);
 
 		String mount_state = Environment.getExternalStorageState();
 
@@ -162,7 +142,7 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 				startActivity(intent);
 				break;
 			case SHUFFLE_ALL:
-				MusicUtils.shuffleAll(getApplicationContext());
+				mUtils.shuffleAll();
 				break;
 			case SETTINGS:
 				intent = new Intent(INTENT_MUSIC_SETTINGS);
@@ -209,7 +189,7 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 	@Override
 	public void onStart() {
 		super.onStart();
-		mToken = MusicUtils.bindToService(this, this);
+		mToken = mUtils.bindToService(this);
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(BROADCAST_META_CHANGED);
 		filter.addAction(BROADCAST_QUEUE_CHANGED);
@@ -222,17 +202,9 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 	public void onStop() {
 
 		unregisterReceiver(mMediaStatusReceiver);
-		MusicUtils.unbindFromService(mToken);
+		mUtils.unbindFromService(mToken);
 		mService = null;
 		super.onStop();
-	}
-
-	public void setBackground(long song_id, long album_id) {
-		if (mEffect != null) {
-			mEffect.cancel(true);
-		}
-		mEffect = new AsyncBackgroundEffect();
-		mEffect.execute(song_id, album_id);
 	}
 
 	private void updateNowplaying() {
@@ -270,8 +242,7 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 
 			if (mService != null) {
 				try {
-					Bitmap bitmap = MusicUtils.getArtwork(getApplicationContext(),
-							mService.getAudioId(), mService.getAlbumId());
+					Bitmap bitmap = mUtils.getArtwork(mService.getAudioId(), mService.getAlbumId());
 					if (bitmap == null) return null;
 					int value = 0;
 					if (bitmap.getHeight() <= bitmap.getWidth()) {
@@ -296,37 +267,6 @@ public class MusicBrowserActivity extends SherlockFragmentActivity implements Co
 			} else {
 				mActionBar.setIcon(R.drawable.ic_launcher_music);
 			}
-		}
-	}
-
-	private class AsyncBackgroundEffect extends AsyncTask<Long, Void, Drawable> {
-
-		@Override
-		public Drawable doInBackground(Long... params) {
-			Bitmap bitmap;
-			if (params == null || params.length != 2) {
-				bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_music);
-			} else {
-				bitmap = MusicUtils.getArtwork(getApplicationContext(), params[0], params[1]);
-			}
-
-			if (bitmap == null) {
-				bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_music);
-			}
-			float density = getResources().getDisplayMetrics().density;
-			Drawable drawable = MusicUtils.getBackgroundImage(getApplicationContext(), bitmap,
-					mBackground.getWidth(), mBackground.getHeight(), 1.0f / 32 / density);
-			return drawable;
-		}
-
-		@Override
-		public void onPostExecute(Drawable result) {
-			if (result != null) {
-				mBackground.setImageDrawable(result);
-			} else {
-				mBackground.setImageResource(R.drawable.ic_launcher_music);
-			}
-			mEffect = null;
 		}
 	}
 

@@ -22,7 +22,10 @@ package org.yammp.app;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
+
+import com.actionbarsherlock.app.SherlockListFragment;
 
 import android.app.SearchManager;
 import android.content.ComponentName;
@@ -48,13 +51,15 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class QueryFragment extends ListFragment implements Constants, LoaderCallbacks<Cursor> {
+public class QueryFragment extends SherlockListFragment implements Constants, LoaderCallbacks<Cursor> {
 
 	private QueryListAdapter mAdapter;
 
 	private String mFilterString = "";
 	private Cursor mQueryCursor;
 	private ListView mTrackList;
+
+	private MediaUtils mUtils;
 
 	public QueryFragment() {
 
@@ -67,7 +72,7 @@ public class QueryFragment extends ListFragment implements Constants, LoaderCall
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-
+		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
 		// We have a menu item to show in action bar.
 		setHasOptionsMenu(true);
 
@@ -139,7 +144,7 @@ public class QueryFragment extends ListFragment implements Constants, LoaderCall
 			startActivity(intent);
 		} else if (position >= 0 && id >= 0) {
 			long[] list = new long[] { id };
-			MusicUtils.playAll(getActivity(), list, 0);
+			mUtils.playAll(list, 0);
 		} else {
 			Log.e("QueryBrowser", "invalid position/id: " + position + "/" + id);
 		}
@@ -177,7 +182,7 @@ public class QueryFragment extends ListFragment implements Constants, LoaderCall
 				// This is a specific file
 				String id = uri.getLastPathSegment();
 				long[] list = new long[] { Long.valueOf(id) };
-				MusicUtils.playAll(getActivity(), list, 0);
+				mUtils.playAll(list, 0);
 				getActivity().finish();
 				return;
 			} else if (data.startsWith("content://media/external/audio/albums/")) {
@@ -260,7 +265,7 @@ public class QueryFragment extends ListFragment implements Constants, LoaderCall
 				int numalbums = cursor.getInt(cursor.getColumnIndexOrThrow("data1"));
 				int numsongs = cursor.getInt(cursor.getColumnIndexOrThrow("data2"));
 
-				String songs_albums = MusicUtils.makeAlbumsSongsLabel(context, numalbums, numsongs,
+				String songs_albums = mUtils.makeAlbumsSongsLabel(numalbums, numsongs,
 						isunknown);
 
 				viewholder.result_summary.setText(songs_albums);

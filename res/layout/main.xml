@@ -22,13 +22,6 @@
 	android:layout_width="match_parent"
 	android:layout_height="match_parent">
 
-	<ImageSwitcher
-		android:id="@+id/background"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:inAnimation="@android:anim/fade_in"
-		android:outAnimation="@android:anim/fade_out"/>
-
 	<FrameLayout
 		android:id="@+id/content"
 		android:layout_width="match_parent"

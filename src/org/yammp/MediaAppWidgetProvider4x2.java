@@ -22,7 +22,7 @@ package org.yammp;
 
 import org.yammp.app.MusicBrowserActivity;
 import org.yammp.app.MusicPlaybackActivity;
-import org.yammp.util.MusicUtils;
+import org.yammp.util.MediaUtils;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -200,7 +200,7 @@ public class MediaAppWidgetProvider4x2 extends AppWidgetProvider implements Cons
 			views.setTextViewText(R.id.album_name, mAlbumName);
 			views.setTextViewText(R.id.track_name, mTrackName);
 			// Set album art
-			Uri uri = MusicUtils.getArtworkUri(context, mAudioId, mAlbumId);
+			Uri uri = new MediaUtils(context).getArtworkUri(mAudioId, mAlbumId);
 			if (uri != null) {
 				views.setImageViewUri(R.id.album_art, uri);
 			} else {

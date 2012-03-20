@@ -1,7 +1,8 @@
 package org.yammp.dialog;
 
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 
 import com.actionbarsherlock.app.SherlockDialogFragment;
 
@@ -14,6 +15,7 @@ import android.os.Bundle;
 public class DeleteDialogFragment extends SherlockDialogFragment implements OnClickListener {
 
 	private long[] mItems = new long[] {};
+	private MediaUtils mUtils;
 	private static boolean mIsDeleteLyrics = false;
 	private static long mId;
 	private static int mType;
@@ -31,14 +33,20 @@ public class DeleteDialogFragment extends SherlockDialogFragment implements OnCl
 	}
 
 	@Override
+	public void onActivityCreated(Bundle saveInstanceState) {
+		super.onActivityCreated(saveInstanceState);
+		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+	}
+	
+	@Override
 	public void onClick(DialogInterface dialog, int which) {
 
 		switch (which) {
 			case DialogInterface.BUTTON_POSITIVE:
 				if (mIsDeleteLyrics) {
-					MusicUtils.deleteLyrics(getSherlockActivity(), mItems);
+					mUtils.deleteLyrics(mItems);
 				} else {
-					MusicUtils.deleteTracks(getSherlockActivity(), mItems);
+					mUtils.deleteTracks(mItems);
 				}
 				break;
 		}
@@ -51,19 +59,19 @@ public class DeleteDialogFragment extends SherlockDialogFragment implements OnCl
 		switch (mType) {
 			case ARTIST:
 				mItems = new long[] { mId };
-				mName = MusicUtils.getTrackName(getSherlockActivity(), mId);
+				mName = mUtils.getTrackName(mId);
 				mMessage = getString(mIsDeleteLyrics ? R.string.delete_song_lyrics
 						: R.string.delete_song_track, mName);
 				break;
 			case ALBUM:
-				mItems = MusicUtils.getSongListForAlbum(getSherlockActivity(), mId);
-				mName = MusicUtils.getAlbumName(getSherlockActivity(), mId, true);
+				mItems = mUtils.getSongListForAlbum(mId);
+				mName = mUtils.getAlbumName(mId, true);
 				mMessage = getString(mIsDeleteLyrics ? R.string.delete_album_lyrics
 						: R.string.delete_album_tracks, mName);
 				break;
 			case TRACK:
-				mItems = MusicUtils.getSongListForArtist(getSherlockActivity(), mId);
-				mName = MusicUtils.getArtistName(getSherlockActivity(), mId, true);
+				mItems = mUtils.getSongListForArtist(mId);
+				mName = mUtils.getArtistName(mId, true);
 				mMessage = getString(mIsDeleteLyrics ? R.string.delete_artist_lyrics
 						: R.string.delete_artist_tracks, mName);
 				break;

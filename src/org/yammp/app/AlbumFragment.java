@@ -24,9 +24,10 @@ import java.io.File;
 
 import org.yammp.Constants;
 import org.yammp.R;
+import org.yammp.YAMMPApplication;
 import org.yammp.dialog.DeleteDialogFragment;
 import org.yammp.util.LazyImageLoader;
-import org.yammp.util.MusicUtils;
+import org.yammp.util.MediaUtils;
 
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
@@ -49,6 +50,8 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
+import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
@@ -60,7 +63,7 @@ import android.widget.TextView;
 import com.actionbarsherlock.app.SherlockFragment;
 
 public class AlbumFragment extends SherlockFragment implements Constants, OnItemClickListener,
-		OnItemSelectedListener, LoaderCallbacks<Cursor> {
+		OnItemSelectedListener, OnScrollListener, LoaderCallbacks<Cursor> {
 
 	private AlbumsAdapter mAdapter;
 
@@ -89,10 +92,12 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 		setArguments(args);
 	}
 
+	MediaUtils mUtils;
+	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-
+		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
 		// We have a menu item to show in action bar.
 		setHasOptionsMenu(true);
 
@@ -108,8 +113,7 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 		mGridView.setOnItemClickListener(this);
 		mGridView.setOnItemSelectedListener(this);
 		mGridView.setOnCreateContextMenuListener(this);
-		mGridView.setDrawingCacheEnabled(true);
-		mGridView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_AUTO);
+		mGridView.setOnScrollListener(this);
 
 		registerForContextMenu(mGridView);
 
@@ -124,9 +128,9 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 			switch (item.getItemId()) {
 				case PLAY_SELECTION:
 					int position = mSelectedPosition;
-					long[] list = MusicUtils
-							.getSongListForAlbum(getSherlockActivity(), mSelectedId);
-					MusicUtils.playAll(getSherlockActivity(), list, position);
+					long[] list = mUtils
+							.getSongListForAlbum(mSelectedId);
+					mUtils.playAll(list, position);
 					return true;
 				case DELETE_ITEMS:
 					DeleteDialogFragment
@@ -342,7 +346,7 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 			// we just use it to see if there is album art or not
 			long aid = cursor.getLong(mIdIdx);
 
-			long currentalbumid = MusicUtils.getCurrentAlbumId();
+			long currentalbumid = mUtils.getCurrentAlbumId();
 			if (currentalbumid == aid) {
 				viewholder.album_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
 						R.drawable.ic_indicator_nowplaying_small, 0);
@@ -383,6 +387,24 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 
 		}
 
+	}
+
+	private int mScrollState = OnScrollListener.SCROLL_STATE_IDLE;
+	private boolean mScrollStopped = true;
+	private int mFirstVisible = 0;
+	
+	@Override
+	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+		if (mScrollState == OnScrollListener.SCROLL_STATE_FLING) {
+			long item_id = view.getItemIdAtPosition(firstVisibleItem);
+			((YAMMPActivity)getSherlockActivity()).setBackground(0, item_id);
+		}
+		
+	}
+
+	@Override
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		mScrollState = scrollState;
 	}
 
 }

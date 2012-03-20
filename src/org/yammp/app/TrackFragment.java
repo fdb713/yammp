@@ -22,7 +22,8 @@ package org.yammp.app;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.PreferencesEditor;
 import org.yammp.widget.TouchInterceptor;
 import org.yammp.widget.TouchInterceptor.OnDropListener;
@@ -81,6 +82,8 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 
 	};
 
+	private MediaUtils mUtils;
+
 	public TrackFragment() {
 
 	}
@@ -92,7 +95,7 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-
+		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
 		// We have a menu item to show in action bar.
 		setHasOptionsMenu(true);
 
@@ -142,10 +145,10 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 				int position = mSelectedPosition;
 
 				if (mPlaylistId == PLAYLIST_QUEUE) {
-					MusicUtils.setQueuePosition(position);
+					mUtils.setQueuePosition(position);
 					return true;
 				}
-				MusicUtils.playAll(getActivity(), mCursor, position);
+				mUtils.playAll(mCursor, position);
 				return true;
 			case DELETE_ITEMS:
 				intent = new Intent(INTENT_DELETE_ITEMS);
@@ -213,7 +216,7 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 				switch ((int) mPlaylistId) {
 					case (int) PLAYLIST_QUEUE:
 						uri = Audio.Media.EXTERNAL_CONTENT_URI;
-						long[] mNowPlaying = MusicUtils.getQueue();
+						long[] mNowPlaying = mUtils.getQueue();
 						if (mNowPlaying.length == 0) return null;
 						where = new StringBuilder();
 						where.append(MediaStore.Audio.Media._ID + " IN (");
@@ -226,7 +229,7 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 						sort_order = null;
 						break;
 					case (int) PLAYLIST_FAVORITES:
-						long favorites_id = MusicUtils.getFavoritesId(getActivity());
+						long favorites_id = mUtils.getFavoritesId();
 
 						cols = new String[] { Playlists.Members._ID, Playlists.Members.AUDIO_ID,
 								Playlists.Members.TITLE, Playlists.Members.ALBUM,
@@ -304,10 +307,10 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 		if (mPlaylistId >= 0) {
 			Playlists.Members.moveItem(getActivity().getContentResolver(), mPlaylistId, from, to);
 		} else if (mPlaylistId == PLAYLIST_QUEUE) {
-			MusicUtils.moveQueueItem(from, to);
+			mUtils.moveQueueItem(from, to);
 			reloadQueueCursor();
 		} else if (mPlaylistId == PLAYLIST_FAVORITES) {
-			long favorites_id = MusicUtils.getFavoritesId(getActivity());
+			long favorites_id = mUtils.getFavoritesId();
 			Playlists.Members.moveItem(getActivity().getContentResolver(), favorites_id, from, to);
 		}
 
@@ -322,10 +325,10 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 		// dropping out of party shuffle.
 
 		if (mPlaylistId == PLAYLIST_QUEUE) {
-			MusicUtils.setQueueId(id);
+			mUtils.setQueueId(id);
 			return;
 		}
-		MusicUtils.playAll(getActivity(), mCursor, position);
+		mUtils.playAll(mCursor, position);
 
 	}
 
@@ -448,7 +451,7 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 
 			Uri uri = Audio.Media.EXTERNAL_CONTENT_URI;
 
-			long[] mNowPlaying = MusicUtils.getQueue();
+			long[] mNowPlaying = mUtils.getQueue();
 			if (mNowPlaying.length == 0) {
 				// return;
 			}
@@ -462,7 +465,7 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 			}
 			where.append(")");
 
-			mCursor = MusicUtils.query(getActivity(), uri, cols, where.toString(), null, null);
+			mCursor = mUtils.query(uri, cols, where.toString(), null, null);
 			mAdapter.changeCursor(mCursor);
 		}
 	}
@@ -477,10 +480,10 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 			getActivity().getContentResolver().delete(uri, Playlists.Members.AUDIO_ID + "=" + id,
 					null);
 		} else if (mPlaylistId == PLAYLIST_QUEUE) {
-			MusicUtils.removeTrack(id);
+			mUtils.removeTrack(id);
 			reloadQueueCursor();
 		} else if (mPlaylistId == PLAYLIST_FAVORITES) {
-			MusicUtils.removeFromFavorites(getActivity(), id);
+			mUtils.removeFromFavorites(id);
 		}
 
 		mListView.invalidateViews();
@@ -514,12 +517,12 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 			if (secs <= 0) {
 				viewholder.track_duration.setText("");
 			} else {
-				viewholder.track_duration.setText(MusicUtils.makeTimeString(context, secs));
+				viewholder.track_duration.setText(mUtils.makeTimeString(secs));
 			}
 
 			long audio_id = cursor.getLong(mIdIdx);
 
-			long currentaudioid = MusicUtils.getCurrentAudioId();
+			long currentaudioid = mUtils.getCurrentAudioId();
 			if (currentaudioid == audio_id) {
 				viewholder.track_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
 						R.drawable.ic_indicator_nowplaying_small, 0);

@@ -18,7 +18,8 @@ package org.yammp.dialog;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -57,7 +58,7 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 		public void onClick(DialogInterface dialog, int which) {
 
 			String name = mPlaylist.getText().toString();
-			MusicUtils.renamePlaylist(PlaylistDialog.this, mRenameId, name);
+			mUtils.renamePlaylist(mRenameId, name);
 			finish();
 		}
 	};
@@ -71,18 +72,20 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 			if (name != null && name.length() > 0) {
 				int id = idForplaylist(name);
 				if (id >= 0) {
-					MusicUtils.clearPlaylist(PlaylistDialog.this, id);
-					MusicUtils.addToPlaylist(PlaylistDialog.this, mList, id);
+					mUtils.clearPlaylist(id);
+					mUtils.addToPlaylist(mList, id);
 				} else {
-					long new_id = MusicUtils.createPlaylist(PlaylistDialog.this, name);
+					long new_id = mUtils.createPlaylist(name);
 					if (new_id >= 0) {
-						MusicUtils.addToPlaylist(PlaylistDialog.this, mList, new_id);
+						mUtils.addToPlaylist(mList, new_id);
 					}
 				}
 				finish();
 			}
 		}
 	};
+
+	private MediaUtils mUtils;
 
 	@Override
 	public void afterTextChanged(Editable s) {
@@ -108,7 +111,7 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		setContentView(new LinearLayout(this));
 
 		action = getIntent().getAction();
@@ -217,7 +220,7 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 
 	private int idForplaylist(String name) {
 
-		Cursor cursor = MusicUtils.query(this, MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+		Cursor cursor = mUtils.query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
 				new String[] { MediaStore.Audio.Playlists._ID }, MediaStore.Audio.Playlists.NAME
 						+ "=?", new String[] { name }, MediaStore.Audio.Playlists.NAME);
 		int id = -1;
@@ -273,7 +276,7 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 
 	private String nameForId(long id) {
 
-		Cursor cursor = MusicUtils.query(this, MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+		Cursor cursor = mUtils.query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
 				new String[] { MediaStore.Audio.Playlists.NAME }, MediaStore.Audio.Playlists._ID
 						+ "=?", new String[] { Long.valueOf(id).toString() },
 				MediaStore.Audio.Playlists.NAME);

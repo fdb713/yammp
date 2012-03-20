@@ -34,7 +34,6 @@ import org.yammp.IMusicPlaybackService;
 import org.yammp.MusicPlaybackService;
 import org.yammp.R;
 
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -68,8 +67,14 @@ import android.util.Log;
 import android.view.Window;
 import android.widget.Toast;
 
-public class MusicUtils implements Constants {
+public class MediaUtils implements Constants {
 
+	private Context mContext;
+	
+	public MediaUtils(Context context) {
+		mContext = context;
+	}
+	
 	public static IMusicPlaybackService mService = null;
 
 	private static HashMap<Context, ServiceBinder> mConnectionMap = new HashMap<Context, ServiceBinder>();
@@ -120,19 +125,19 @@ public class MusicUtils implements Constants {
 
 	private static Time mTime = new Time();
 
-	public static void addToCurrentPlaylist(Context context, long[] list) {
+	public void addToCurrentPlaylist(long[] list) {
 
 		if (mService == null) return;
 		try {
 			mService.enqueue(list, MusicPlaybackService.ACTION_LAST);
-			String message = context.getResources().getQuantityString(
+			String message = mContext.getResources().getQuantityString(
 					R.plurals.NNNtrackstoplaylist, list.length, Integer.valueOf(list.length));
-			Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+			Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
 		} catch (RemoteException ex) {
 		}
 	}
 
-	public static void addToFavorites(Context context, long id) {
+	public void addToFavorites(long id) {
 
 		long favorites_id;
 
@@ -141,7 +146,7 @@ public class MusicUtils implements Constants {
 			// unless the selected item represents something playable
 			Log.e(LOGTAG_MUSICUTILS, "playlist id " + id + " is invalid.");
 		} else {
-			ContentResolver resolver = context.getContentResolver();
+			ContentResolver resolver = mContext.getContentResolver();
 			// need to determine the number of items currently in the playlist,
 			// so the play_order field can be maintained.
 
@@ -151,7 +156,7 @@ public class MusicUtils implements Constants {
 			Cursor cursor = resolver.query(favorites_uri, favorites_cols, favorites_where, null,
 					null);
 			if (cursor.getCount() <= 0) {
-				favorites_id = createPlaylist(context, PLAYLIST_NAME_FAVORITES);
+				favorites_id = createPlaylist(PLAYLIST_NAME_FAVORITES);
 			} else {
 				cursor.moveToFirst();
 				favorites_id = cursor.getLong(0);
@@ -178,7 +183,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void addToPlaylist(Context context, long[] ids, long playlistid) {
+	public void addToPlaylist(long[] ids, long playlistid) {
 
 		if (ids == null) {
 			// this shouldn't happen (the menuitems shouldn't be visible
@@ -186,7 +191,7 @@ public class MusicUtils implements Constants {
 			Log.e("MusicBase", "ListSelection null");
 		} else {
 			int size = ids.length;
-			ContentResolver resolver = context.getContentResolver();
+			ContentResolver resolver = mContext.getContentResolver();
 			// need to determine the number of items currently in the playlist,
 			// so the play_order field can be maintained.
 			String[] cols = new String[] { "count(*)" };
@@ -200,21 +205,21 @@ public class MusicUtils implements Constants {
 				makeInsertItems(ids, i, 1000, base);
 				numinserted += resolver.bulkInsert(uri, sContentValuesCache);
 			}
-			String message = context.getResources().getQuantityString(
+			String message = mContext.getResources().getQuantityString(
 					R.plurals.NNNtrackstoplaylist, numinserted, numinserted);
-			Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+			Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
 			// mLastPlaylistSelected = playlistid;
 		}
 	}
 
-	public static ServiceToken bindToService(Activity context) {
+	public ServiceToken bindToService() {
 
-		return bindToService(context, null);
+		return bindToService(null);
 	}
 
-	public static ServiceToken bindToService(Context context, ServiceConnection callback) {
+	public ServiceToken bindToService(ServiceConnection callback) {
 
-		ContextWrapper cw = new ContextWrapper(context);
+		ContextWrapper cw = new ContextWrapper(mContext);
 		cw.startService(new Intent(cw, MusicPlaybackService.class));
 		ServiceBinder sb = new ServiceBinder(callback);
 		if (cw.bindService(new Intent(cw, MusicPlaybackService.class), sb, 0)) {
@@ -225,21 +230,21 @@ public class MusicUtils implements Constants {
 		return null;
 	}
 
-	public static void clearAlbumArtCache() {
+	public void clearAlbumArtCache() {
 
 		synchronized (mArtBitmapCache) {
 			mArtBitmapCache.clear();
 		}
 	}
 
-	public static void clearPlaylist(Context context, int plid) {
+	public void clearPlaylist(int plid) {
 
 		Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", plid);
-		context.getContentResolver().delete(uri, null, null);
+		mContext.getContentResolver().delete(uri, null, null);
 		return;
 	}
 
-	public static void clearQueue() {
+	public void clearQueue() {
 
 		if (mService == null) return;
 
@@ -250,10 +255,10 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static long createPlaylist(Context context, String name) {
+	public long createPlaylist(String name) {
 
 		if (name != null && name.length() > 0) {
-			ContentResolver resolver = context.getContentResolver();
+			ContentResolver resolver = mContext.getContentResolver();
 			String[] cols = new String[] { MediaStore.Audio.Playlists.NAME };
 			String whereclause = MediaStore.Audio.Playlists.NAME + " = '" + name + "'";
 			Cursor cur = resolver.query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, cols,
@@ -269,7 +274,7 @@ public class MusicUtils implements Constants {
 		return -1;
 	}
 
-	public static void debugDump(PrintWriter out) {
+	public void debugDump(PrintWriter out) {
 
 		for (int i = 0; i < mMusicLog.length; i++) {
 			int idx = mLogPtr + i;
@@ -283,7 +288,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void debugLog(Object o) {
+	public void debugLog(Object o) {
 
 		mMusicLog[mLogPtr] = new LogEntry(o);
 		mLogPtr++;
@@ -292,7 +297,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void deleteLyrics(Context context, long[] list) {
+	public void deleteLyrics(long[] list) {
 
 		String[] cols = new String[] { MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA,
 				MediaStore.Audio.Media.ALBUM_ID };
@@ -305,7 +310,7 @@ public class MusicUtils implements Constants {
 			}
 		}
 		where.append(")");
-		Cursor c = query(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cols,
+		Cursor c = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cols,
 				where.toString(), null, null);
 
 		int mDeletedLyricsCount = 0;
@@ -333,15 +338,14 @@ public class MusicUtils implements Constants {
 			c.close();
 		}
 
-		String message = context.getResources().getQuantityString(R.plurals.NNNlyricsdeleted,
+		String message = mContext.getResources().getQuantityString(R.plurals.NNNlyricsdeleted,
 				mDeletedLyricsCount, Integer.valueOf(mDeletedLyricsCount));
 
 		reloadLyrics();
-		Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+		Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
 	}
 
-	// XXX
-	public static void deleteTracks(Context context, long[] list) {
+	public void deleteTracks(long[] list) {
 
 		String[] cols = new String[] { MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA,
 				MediaStore.Audio.Media.ALBUM_ID };
@@ -354,7 +358,7 @@ public class MusicUtils implements Constants {
 			}
 		}
 		where.append(")");
-		Cursor c = query(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cols,
+		Cursor c = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cols,
 				where.toString(), null, null);
 
 		if (c != null) {
@@ -378,7 +382,7 @@ public class MusicUtils implements Constants {
 			}
 
 			// step 2: remove selected tracks from the database
-			context.getContentResolver().delete(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+			mContext.getContentResolver().delete(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
 					where.toString(), null);
 
 			// step 3: remove files from card
@@ -400,24 +404,24 @@ public class MusicUtils implements Constants {
 			c.close();
 		}
 
-		String message = context.getResources().getQuantityString(R.plurals.NNNtracksdeleted,
+		String message = mContext.getResources().getQuantityString(R.plurals.NNNtracksdeleted,
 				list.length, Integer.valueOf(list.length));
 
-		Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+		Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
 		// We deleted a number of tracks, which could affect any number of
 		// things
 		// in the media content domain, so update everything.
-		context.getContentResolver().notifyChange(Uri.parse("content://media"), null);
+		mContext.getContentResolver().notifyChange(Uri.parse("content://media"), null);
 	}
 
-	public static String getAlbumName(Context context, long album_id, boolean default_name) {
+	public String getAlbumName(long album_id, boolean default_name) {
 		String where = Audio.Albums._ID + "=" + album_id;
 		String[] cols = new String[] { Audio.Albums.ALBUM };
 		Uri uri = Audio.Albums.EXTERNAL_CONTENT_URI;
-		Cursor cursor = context.getContentResolver().query(uri, cols, where, null, null);
+		Cursor cursor = mContext.getContentResolver().query(uri, cols, where, null, null);
 		if (cursor.getCount() <= 0) {
 			if (default_name)
-				return context.getString(R.string.unknown_album);
+				return mContext.getString(R.string.unknown_album);
 			else
 				return MediaStore.UNKNOWN_STRING;
 		} else {
@@ -426,7 +430,7 @@ public class MusicUtils implements Constants {
 			cursor.close();
 			if (name == null || MediaStore.UNKNOWN_STRING.equals(name)) {
 				if (default_name)
-					return context.getString(R.string.unknown_album);
+					return mContext.getString(R.string.unknown_album);
 				else
 					return MediaStore.UNKNOWN_STRING;
 			}
@@ -435,9 +439,9 @@ public class MusicUtils implements Constants {
 
 	}
 
-	public static long[] getAllSongs(Context context) {
+	public long[] getAllSongs() {
 
-		Cursor c = query(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+		Cursor c = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
 				new String[] { MediaStore.Audio.Media._ID },
 				MediaStore.Audio.Media.IS_MUSIC + "=1", null, null);
 		try {
@@ -457,14 +461,14 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static String getArtistName(Context context, long artist_id, boolean default_name) {
+	public String getArtistName(long artist_id, boolean default_name) {
 		String where = Audio.Artists._ID + "=" + artist_id;
 		String[] cols = new String[] { Audio.Artists.ARTIST };
 		Uri uri = Audio.Artists.EXTERNAL_CONTENT_URI;
-		Cursor cursor = context.getContentResolver().query(uri, cols, where, null, null);
+		Cursor cursor = mContext.getContentResolver().query(uri, cols, where, null, null);
 		if (cursor.getCount() <= 0) {
 			if (default_name)
-				return context.getString(R.string.unknown_artist);
+				return mContext.getString(R.string.unknown_artist);
 			else
 				return MediaStore.UNKNOWN_STRING;
 		} else {
@@ -473,7 +477,7 @@ public class MusicUtils implements Constants {
 			cursor.close();
 			if (name == null || MediaStore.UNKNOWN_STRING.equals(name)) {
 				if (default_name)
-					return context.getString(R.string.unknown_artist);
+					return mContext.getString(R.string.unknown_artist);
 				else
 					return MediaStore.UNKNOWN_STRING;
 			}
@@ -487,16 +491,16 @@ public class MusicUtils implements Constants {
 	 * for the "unknown" album here (use -1 instead) This method always returns
 	 * the default album art icon when no album art is found.
 	 */
-	public static Bitmap getArtwork(Context context, long song_id, long album_id) {
+	public Bitmap getArtwork(long song_id, long album_id) {
 
-		return getArtwork(context, song_id, album_id, true);
+		return getArtwork(song_id, album_id, true);
 	}
 
 	/**
 	 * Get album art for specified album. You should not pass in the album id
 	 * for the "unknown" album here (use -1 instead)
 	 */
-	public static Bitmap getArtwork(Context context, long song_id, long album_id,
+	public Bitmap getArtwork(long song_id, long album_id,
 			boolean allowdefault) {
 
 		if (album_id < 0) {
@@ -504,14 +508,14 @@ public class MusicUtils implements Constants {
 			// art directly
 			// from the file.
 			if (song_id >= 0) {
-				Bitmap bm = getArtworkFromFile(context, song_id, -1);
+				Bitmap bm = getArtworkFromFile(song_id, -1);
 				if (bm != null) return bm;
 			}
-			if (allowdefault) return getDefaultArtwork(context);
+			if (allowdefault) return getDefaultArtwork();
 			return null;
 		}
 
-		ContentResolver res = context.getContentResolver();
+		ContentResolver res = mContext.getContentResolver();
 		Uri uri = ContentUris.withAppendedId(mArtworkUri, album_id);
 		if (uri != null) {
 			InputStream in = null;
@@ -522,14 +526,14 @@ public class MusicUtils implements Constants {
 				// The album art thumbnail does not actually exist. Maybe the
 				// user deleted it, or
 				// maybe it never existed to begin with.
-				Bitmap bm = getArtworkFromFile(context, song_id, album_id);
+				Bitmap bm = getArtworkFromFile(song_id, album_id);
 				if (bm != null) {
 					if (bm.getConfig() == null) {
 						bm = bm.copy(Bitmap.Config.ARGB_8888, false);
-						if (bm == null && allowdefault) return getDefaultArtwork(context);
+						if (bm == null && allowdefault) return getDefaultArtwork();
 					}
 				} else if (allowdefault) {
-					bm = getDefaultArtwork(context);
+					bm = getDefaultArtwork();
 				}
 				return bm;
 			} finally {
@@ -550,13 +554,13 @@ public class MusicUtils implements Constants {
 	 * to getting artwork directly from the file, nor will it attempt to repair
 	 * the database.
 	 * 
-	 * @param context
+	 * @param mContext
 	 * @param album_id
 	 * @param w
 	 * @param h
 	 * @return
 	 */
-	public static Bitmap getArtworkQuick(Context context, long album_id, int w, int h) {
+	public Bitmap getArtworkQuick(long album_id, int w, int h) {
 
 		/*
 		 * NOTE: There is in fact a 1 pixel border on the right side in the
@@ -565,7 +569,7 @@ public class MusicUtils implements Constants {
 		 */
 
 		w -= 1;
-		ContentResolver res = context.getContentResolver();
+		ContentResolver res = mContext.getContentResolver();
 		Uri uri = ContentUris.withAppendedId(mArtworkUri, album_id);
 		if (uri != null) {
 			ParcelFileDescriptor fd = null;
@@ -628,21 +632,21 @@ public class MusicUtils implements Constants {
 		return null;
 	}
 
-	public static Uri getArtworkUri(Context context, long album_id) {
-		return getArtworkUri(context, -1, album_id);
+	public Uri getArtworkUri(long album_id) {
+		return getArtworkUri(-1, album_id);
 	}
 
-	public static Uri getArtworkUri(Context context, long song_id, long album_id) {
+	public Uri getArtworkUri(long song_id, long album_id) {
 
 		if (album_id < 0) {
 			// This is something that is not in the database, so get the album
 			// art directly
 			// from the file.
-			if (song_id >= 0) return getArtworkUriFromFile(context, song_id, -1);
+			if (song_id >= 0) return getArtworkUriFromFile(song_id, -1);
 			return null;
 		}
 
-		ContentResolver res = context.getContentResolver();
+		ContentResolver res = mContext.getContentResolver();
 		Uri uri = ContentUris.withAppendedId(mArtworkUri, album_id);
 		if (uri != null) {
 			InputStream in = null;
@@ -653,7 +657,7 @@ public class MusicUtils implements Constants {
 				// The album art thumbnail does not actually exist. Maybe the
 				// user deleted it, or
 				// maybe it never existed to begin with.
-				return getArtworkUriFromFile(context, song_id, album_id);
+				return getArtworkUriFromFile(song_id, album_id);
 			} finally {
 				try {
 					if (in != null) {
@@ -666,7 +670,7 @@ public class MusicUtils implements Constants {
 		return null;
 	}
 
-	public static Drawable getBackgroundImage(Context context, Bitmap bm, int width, int height,
+	public Drawable getBackgroundImage(Bitmap bm, int width, int height,
 			float scale) {
 
 		if (bm == null) return null;
@@ -685,14 +689,14 @@ public class MusicUtils implements Constants {
 		c.drawColor(0xD0000000, PorterDuff.Mode.DARKEN);
 		bitmap1.recycle();
 		bitmap2.recycle();
-		return new BitmapDrawable(context.getResources(), result);
+		return new BitmapDrawable(mContext.getResources(), result);
 	}
 
-	public static String getBetterGenresWhereClause(Context context) {
+	public String getBetterGenresWhereClause() {
 
 		StringBuilder builder = new StringBuilder();
 
-		ContentResolver resolver = context.getContentResolver();
+		ContentResolver resolver = mContext.getContentResolver();
 		String[] genres_cols = new String[] { Audio.Genres._ID };
 		Uri genres_uri = Audio.Genres.EXTERNAL_CONTENT_URI;
 
@@ -715,7 +719,7 @@ public class MusicUtils implements Constants {
 			where.append(" AND " + Genres.Members.TITLE + "!=''");
 			String[] cols = new String[] { Genres.Members._ID };
 			Uri uri = Genres.Members.getContentUri(EXTERNAL_VOLUME, genre_id);
-			Cursor member_cursor = context.getContentResolver().query(uri, cols, where.toString(),
+			Cursor member_cursor = mContext.getContentResolver().query(uri, cols, where.toString(),
 					null, null);
 			if (member_cursor != null) {
 				if (member_cursor.getCount() > 0) {
@@ -732,7 +736,7 @@ public class MusicUtils implements Constants {
 		return builder.toString();
 	}
 
-	public static Drawable getCachedArtwork(Context context, long index,
+	public Drawable getCachedArtwork(long index,
 			BitmapDrawable defaultArtwork) {
 		Drawable d = null;
 		synchronized (mArtCache) {
@@ -743,7 +747,7 @@ public class MusicUtils implements Constants {
 			final Bitmap icon = defaultArtwork.getBitmap();
 			int w = icon.getWidth();
 			int h = icon.getHeight();
-			Bitmap b = MusicUtils.getArtworkQuick(context, index, w, h);
+			Bitmap b = getArtworkQuick(index, w, h);
 			if (b != null) {
 				d = new BitmapDrawable(b);
 				synchronized (mArtCache) {
@@ -760,19 +764,19 @@ public class MusicUtils implements Constants {
 		return d;
 	}
 
-	public static Drawable getCachedArtwork(Context context, long index, int width, int height) {
-		Bitmap b = MusicUtils.getArtworkQuick(context, index, width, height);
+	public Drawable getCachedArtwork(long index, int width, int height) {
+		Bitmap b = getArtworkQuick(index, width, height);
 		return new FastBitmapDrawable(b);
 	}
 
-	public static Bitmap getCachedArtworkBitmap(Context context, long index, int width, int height) {
+	public Bitmap getCachedArtworkBitmap(long index, int width, int height) {
 
 		Bitmap art = null;
 		synchronized (mArtBitmapCache) {
 			art = mArtBitmapCache.get(index);
 		}
 		if (art == null) {
-			art = MusicUtils.getArtworkQuick(context, index, width, height);
+			art = getArtworkQuick(index, width, height);
 			if (art != null) {
 				synchronized (mArtBitmapCache) {
 					mArtBitmapCache.put(index, art);
@@ -782,9 +786,9 @@ public class MusicUtils implements Constants {
 		return art;
 	}
 
-	public static int getCardId(Context context) {
+	public int getCardId() {
 
-		ContentResolver res = context.getContentResolver();
+		ContentResolver res = mContext.getContentResolver();
 		Cursor c = res.query(Uri.parse("content://media/external/fs_id"), null, null, null, null);
 		int id = -1;
 		if (c != null) {
@@ -795,7 +799,7 @@ public class MusicUtils implements Constants {
 		return id;
 	}
 
-	public static long getCurrentAlbumId() {
+	public long getCurrentAlbumId() {
 
 		if (mService != null) {
 			try {
@@ -806,9 +810,9 @@ public class MusicUtils implements Constants {
 		return -1;
 	}
 
-	public static long getCurrentArtistId() {
+	public long getCurrentArtistId() {
 
-		if (MusicUtils.mService != null) {
+		if (MediaUtils.mService != null) {
 			try {
 				return mService.getArtistId();
 			} catch (RemoteException ex) {
@@ -817,9 +821,9 @@ public class MusicUtils implements Constants {
 		return -1;
 	}
 
-	public static long getCurrentAudioId() {
+	public long getCurrentAudioId() {
 
-		if (MusicUtils.mService != null) {
+		if (MediaUtils.mService != null) {
 			try {
 				return mService.getAudioId();
 			} catch (RemoteException ex) {
@@ -828,7 +832,7 @@ public class MusicUtils implements Constants {
 		return -1;
 	}
 
-	public static int getCurrentShuffleMode() {
+	public int getCurrentShuffleMode() {
 
 		int mode = SHUFFLE_NONE;
 		if (mService != null) {
@@ -840,14 +844,14 @@ public class MusicUtils implements Constants {
 		return mode;
 	}
 
-	public static long getFavoritesId(Context context) {
+	public long getFavoritesId() {
 		long favorites_id = -1;
 		String favorites_where = Audio.Playlists.NAME + "='" + PLAYLIST_NAME_FAVORITES + "'";
 		String[] favorites_cols = new String[] { Audio.Playlists._ID };
 		Uri favorites_uri = Audio.Playlists.EXTERNAL_CONTENT_URI;
-		Cursor cursor = query(context, favorites_uri, favorites_cols, favorites_where, null, null);
+		Cursor cursor = query(favorites_uri, favorites_cols, favorites_where, null, null);
 		if (cursor.getCount() <= 0) {
-			favorites_id = createPlaylist(context, PLAYLIST_NAME_FAVORITES);
+			favorites_id = createPlaylist(PLAYLIST_NAME_FAVORITES);
 		} else {
 			cursor.moveToFirst();
 			favorites_id = cursor.getLong(0);
@@ -856,14 +860,14 @@ public class MusicUtils implements Constants {
 		return favorites_id;
 	}
 
-	public static String getGenreName(Context context, long genre_id, boolean default_name) {
+	public String getGenreName(long genre_id, boolean default_name) {
 		String where = Audio.Genres._ID + "=" + genre_id;
 		String[] cols = new String[] { Audio.Genres.NAME };
 		Uri uri = Audio.Genres.EXTERNAL_CONTENT_URI;
-		Cursor cursor = context.getContentResolver().query(uri, cols, where, null, null);
+		Cursor cursor = mContext.getContentResolver().query(uri, cols, where, null, null);
 		if (cursor.getCount() <= 0) {
 			if (default_name)
-				return context.getString(R.string.unknown_genre);
+				return mContext.getString(R.string.unknown_genre);
 			else
 				return MediaStore.UNKNOWN_STRING;
 		} else {
@@ -872,7 +876,7 @@ public class MusicUtils implements Constants {
 			cursor.close();
 			if (name == null || MediaStore.UNKNOWN_STRING.equals(name)) {
 				if (default_name)
-					return context.getString(R.string.unknown_genre);
+					return mContext.getString(R.string.unknown_genre);
 				else
 					return MediaStore.UNKNOWN_STRING;
 			}
@@ -880,11 +884,11 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static String getPlaylistName(Context context, long playlist_id) {
+	public String getPlaylistName(long playlist_id) {
 		String where = Audio.Playlists._ID + "=" + playlist_id;
 		String[] cols = new String[] { Audio.Playlists.NAME };
 		Uri uri = Audio.Playlists.EXTERNAL_CONTENT_URI;
-		Cursor cursor = context.getContentResolver().query(uri, cols, where, null, null);
+		Cursor cursor = mContext.getContentResolver().query(uri, cols, where, null, null);
 		if (cursor.getCount() <= 0) return "";
 
 		cursor.moveToFirst();
@@ -893,7 +897,7 @@ public class MusicUtils implements Constants {
 		return name;
 	}
 
-	public static long[] getQueue() {
+	public long[] getQueue() {
 
 		if (mService == null) return mEmptyList;
 
@@ -905,7 +909,7 @@ public class MusicUtils implements Constants {
 		return mEmptyList;
 	}
 
-	public static int getQueuePosition() {
+	public int getQueuePosition() {
 		if (mService == null) return 0;
 
 		try {
@@ -916,7 +920,7 @@ public class MusicUtils implements Constants {
 		return 0;
 	}
 
-	public static long getSleepTimerRemained() {
+	public long getSleepTimerRemained() {
 
 		long remained = 0;
 		if (mService == null) return remained;
@@ -928,12 +932,12 @@ public class MusicUtils implements Constants {
 		return remained;
 	}
 
-	public static long[] getSongListForAlbum(Context context, long id) {
+	public long[] getSongListForAlbum(long id) {
 
 		final String[] ccols = new String[] { MediaStore.Audio.Media._ID };
 		String where = MediaStore.Audio.Media.ALBUM_ID + "=" + id + " AND "
 				+ MediaStore.Audio.Media.IS_MUSIC + "=1";
-		Cursor cursor = query(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
+		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
 				null, MediaStore.Audio.Media.TRACK);
 
 		if (cursor != null) {
@@ -944,12 +948,12 @@ public class MusicUtils implements Constants {
 		return mEmptyList;
 	}
 
-	public static long[] getSongListForArtist(Context context, long id) {
+	public long[] getSongListForArtist(long id) {
 
 		final String[] ccols = new String[] { MediaStore.Audio.Media._ID };
 		String where = MediaStore.Audio.Media.ARTIST_ID + "=" + id + " AND "
 				+ MediaStore.Audio.Media.IS_MUSIC + "=1";
-		Cursor cursor = query(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
+		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
 				null, MediaStore.Audio.Media.ALBUM_KEY + "," + MediaStore.Audio.Media.TRACK);
 
 		if (cursor != null) {
@@ -960,7 +964,7 @@ public class MusicUtils implements Constants {
 		return mEmptyList;
 	}
 
-	public static long[] getSongListForCursor(Cursor cursor) {
+	public long[] getSongListForCursor(Cursor cursor) {
 
 		if (cursor == null) return mEmptyList;
 		int len = cursor.getCount();
@@ -979,10 +983,10 @@ public class MusicUtils implements Constants {
 		return list;
 	}
 
-	public static long[] getSongListForPlaylist(Context context, long plid) {
+	public long[] getSongListForPlaylist(long plid) {
 
 		final String[] ccols = new String[] { MediaStore.Audio.Playlists.Members.AUDIO_ID };
-		Cursor cursor = query(context, Playlists.Members.getContentUri("external", plid), ccols,
+		Cursor cursor = query(Playlists.Members.getContentUri("external", plid), ccols,
 				null, null, Playlists.Members.DEFAULT_SORT_ORDER);
 
 		if (cursor != null) {
@@ -993,11 +997,11 @@ public class MusicUtils implements Constants {
 		return mEmptyList;
 	}
 
-	public static String getTrackName(Context context, long audio_id) {
+	public String getTrackName(long audio_id) {
 		String where = Audio.Media._ID + "=" + audio_id;
 		String[] cols = new String[] { Audio.Media.TITLE };
 		Uri uri = Audio.Media.EXTERNAL_CONTENT_URI;
-		Cursor cursor = context.getContentResolver().query(uri, cols, where, null, null);
+		Cursor cursor = mContext.getContentResolver().query(uri, cols, where, null, null);
 		if (cursor.getCount() <= 0) return "";
 
 		cursor.moveToFirst();
@@ -1006,7 +1010,7 @@ public class MusicUtils implements Constants {
 		return name;
 	}
 
-	public static void initAlbumArtCache() {
+	public void initAlbumArtCache() {
 
 		try {
 			int id = mService.getMediaMountedCount();
@@ -1019,7 +1023,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static boolean isFavorite(Context context, long id) {
+	public boolean isFavorite(long id) {
 
 		long favorites_id;
 
@@ -1028,7 +1032,7 @@ public class MusicUtils implements Constants {
 			// unless the selected item represents something playable
 			Log.e(LOGTAG_MUSICUTILS, "playlist id " + id + " is invalid.");
 		} else {
-			ContentResolver resolver = context.getContentResolver();
+			ContentResolver resolver = mContext.getContentResolver();
 			// need to determine the number of items currently in the playlist,
 			// so the play_order field can be maintained.
 
@@ -1038,7 +1042,7 @@ public class MusicUtils implements Constants {
 			Cursor cursor = resolver.query(favorites_uri, favorites_cols, favorites_where, null,
 					null);
 			if (cursor.getCount() <= 0) {
-				favorites_id = createPlaylist(context, PLAYLIST_NAME_FAVORITES);
+				favorites_id = createPlaylist(PLAYLIST_NAME_FAVORITES);
 			} else {
 				cursor.moveToFirst();
 				favorites_id = cursor.getLong(0);
@@ -1063,10 +1067,10 @@ public class MusicUtils implements Constants {
 		return false;
 	}
 
-	public static boolean isMediaScannerScanning(Context context) {
+	public boolean isMediaScannerScanning() {
 
 		boolean result = false;
-		Cursor cursor = query(context, MediaStore.getMediaScannerUri(),
+		Cursor cursor = query(MediaStore.getMediaScannerUri(),
 				new String[] { MediaStore.MEDIA_SCANNER_VOLUME }, null, null, null);
 		if (cursor != null) {
 			if (cursor.getCount() == 1) {
@@ -1085,7 +1089,7 @@ public class MusicUtils implements Constants {
 	 */
 	public static boolean isMusicLoaded() {
 
-		if (MusicUtils.mService != null) {
+		if (MediaUtils.mService != null) {
 			try {
 				return mService.getPath() != null;
 			} catch (RemoteException ex) {
@@ -1094,7 +1098,7 @@ public class MusicUtils implements Constants {
 		return false;
 	}
 
-	public static String makeAlbumsLabel(Context context, int numalbums, int numsongs,
+	public String makeAlbumsLabel(int numalbums, int numsongs,
 			boolean isUnknown) {
 
 		// There are two formats for the albums/songs information:
@@ -1103,7 +1107,7 @@ public class MusicUtils implements Constants {
 
 		StringBuilder songs_albums = new StringBuilder();
 
-		Resources r = context.getResources();
+		Resources r = mContext.getResources();
 		if (isUnknown) {
 			String f = r.getQuantityText(R.plurals.Nsongs, numsongs).toString();
 			sFormatBuilder.setLength(0);
@@ -1122,7 +1126,7 @@ public class MusicUtils implements Constants {
 	/**
 	 * This is now only used for the query screen
 	 */
-	public static String makeAlbumsSongsLabel(Context context, int numalbums, int numsongs,
+	public String makeAlbumsSongsLabel(int numalbums, int numsongs,
 			boolean isUnknown) {
 
 		// There are several formats for the albums/songs information:
@@ -1134,7 +1138,7 @@ public class MusicUtils implements Constants {
 
 		StringBuilder songs_albums = new StringBuilder();
 
-		Resources r = context.getResources();
+		Resources r = mContext.getResources();
 		if (!isUnknown) {
 			String f = r.getQuantityText(R.plurals.Nalbums, numalbums).toString();
 			sFormatBuilder.setLength(0);
@@ -1149,7 +1153,7 @@ public class MusicUtils implements Constants {
 		return songs_albums.toString();
 	}
 
-	public static void makePlaylistList(Context context, boolean create_shortcut,
+	public void makePlaylistList(boolean create_shortcut,
 			List<Map<String, String>> list) {
 
 		Map<String, String> map;
@@ -1157,7 +1161,7 @@ public class MusicUtils implements Constants {
 		String[] cols = new String[] { Audio.Playlists._ID, Audio.Playlists.NAME };
 		StringBuilder where = new StringBuilder();
 
-		ContentResolver resolver = context.getContentResolver();
+		ContentResolver resolver = mContext.getContentResolver();
 		if (resolver == null) {
 			System.out.println("resolver = null");
 		} else {
@@ -1169,28 +1173,28 @@ public class MusicUtils implements Constants {
 
 			map = new HashMap<String, String>();
 			map.put(MAP_KEY_ID, String.valueOf(PLAYLIST_FAVORITES));
-			map.put(MAP_KEY_NAME, context.getString(R.string.favorites));
+			map.put(MAP_KEY_NAME, mContext.getString(R.string.favorites));
 			list.add(map);
 
 			if (create_shortcut) {
 				map = new HashMap<String, String>();
 				map.put(MAP_KEY_ID, String.valueOf(PLAYLIST_ALL_SONGS));
-				map.put(MAP_KEY_NAME, context.getString(R.string.play_all));
+				map.put(MAP_KEY_NAME, mContext.getString(R.string.play_all));
 				list.add(map);
 
 				map = new HashMap<String, String>();
 				map.put(MAP_KEY_ID, String.valueOf(PLAYLIST_RECENTLY_ADDED));
-				map.put(MAP_KEY_NAME, context.getString(R.string.recently_added));
+				map.put(MAP_KEY_NAME, mContext.getString(R.string.recently_added));
 				list.add(map);
 			} else {
 				map = new HashMap<String, String>();
 				map.put(MAP_KEY_ID, String.valueOf(PLAYLIST_QUEUE));
-				map.put(MAP_KEY_NAME, context.getString(R.string.queue));
+				map.put(MAP_KEY_NAME, mContext.getString(R.string.queue));
 				list.add(map);
 
 				map = new HashMap<String, String>();
 				map.put(MAP_KEY_ID, String.valueOf(PLAYLIST_NEW));
-				map.put(MAP_KEY_NAME, context.getString(R.string.new_playlist));
+				map.put(MAP_KEY_NAME, mContext.getString(R.string.new_playlist));
 				list.add(map);
 			}
 
@@ -1211,9 +1215,9 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static String makeTimeString(Context context, long secs) {
+	public String makeTimeString(long secs) {
 
-		String durationformat = context.getString(secs < 3600 ? R.string.durationformatshort
+		String durationformat = mContext.getString(secs < 3600 ? R.string.durationformatshort
 				: R.string.durationformatlong);
 
 		/*
@@ -1232,7 +1236,7 @@ public class MusicUtils implements Constants {
 		return sFormatter.format(durationformat, timeArgs).toString();
 	}
 
-	public static void movePlaylistItem(Context context, Cursor cursor, long playlist_id, int from,
+	public void movePlaylistItem(Cursor cursor, long playlist_id, int from,
 			int to) {
 
 		if (from < 0) {
@@ -1242,7 +1246,7 @@ public class MusicUtils implements Constants {
 			to = 0;
 		}
 
-		ContentResolver resolver = context.getContentResolver();
+		ContentResolver resolver = mContext.getContentResolver();
 		cursor.moveToPosition(from);
 		long id = cursor.getLong(cursor.getColumnIndexOrThrow(Playlists.Members.AUDIO_ID));
 		Uri uri = Playlists.Members.getContentUri("external", playlist_id);
@@ -1254,7 +1258,7 @@ public class MusicUtils implements Constants {
 		resolver.insert(uri, values);
 	}
 
-	public static void moveQueueItem(int from, int to) {
+	public void moveQueueItem(int from, int to) {
 		if (mService == null) return;
 
 		try {
@@ -1264,7 +1268,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static String parseGenreName(String orig) {
+	public String parseGenreName(String orig) {
 		int genre_id = -1;
 
 		if (orig == null || orig.trim().length() <= 0) return "Unknown";
@@ -1282,42 +1286,42 @@ public class MusicUtils implements Constants {
 
 	}
 
-	public static void playAll(Context context) {
+	public void playAll() {
 
-		playAll(context, getAllSongs(context), 0);
+		playAll(getAllSongs(), 0);
 	}
 
-	public static void playAll(Context context, Cursor cursor) {
+	public void playAll(Cursor cursor) {
 
-		playAll(context, cursor, 0, false);
+		playAll(cursor, 0, false);
 	}
 
-	public static void playAll(Context context, Cursor cursor, int position) {
+	public void playAll(Cursor cursor, int position) {
 
-		playAll(context, cursor, position, false);
+		playAll(cursor, position, false);
 	}
 
-	public static void playAll(Context context, long[] list, int position) {
+	public void playAll(long[] list, int position) {
 
-		playAll(context, list, position, false);
+		playAll(list, position, false);
 	}
 
-	public static void playPlaylist(Context context, long plid) {
+	public void playPlaylist(long plid) {
 
-		long[] list = getSongListForPlaylist(context, plid);
+		long[] list = getSongListForPlaylist(plid);
 		if (list != null) {
-			playAll(context, list, -1, false);
+			playAll(list, -1, false);
 		}
 	}
 
-	public static void playRecentlyAdded(Context context) {
+	public void playRecentlyAdded() {
 
 		// do a query for all songs added in the last X weeks
-		int weekX = new PreferencesEditor(context).getIntPref(PREF_KEY_NUMWEEKS, 2) * 3600 * 24 * 7;
+		int weekX = new PreferencesEditor(mContext).getIntPref(PREF_KEY_NUMWEEKS, 2) * 3600 * 24 * 7;
 		final String[] ccols = new String[] { MediaStore.Audio.Media._ID };
 		String where = MediaStore.MediaColumns.DATE_ADDED + ">"
 				+ (System.currentTimeMillis() / 1000 - weekX);
-		Cursor cursor = query(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
+		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
 				null, MediaStore.Audio.Media.DEFAULT_SORT_ORDER);
 
 		if (cursor == null) // Todo: show a message
@@ -1329,24 +1333,24 @@ public class MusicUtils implements Constants {
 				cursor.moveToNext();
 				list[i] = cursor.getLong(0);
 			}
-			MusicUtils.playAll(context, list, 0);
+			playAll(list, 0);
 		} catch (SQLiteException ex) {
 		} finally {
 			cursor.close();
 		}
 	}
 
-	public static Cursor query(Context context, Uri uri, String[] projection, String selection,
+	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
 
-		return query(context, uri, projection, selection, selectionArgs, sortOrder, 0);
+		return query(uri, projection, selection, selectionArgs, sortOrder, 0);
 	}
 
-	public static Cursor query(Context context, Uri uri, String[] projection, String selection,
+	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder, int limit) {
 
 		try {
-			ContentResolver resolver = context.getContentResolver();
+			ContentResolver resolver = mContext.getContentResolver();
 			if (resolver == null) return null;
 			if (limit > 0) {
 				uri = uri.buildUpon().appendQueryParameter("limit", "" + limit).build();
@@ -1358,7 +1362,7 @@ public class MusicUtils implements Constants {
 
 	}
 
-	public static void reloadLyrics() {
+	public void reloadLyrics() {
 
 		if (mService == null) return;
 		try {
@@ -1368,7 +1372,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void reloadSettings() {
+	public void reloadSettings() {
 
 		if (mService == null) return;
 		try {
@@ -1378,7 +1382,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void removeFromFavorites(Context context, long id) {
+	public void removeFromFavorites(long id) {
 
 		long favorites_id;
 
@@ -1387,7 +1391,7 @@ public class MusicUtils implements Constants {
 			// unless the selected item represents something playable
 			Log.e(LOGTAG_MUSICUTILS, "playlist id " + id + " is invalid.");
 		} else {
-			ContentResolver resolver = context.getContentResolver();
+			ContentResolver resolver = mContext.getContentResolver();
 			// need to determine the number of items currently in the playlist,
 			// so the play_order field can be maintained.
 
@@ -1397,7 +1401,7 @@ public class MusicUtils implements Constants {
 			Cursor cursor = resolver.query(favorites_uri, favorites_cols, favorites_where, null,
 					null);
 			if (cursor.getCount() <= 0) {
-				favorites_id = createPlaylist(context, PLAYLIST_NAME_FAVORITES);
+				favorites_id = createPlaylist(PLAYLIST_NAME_FAVORITES);
 			} else {
 				cursor.moveToFirst();
 				favorites_id = cursor.getLong(0);
@@ -1410,7 +1414,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static int removeTrack(long id) {
+	public int removeTrack(long id) {
 		if (mService == null) return 0;
 
 		try {
@@ -1421,7 +1425,7 @@ public class MusicUtils implements Constants {
 		return 0;
 	}
 
-	public static int removeTracks(int first, int last) {
+	public int removeTracks(int first, int last) {
 		if (mService == null) return 0;
 
 		try {
@@ -1432,20 +1436,20 @@ public class MusicUtils implements Constants {
 		return 0;
 	}
 
-	public static void renamePlaylist(Context context, long id, String name) {
+	public void renamePlaylist(long id, String name) {
 
 		if (name != null && name.length() > 0) {
-			ContentResolver resolver = context.getContentResolver();
+			ContentResolver resolver = mContext.getContentResolver();
 			ContentValues values = new ContentValues(1);
 			values.put(MediaStore.Audio.Playlists.NAME, name);
 			resolver.update(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, values,
 					MediaStore.Audio.Playlists._ID + "=?", new String[] { String.valueOf(id) });
 
-			Toast.makeText(context, R.string.playlist_renamed, Toast.LENGTH_SHORT).show();
+			Toast.makeText(mContext, R.string.playlist_renamed, Toast.LENGTH_SHORT).show();
 		}
 	}
 
-	public static void setQueueId(long id) {
+	public void setQueueId(long id) {
 		if (mService == null) return;
 		try {
 			mService.setQueueId(id);
@@ -1454,7 +1458,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void setQueuePosition(int index) {
+	public void setQueuePosition(int index) {
 		if (mService == null) return;
 		try {
 			mService.setQueuePosition(index);
@@ -1463,33 +1467,17 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void setSpinnerState(Activity a) {
+	public void shuffleAll() {
 
-		if (isMediaScannerScanning(a)) {
-			// start the progress spinner
-			a.getWindow().setFeatureInt(Window.FEATURE_INDETERMINATE_PROGRESS,
-					Window.PROGRESS_INDETERMINATE_ON);
-
-			a.getWindow().setFeatureInt(Window.FEATURE_INDETERMINATE_PROGRESS,
-					Window.PROGRESS_VISIBILITY_ON);
-		} else {
-			// stop the progress spinner
-			a.getWindow().setFeatureInt(Window.FEATURE_INDETERMINATE_PROGRESS,
-					Window.PROGRESS_VISIBILITY_OFF);
-		}
+		playAll(getAllSongs(), 0, true);
 	}
 
-	public static void shuffleAll(Context context) {
+	public void shuffleAll(Cursor cursor) {
 
-		playAll(context, getAllSongs(context), 0, true);
+		playAll(cursor, 0, true);
 	}
 
-	public static void shuffleAll(Context context, Cursor cursor) {
-
-		playAll(context, cursor, 0, true);
-	}
-
-	public static void startSleepTimer(long milliseconds, boolean gentle) {
+	public void startSleepTimer(long milliseconds, boolean gentle) {
 
 		if (mService == null) return;
 		try {
@@ -1499,7 +1487,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void stopSleepTimer() {
+	public void stopSleepTimer() {
 
 		if (mService == null) return;
 		try {
@@ -1509,7 +1497,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	public static void unbindFromService(ServiceToken token) {
+	public void unbindFromService(ServiceToken token) {
 
 		if (token == null) {
 			Log.e(LOGTAG_MUSICUTILS, "Trying to unbind with null token");
@@ -1531,7 +1519,7 @@ public class MusicUtils implements Constants {
 	}
 
 	/** get album art for specified file */
-	private static Bitmap getArtworkFromFile(Context context, long songid, long albumid) {
+	private Bitmap getArtworkFromFile(long songid, long albumid) {
 
 		Bitmap bm = null;
 
@@ -1541,7 +1529,7 @@ public class MusicUtils implements Constants {
 		try {
 			if (albumid < 0) {
 				Uri uri = Uri.parse("content://media/external/audio/media/" + songid + "/albumart");
-				ParcelFileDescriptor pfd = context.getContentResolver()
+				ParcelFileDescriptor pfd = mContext.getContentResolver()
 						.openFileDescriptor(uri, "r");
 				if (pfd != null) {
 					FileDescriptor fd = pfd.getFileDescriptor();
@@ -1549,7 +1537,7 @@ public class MusicUtils implements Constants {
 				}
 			} else {
 				Uri uri = ContentUris.withAppendedId(mArtworkUri, albumid);
-				ParcelFileDescriptor pfd = context.getContentResolver()
+				ParcelFileDescriptor pfd = mContext.getContentResolver()
 						.openFileDescriptor(uri, "r");
 				if (pfd != null) {
 					FileDescriptor fd = pfd.getFileDescriptor();
@@ -1562,19 +1550,19 @@ public class MusicUtils implements Constants {
 		return bm;
 	}
 
-	private static Uri getArtworkUriFromFile(Context context, long songid, long albumid) {
+	private Uri getArtworkUriFromFile(long songid, long albumid) {
 
 		if (albumid < 0 && songid < 0) return null;
 
 		try {
 			if (albumid < 0) {
 				Uri uri = Uri.parse("content://media/external/audio/media/" + songid + "/albumart");
-				ParcelFileDescriptor pfd = context.getContentResolver()
+				ParcelFileDescriptor pfd = mContext.getContentResolver()
 						.openFileDescriptor(uri, "r");
 				if (pfd != null) return uri;
 			} else {
 				Uri uri = ContentUris.withAppendedId(mArtworkUri, albumid);
-				ParcelFileDescriptor pfd = context.getContentResolver()
+				ParcelFileDescriptor pfd = mContext.getContentResolver()
 						.openFileDescriptor(uri, "r");
 				if (pfd != null) return uri;
 			}
@@ -1584,12 +1572,12 @@ public class MusicUtils implements Constants {
 		return null;
 	}
 
-	private static Bitmap getDefaultArtwork(Context context) {
+	private Bitmap getDefaultArtwork() {
 
 		BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
 		return BitmapFactory.decodeStream(
-				context.getResources().openRawResource(R.drawable.ic_mp_albumart_unknown), null,
+				mContext.getResources().openRawResource(R.drawable.ic_mp_albumart_unknown), null,
 				opts);
 	}
 
@@ -1626,18 +1614,18 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	private static void playAll(Context context, Cursor cursor, int position, boolean force_shuffle) {
+	private void playAll(Cursor cursor, int position, boolean force_shuffle) {
 
 		long[] list = getSongListForCursor(cursor);
-		playAll(context, list, position, force_shuffle);
+		playAll(list, position, force_shuffle);
 	}
 
-	private static void playAll(Context context, long[] list, int position, boolean force_shuffle) {
+	private void playAll(long[] list, int position, boolean force_shuffle) {
 
 		if (list == null || list.length == 0 || mService == null) {
 			Log.d(LOGTAG_MUSICUTILS, "attempt to play empty song list");
 			// Don't try to play empty playlists. Nothing good will come of it.
-			Toast.makeText(context, R.string.emptyplaylist, Toast.LENGTH_SHORT).show();
+			Toast.makeText(mContext, R.string.emptyplaylist, Toast.LENGTH_SHORT).show();
 			return;
 		}
 		try {
@@ -1667,7 +1655,7 @@ public class MusicUtils implements Constants {
 		} finally {
 			Intent intent = new Intent(INTENT_PLAYBACK_VIEWER)
 					.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-			context.startActivity(intent);
+			mContext.startActivity(intent);
 		}
 	}
 
@@ -1678,7 +1666,7 @@ public class MusicUtils implements Constants {
 
 	// A really simple BitmapDrawable-like class, that doesn't do
 	// scaling, dithering or filtering.
-	private static class FastBitmapDrawable extends Drawable {
+	private class FastBitmapDrawable extends Drawable {
 
 		private Bitmap mBitmap;
 
@@ -1706,7 +1694,7 @@ public class MusicUtils implements Constants {
 		}
 	}
 
-	private static class ServiceBinder implements ServiceConnection {
+	private class ServiceBinder implements ServiceConnection {
 
 		ServiceConnection mCallback;
 

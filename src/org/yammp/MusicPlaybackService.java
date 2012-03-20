@@ -32,7 +32,7 @@ import java.util.Vector;
 
 import org.yammp.util.EqualizerWrapper;
 import org.yammp.util.LyricsParser;
-import org.yammp.util.MusicUtils;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.PreferencesEditor;
 import org.yammp.util.ShakeListener;
 import org.yammp.util.ShakeListener.OnShakeListener;
@@ -161,6 +161,8 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	private float mShakingThreshold = DEFAULT_SHAKING_THRESHOLD;
 	private boolean mScrobbleEnabled = false;
 	private boolean mExternalAudioDeviceConnected = false;
+	private MediaUtils mUtils;
+	private YAMMPApplication mApplication;
 
 	private Intent mPlaybackIntent;
 	private Handler mMediaplayerHandler = new Handler() {
@@ -168,7 +170,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		@Override
 		public void handleMessage(Message msg) {
 
-			MusicUtils.debugLog("mMediaplayerHandler.handleMessage " + msg.what);
+			mUtils.debugLog("mMediaplayerHandler.handleMessage " + msg.what);
 			switch (msg.what) {
 				case FADEDOWN:
 					mCurrentVolume -= 0.05f;
@@ -347,7 +349,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 			String action = intent.getAction();
 			String cmd = intent.getStringExtra(CMDNAME);
-			MusicUtils.debugLog("mIntentReceiver.onReceive " + action + " / " + cmd);
+			mUtils.debugLog("mIntentReceiver.onReceive " + action + " / " + cmd);
 			if (CMDNEXT.equals(cmd) || NEXT_ACTION.equals(action)) {
 				next(true);
 			} else if (CMDPREVIOUS.equals(cmd) || PREVIOUS_ACTION.equals(action)) {
@@ -471,7 +473,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	}
 
 	public void addToFavorites(long id) {
-		MusicUtils.addToFavorites(this, id);
+		mUtils.addToFavorites(id);
 		notifyChange(BROADCAST_FAVORITESTATE_CHANGED);
 	}
 
@@ -616,7 +618,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public Bitmap getAlbumArt() {
 
 		synchronized (this) {
-			return MusicUtils.getArtwork(this, getAudioId(), getAlbumId());
+			return mUtils.getArtwork(getAudioId(), getAlbumId());
 		}
 	}
 
@@ -655,7 +657,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	public Uri getArtworkUri() {
 
 		synchronized (this) {
-			return MusicUtils.getArtworkUri(this, getAudioId(), getAlbumId());
+			return mUtils.getArtworkUri(getAudioId(), getAlbumId());
 		}
 	}
 
@@ -785,7 +787,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	}
 
 	public boolean isFavorite(long id) {
-		return MusicUtils.isFavorite(this, id);
+		return mUtils.isFavorite(id);
 	}
 
 	/**
@@ -962,6 +964,10 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		super.onCreate();
 
+		mApplication =(YAMMPApplication)getApplication();
+		
+		mUtils = mApplication.getMediaUtils();
+		
 		mPlaybackIntent = new Intent();
 
 		mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -974,7 +980,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mShakeDetector = new ShakeListener(this);
 
-		mCardId = MusicUtils.getCardId(this);
+		mCardId = mUtils.getCardId();
 
 		registerExternalStorageListener();
 		registerA2dpServiceListener();
@@ -1098,7 +1104,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 			}
 		} else {
-			MusicUtils.shuffleAll(getApplicationContext());
+			mUtils.shuffleAll();
 			Toast.makeText(this, R.string.shuffle_all, Toast.LENGTH_SHORT).show();
 		}
 
@@ -1113,7 +1119,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		if (intent != null) {
 			String action = intent.getAction();
 			String cmd = intent.getStringExtra("command");
-			MusicUtils.debugLog("onStartCommand " + action + " / " + cmd);
+			mUtils.debugLog("onStartCommand " + action + " / " + cmd);
 
 			if (CMDNEXT.equals(cmd) || NEXT_ACTION.equals(action)) {
 				next(true);
@@ -1483,7 +1489,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 						closeExternalStorageFiles(intent.getData().getPath());
 					} else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
 						mMediaMountedCount++;
-						mCardId = MusicUtils.getCardId(MusicPlaybackService.this);
+						mCardId = mUtils.getCardId();
 						reloadQueue();
 						mQueueIsSaveable = true;
 						notifyChange(BROADCAST_QUEUE_CHANGED);
@@ -1543,7 +1549,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	}
 
 	public void removeFromFavorites(long id) {
-		MusicUtils.removeFromFavorites(this, id);
+		mUtils.removeFromFavorites(id);
 		notifyChange(BROADCAST_FAVORITESTATE_CHANGED);
 	}
 
@@ -1954,16 +1960,16 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			// To deal with this, try querying for the current file, and if
 			// that fails, wait a while and try again. If that too fails,
 			// assume there is a problem and don't restore the state.
-			Cursor crsr = MusicUtils.query(this, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+			Cursor cur = mUtils.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
 					new String[] { "_id" }, "_id=" + mPlayList[mPlayPos], null, null);
-			if (crsr == null || crsr.getCount() == 0) {
+			if (cur == null || cur.getCount() == 0) {
 				// wait a bit and try again
 				SystemClock.sleep(3000);
-				crsr = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+				cur = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
 						mCursorCols, "_id=" + mPlayList[mPlayPos], null, null);
 			}
-			if (crsr != null) {
-				crsr.close();
+			if (cur != null) {
+				cur.close();
 			}
 
 			mOpenFailedCounter = 20;
@@ -2273,7 +2279,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		writer.println("playing: " + mIsSupposedToBePlaying);
 		writer.println("actual: " + mPlayer.isPlaying());
 		writer.println("shuffle mode: " + mShuffleMode);
-		MusicUtils.debugDump(writer);
+		mUtils.debugDump(writer);
 	}
 
 	/**
@@ -2423,7 +2429,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		public void start() {
 
-			MusicUtils.debugLog(new Exception("MultiPlayer.start called"));
+			mUtils.debugLog(new Exception("MultiPlayer.start called"));
 			mMediaPlayer.start();
 		}
 

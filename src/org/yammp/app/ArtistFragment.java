@@ -24,9 +24,10 @@ import java.io.File;
 
 import org.yammp.Constants;
 import org.yammp.R;
+import org.yammp.YAMMPApplication;
 import org.yammp.dialog.DeleteDialogFragment;
 import org.yammp.util.LazyImageLoader;
-import org.yammp.util.MusicUtils;
+import org.yammp.util.MediaUtils;
 
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
@@ -38,7 +39,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -80,7 +80,6 @@ public class ArtistFragment extends SherlockFragment implements
 			mCurrentChildAlbumName;
 	private boolean mGroupSelected, mChildSelected = false;
 	private LazyImageLoader mImageLoader;
-	private boolean mContextMenuCreated;
 
 	private int mGroupArtistIdIdx, mGroupArtistIdx, mGroupAlbumIdx, mGroupSongIdx;
 
@@ -93,6 +92,8 @@ public class ArtistFragment extends SherlockFragment implements
 
 	};
 
+	private MediaUtils mUtils;
+
 	public ArtistFragment() {
 
 	}
@@ -104,7 +105,7 @@ public class ArtistFragment extends SherlockFragment implements
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-
+		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
 		setHasOptionsMenu(true);
 
 		mImageLoader = new LazyImageLoader(getActivity().getApplicationContext(),
@@ -131,13 +132,11 @@ public class ArtistFragment extends SherlockFragment implements
 			switch (item.getItemId()) {
 				case PLAY_SELECTION:
 					if (mGroupSelected && !mChildSelected) {
-						long[] list = MusicUtils.getSongListForArtist(getSherlockActivity(),
-								mSelectedGroupId);
-						MusicUtils.playAll(getSherlockActivity(), list, 0);
+						long[] list = mUtils.getSongListForArtist(mSelectedGroupId);
+						mUtils.playAll(list, 0);
 					} else if (mChildSelected && !mGroupSelected) {
-						long[] list = MusicUtils.getSongListForAlbum(getSherlockActivity(),
-								mSelectedChildId);
-						MusicUtils.playAll(getSherlockActivity(), list, 0);
+						long[] list = mUtils.getSongListForAlbum(mSelectedChildId);
+						mUtils.playAll(list, 0);
 					}
 					return true;
 				case DELETE_ITEMS:
@@ -179,8 +178,6 @@ public class ArtistFragment extends SherlockFragment implements
 		mSelectedGroupPosition = ExpandableListView.getPackedPositionGroup(mi.packedPosition);
 		int gpos = mSelectedGroupPosition;
 		if (itemtype == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
-
-			mContextMenuCreated = true;
 
 			mGroupSelected = true;
 			mChildSelected = false;
@@ -230,14 +227,12 @@ public class ArtistFragment extends SherlockFragment implements
 	@Override
 	public void onItemSelected(AdapterView<?> adapter, View view, int position, long id) {
 
-		if (view.getTag() != null) {
-			if (view.getTag() instanceof ViewHolderGroup) {
-				mListView.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
-				mListView.requestFocus();
-			} else if (view.getTag() instanceof ViewHolderChild) {
-				mListView.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
-				((ViewHolderChild) view.getTag()).gridview.requestFocus();
-			}
+		if (view.getTag() != null && view.getTag() instanceof ViewHolderChild) {
+			mListView.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+			((ViewHolderChild) view.getTag()).gridview.requestFocus();
+		} else {
+			mListView.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+			mListView.requestFocus();
 		}
 
 	}
@@ -387,7 +382,7 @@ public class ArtistFragment extends SherlockFragment implements
 
 			long aid = cursor.getLong(0);
 
-			long currentalbumid = MusicUtils.getCurrentAlbumId();
+			long currentalbumid = mUtils.getCurrentAlbumId();
 			if (currentalbumid == aid) {
 				viewholder.album_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,
 						R.drawable.ic_indicator_nowplaying_small, 0);
@@ -516,11 +511,11 @@ public class ArtistFragment extends SherlockFragment implements
 			int numalbums = cursor.getInt(mGroupAlbumIdx);
 			int numsongs = cursor.getInt(mGroupSongIdx);
 
-			String songs_albums = MusicUtils.makeAlbumsLabel(context, numalbums, numsongs, unknown);
+			String songs_albums = mUtils.makeAlbumsLabel(numalbums, numsongs, unknown);
 
 			viewholder.album_track_count.setText(songs_albums);
 
-			long currentartistid = MusicUtils.getCurrentArtistId();
+			long currentartistid = mUtils.getCurrentArtistId();
 			long aid = cursor.getLong(mGroupArtistIdIdx);
 			if (currentartistid == aid) {
 				viewholder.artist_name.setCompoundDrawablesWithIntrinsicBounds(0, 0,

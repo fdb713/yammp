@@ -2,7 +2,8 @@ package org.yammp.dialog;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.ServiceToken;
 
 import android.content.ComponentName;
@@ -13,12 +14,12 @@ import android.support.v4.app.FragmentActivity;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-public class PlayShortcut extends FragmentActivity implements Constants {
+public class PlayShortcut extends FragmentActivity implements Constants, ServiceConnection {
 
 	private long mPlaylistId;
 	private ServiceToken mToken = null;
+	private MediaUtils mUtils;
 
-	private ServiceConnection osc = new ServiceConnection() {
 
 		@Override
 		public void onServiceConnected(ComponentName classname, IBinder obj) {
@@ -28,14 +29,14 @@ public class PlayShortcut extends FragmentActivity implements Constants {
 					&& mPlaylistId != PLAYLIST_UNKNOWN) {
 				switch ((int) mPlaylistId) {
 					case (int) PLAYLIST_ALL_SONGS:
-						MusicUtils.playAll(getApplicationContext());
+						mUtils.playAll();
 						break;
 					case (int) PLAYLIST_RECENTLY_ADDED:
-						MusicUtils.playRecentlyAdded(getApplicationContext());
+						mUtils.playRecentlyAdded();
 						break;
 					default:
 						if (mPlaylistId >= 0) {
-							MusicUtils.playPlaylist(PlayShortcut.this, mPlaylistId);
+							mUtils.playPlaylist(mPlaylistId);
 						}
 						break;
 				}
@@ -52,23 +53,22 @@ public class PlayShortcut extends FragmentActivity implements Constants {
 
 			finish();
 		}
-	};
 
 	@Override
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		setContentView(new LinearLayout(this));
 		mPlaylistId = getIntent().getLongExtra(MAP_KEY_ID, PLAYLIST_UNKNOWN);
-		mToken = MusicUtils.bindToService(this, osc);
+		mToken = mUtils.bindToService(this);
 	}
 
 	@Override
 	public void onStop() {
 
 		if (mToken != null) {
-			MusicUtils.unbindFromService(mToken);
+			mUtils.unbindFromService(mToken);
 		}
 		finish();
 		super.onStop();

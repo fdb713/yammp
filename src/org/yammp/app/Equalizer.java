@@ -21,7 +21,8 @@ import java.util.ArrayList;
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.ServiceToken;
 import org.yammp.view.EqualizerView;
 import org.yammp.view.EqualizerView.OnBandLevelChangeListener;
@@ -47,6 +48,7 @@ public class Equalizer extends SherlockFragmentActivity implements Constants, Se
 	private ServiceToken mToken;
 	private Spinner mSpinner;
 	private EqualizerView mEqualizerView;
+	private MediaUtils mUtils;
 
 	@Override
 	public void onBandLevelChange(short band, short level) {
@@ -64,7 +66,7 @@ public class Equalizer extends SherlockFragmentActivity implements Constants, Se
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		setContentView(R.layout.equalizer);
 
 		mEqualizerView = (EqualizerView) findViewById(R.id.equalizer_view);
@@ -117,7 +119,7 @@ public class Equalizer extends SherlockFragmentActivity implements Constants, Se
 
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-		mToken = MusicUtils.bindToService(this, this);
+		mToken = mUtils.bindToService(this);
 		if (mToken == null) {
 			finish();
 		}
@@ -126,7 +128,7 @@ public class Equalizer extends SherlockFragmentActivity implements Constants, Se
 	@Override
 	public void onStop() {
 
-		MusicUtils.unbindFromService(mToken);
+		mUtils.unbindFromService(mToken);
 		mService = null;
 		super.onStop();
 	}

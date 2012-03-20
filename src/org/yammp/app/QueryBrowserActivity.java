@@ -22,7 +22,8 @@ package org.yammp.app;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.ServiceToken;
 
 import android.app.SearchManager;
@@ -49,6 +50,7 @@ public class QueryBrowserActivity extends SherlockFragmentActivity implements Co
 	private Intent intent;
 	private Bundle bundle;
 	private QueryFragment fragment;
+	private MediaUtils mUtils;
 
 	@Override
 	public void afterTextChanged(Editable s) {
@@ -66,7 +68,7 @@ public class QueryBrowserActivity extends SherlockFragmentActivity implements Co
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
 		configureActivity();
@@ -145,12 +147,12 @@ public class QueryBrowserActivity extends SherlockFragmentActivity implements Co
 	@Override
 	public void onStart() {
 		super.onStart();
-		mToken = MusicUtils.bindToService(this, this);
+		mToken = mUtils.bindToService(this);
 	}
 
 	@Override
 	public void onStop() {
-		MusicUtils.unbindFromService(mToken);
+		mUtils.unbindFromService(mToken);
 		super.onStop();
 	};
 

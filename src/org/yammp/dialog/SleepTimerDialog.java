@@ -18,7 +18,8 @@ package org.yammp.dialog;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.PreferencesEditor;
 
 import android.app.AlertDialog;
@@ -47,12 +48,13 @@ public class SleepTimerDialog extends FragmentActivity implements OnSeekBarChang
 	private AlertDialog mSleepTimerDialog;
 
 	private String action;
+	private MediaUtils mUtils;
 
 	@Override
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		setContentView(new LinearLayout(this));
 
 		DisplayMetrics dm = new DisplayMetrics();
@@ -63,7 +65,7 @@ public class SleepTimerDialog extends FragmentActivity implements OnSeekBarChang
 		mSleepTimerDialog = new AlertDialog.Builder(this).create();
 		mSleepTimerDialog.setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-		mRemained = (int) MusicUtils.getSleepTimerRemained() / 1000 / 60;
+		mRemained = (int) mUtils.getSleepTimerRemained() / 1000 / 60;
 
 		LinearLayout mContainer = new LinearLayout(this);
 		mContainer.setOrientation(LinearLayout.VERTICAL);
@@ -106,9 +108,9 @@ public class SleepTimerDialog extends FragmentActivity implements OnSeekBarChang
 								long milliseconds = mTimerTime * 60 * 1000;
 								boolean gentle = new PreferencesEditor(getApplicationContext())
 										.getBooleanPref(KEY_GENTLE_SLEEPTIMER, true);
-								MusicUtils.startSleepTimer(milliseconds, gentle);
+								mUtils.startSleepTimer(milliseconds, gentle);
 							} else {
-								MusicUtils.stopSleepTimer();
+								mUtils.stopSleepTimer();
 							}
 							finish();
 						}

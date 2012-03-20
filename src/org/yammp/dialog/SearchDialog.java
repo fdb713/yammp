@@ -26,9 +26,10 @@ import java.net.MalformedURLException;
 import org.xmlpull.v1.XmlPullParserException;
 import org.yammp.Constants;
 import org.yammp.R;
+import org.yammp.YAMMPApplication;
 import org.yammp.util.ImageDownloader;
 import org.yammp.util.LyricsDownloader;
-import org.yammp.util.MusicUtils;
+import org.yammp.util.MediaUtils;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -104,6 +105,8 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 		}
 	};
 
+	private MediaUtils mUtils;
+
 	@Override
 	public void afterTextChanged(Editable s) {
 
@@ -146,7 +149,7 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-
+		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
 		mLinearLayout = new LinearLayout(this);
 		mLinearLayout.setOrientation(LinearLayout.VERTICAL);
 
@@ -489,7 +492,7 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 			if (mSearchDialog != null && mSearchDialog.isShowing()) {
 				mSearchDialog.dismiss();
 			}
-			MusicUtils.reloadLyrics();
+			mUtils.reloadLyrics();
 			finish();
 		}
 

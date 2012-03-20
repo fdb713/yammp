@@ -22,7 +22,10 @@ package org.yammp.app;
 
 import org.yammp.Constants;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
+
+import com.actionbarsherlock.app.SherlockListFragment;
 
 import android.content.Context;
 import android.content.Intent;
@@ -42,11 +45,13 @@ import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class GenreFragment extends ListFragment implements LoaderCallbacks<Cursor>, Constants {
+public class GenreFragment extends SherlockListFragment implements LoaderCallbacks<Cursor>, Constants {
 
 	private GenresAdapter mAdapter;
 
 	private int mNameIdx;
+
+	private MediaUtils mUtils;
 
 	public GenreFragment() {
 
@@ -59,7 +64,7 @@ public class GenreFragment extends ListFragment implements LoaderCallbacks<Curso
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-
+		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
 		setHasOptionsMenu(true);
 
 		mAdapter = new GenresAdapter(getActivity(), null, false);
@@ -72,7 +77,7 @@ public class GenreFragment extends ListFragment implements LoaderCallbacks<Curso
 
 		String[] cols = new String[] { Audio.Genres._ID, Audio.Genres.NAME };
 
-		String where = MusicUtils.getBetterGenresWhereClause(getActivity());
+		String where = mUtils.getBetterGenresWhereClause();
 
 		Uri uri = Audio.Genres.EXTERNAL_CONTENT_URI;
 
@@ -158,7 +163,7 @@ public class GenreFragment extends ListFragment implements LoaderCallbacks<Curso
 			ViewHolder viewholder = (ViewHolder) view.getTag();
 
 			String genre_name = cursor.getString(mNameIdx);
-			viewholder.genre_name.setText(MusicUtils.parseGenreName(genre_name));
+			viewholder.genre_name.setText(mUtils.parseGenreName(genre_name));
 
 		}
 

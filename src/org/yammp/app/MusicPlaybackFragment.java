@@ -26,9 +26,10 @@ import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.MusicPlaybackService;
 import org.yammp.R;
+import org.yammp.YAMMPApplication;
 import org.yammp.util.ColorAnalyser;
 import org.yammp.util.EqualizerWrapper;
-import org.yammp.util.MusicUtils;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.PreferencesEditor;
 import org.yammp.util.ServiceToken;
 import org.yammp.util.VisualizerCompat;
@@ -301,11 +302,14 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 		}
 	};
 
+	private MediaUtils mUtils;
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onActivityCreated(Bundle icicle) {
 
 		super.onActivityCreated(icicle);
+		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
 		mPrefs = new PreferencesEditor(getSherlockActivity());
 		configureActivity();
 
@@ -360,7 +364,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			case MENU_ADD_TO_PLAYLIST:
 				intent = new Intent(INTENT_ADD_TO_PLAYLIST);
 				long[] list_to_be_added = new long[1];
-				list_to_be_added[0] = MusicUtils.getCurrentAudioId();
+				list_to_be_added[0] = mUtils.getCurrentAudioId();
 				intent.putExtra(INTENT_KEY_LIST, list_to_be_added);
 				startActivity(intent);
 				break;
@@ -378,7 +382,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 				bundle.putString(
 						INTENT_KEY_PATH,
 						Uri.withAppendedPath(Audio.Media.EXTERNAL_CONTENT_URI,
-								Uri.encode(String.valueOf(MusicUtils.getCurrentAudioId())))
+								Uri.encode(String.valueOf(mUtils.getCurrentAudioId())))
 								.toString());
 				intent.putExtras(bundle);
 				startActivity(intent);
@@ -476,7 +480,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 		super.onStart();
 		paused = false;
-		mToken = MusicUtils.bindToService(getSherlockActivity(), this);
+		mToken = mUtils.bindToService(this);
 		loadPreferences();
 
 		if (mLyricsWakelock) {
@@ -525,7 +529,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 		getSherlockActivity().getWindow().clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-		MusicUtils.unbindFromService(mToken);
+		mUtils.unbindFromService(mToken);
 		mService = null;
 		super.onStop();
 	}
@@ -695,7 +699,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			long pos = mPosOverride < 0 ? mService.position() : mPosOverride;
 			long remaining = 1000 - pos % 1000;
 			if (pos >= 0 && mDuration > 0) {
-				mCurrentTime.setText(MusicUtils.makeTimeString(getSherlockActivity(), pos / 1000));
+				mCurrentTime.setText(mUtils.makeTimeString(pos / 1000));
 
 				if (mService.isPlaying()) {
 					mCurrentTime.setVisibility(View.VISIBLE);
@@ -875,7 +879,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			mColorAnalyser.execute();
 
 			mDuration = mService.duration();
-			mTotalTime.setText(MusicUtils.makeTimeString(getSherlockActivity(), mDuration / 1000));
+			mTotalTime.setText(mUtils.makeTimeString(mDuration / 1000));
 		} catch (RemoteException e) {
 			e.printStackTrace();
 			// finish();
@@ -946,10 +950,11 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			return view;
 		}
 
+		private MediaUtils mUtils;
 		@Override
 		public void onActivityCreated(Bundle savedInstanceState) {
 			super.onActivityCreated(savedInstanceState);
-
+			mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
 			View view = getView();
 
 			mAlbum = (ImageSwitcher) view.findViewById(R.id.album_art);
@@ -997,7 +1002,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 		@Override
 		public void onStart() {
 			super.onStart();
-			mToken = MusicUtils.bindToService(getActivity(), this);
+			mToken = mUtils.bindToService(this);
 			IntentFilter f = new IntentFilter();
 			f.addAction(BROADCAST_META_CHANGED);
 			getActivity().registerReceiver(mStatusListener, new IntentFilter(f));
@@ -1019,7 +1024,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			}
 			getActivity().unregisterReceiver(mScreenTimeoutListener);
 
-			MusicUtils.unbindFromService(mToken);
+			mUtils.unbindFromService(mToken);
 			super.onStop();
 		}
 
@@ -1150,7 +1155,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 				if (mService != null) {
 					try {
-						Bitmap bitmap = MusicUtils.getArtwork(getActivity(), mService.getAudioId(),
+						Bitmap bitmap = mUtils.getArtwork(mService.getAudioId(),
 								mService.getAlbumId());
 						if (bitmap == null) return null;
 						int value = 0;
@@ -1261,8 +1266,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 				try {
 					if (mAutoColor) {
 						mUIColor = ColorAnalyser
-								.analyse(MusicUtils.getArtwork(getSherlockActivity(),
-										mService.getAudioId(), mService.getAlbumId()));
+								.analyse(mUtils.getArtwork(mService.getAudioId(), mService.getAlbumId()));
 					} else {
 						mUIColor = mPrefs.getIntPref(KEY_CUSTOMIZED_COLOR, Color.WHITE);
 					}

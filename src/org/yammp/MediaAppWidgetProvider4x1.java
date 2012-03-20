@@ -22,7 +22,7 @@ package org.yammp;
 
 import org.yammp.app.MusicBrowserActivity;
 import org.yammp.app.MusicPlaybackActivity;
-import org.yammp.util.MusicUtils;
+import org.yammp.util.MediaUtils;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -90,7 +90,7 @@ public class MediaAppWidgetProvider4x1 extends AppWidgetProvider implements Cons
 	 *            launch {@link MusicBrowserActivity}.
 	 */
 	private void linkButtons(Context context, RemoteViews views, boolean isPlaying) {
-
+		
 		// Connect up various buttons and touch events
 		PendingIntent pendingIntent;
 
@@ -181,7 +181,7 @@ public class MediaAppWidgetProvider4x1 extends AppWidgetProvider implements Cons
 			// Set album art
 			Uri uri = null;
 			if (mAudioId >= 0 && mAlbumId >= 0) {
-				uri = MusicUtils.getArtworkUri(context, mAudioId, mAlbumId);
+				uri = new MediaUtils(context).getArtworkUri(mAudioId, mAlbumId);
 			}
 			if (uri != null) {
 				views.setImageViewUri(R.id.album_art, uri);

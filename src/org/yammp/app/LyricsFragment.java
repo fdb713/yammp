@@ -23,7 +23,8 @@ package org.yammp.app;
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.R;
-import org.yammp.util.MusicUtils;
+import org.yammp.YAMMPApplication;
+import org.yammp.util.MediaUtils;
 import org.yammp.util.ServiceToken;
 import org.yammp.widget.TextScrollView;
 import org.yammp.widget.TextScrollView.OnLineSelectedListener;
@@ -59,6 +60,7 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 	private TextScrollView mLyricsScrollView;
 	private TextView mLyricsInfoMessage;
 	private boolean mIntentDeRegistered = false;
+	private MediaUtils mUtils;
 
 	private BroadcastReceiver mStatusListener = new BroadcastReceiver() {
 
@@ -101,6 +103,7 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
+		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
 		View fragmentView = getView();
 		mLyricsScrollView = (TextScrollView) fragmentView.findViewById(R.id.lyrics_scroll);
 		mLyricsScrollView.setContentGravity(Gravity.CENTER_HORIZONTAL);
@@ -158,7 +161,7 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 	@Override
 	public void onStart() {
 		super.onStart();
-		mToken = MusicUtils.bindToService(getActivity(), this);
+		mToken = mUtils.bindToService(this);
 		mLyricsScrollView.setLineSelectedListener(this);
 
 		try {
@@ -189,7 +192,7 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 		}
 		getActivity().unregisterReceiver(mScreenTimeoutListener);
 
-		MusicUtils.unbindFromService(mToken);
+		mUtils.unbindFromService(mToken);
 		mService = null;
 		super.onStop();
 	}
