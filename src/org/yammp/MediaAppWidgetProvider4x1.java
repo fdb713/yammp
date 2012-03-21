@@ -90,7 +90,7 @@ public class MediaAppWidgetProvider4x1 extends AppWidgetProvider implements Cons
 	 *            launch {@link MusicBrowserActivity}.
 	 */
 	private void linkButtons(Context context, RemoteViews views, boolean isPlaying) {
-		
+
 		// Connect up various buttons and touch events
 		PendingIntent pendingIntent;
 

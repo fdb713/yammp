@@ -68,7 +68,7 @@ public class QueryBrowserActivity extends SherlockFragmentActivity implements Co
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getApplication()).getMediaUtils();
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
 		configureActivity();

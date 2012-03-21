@@ -4,13 +4,13 @@ import org.yammp.R;
 import org.yammp.YAMMPApplication;
 import org.yammp.util.MediaUtils;
 
-import com.actionbarsherlock.app.SherlockDialogFragment;
-
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
+
+import com.actionbarsherlock.app.SherlockDialogFragment;
 
 public class DeleteDialogFragment extends SherlockDialogFragment implements OnClickListener {
 
@@ -25,19 +25,12 @@ public class DeleteDialogFragment extends SherlockDialogFragment implements OnCl
 	public final static int ALBUM = 2;
 	public final static int TRACK = 3;
 
-	public static DeleteDialogFragment getInstance(boolean is_delete_lyrics, long id, int type) {
-		mId = id;
-		mIsDeleteLyrics = is_delete_lyrics;
-		mType = type;
-		return new DeleteDialogFragment();
-	}
-
 	@Override
 	public void onActivityCreated(Bundle saveInstanceState) {
 		super.onActivityCreated(saveInstanceState);
-		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 	}
-	
+
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
 
@@ -88,6 +81,13 @@ public class DeleteDialogFragment extends SherlockDialogFragment implements OnCl
 			}
 		}.create();
 
+	}
+
+	public static DeleteDialogFragment getInstance(boolean is_delete_lyrics, long id, int type) {
+		mId = id;
+		mIsDeleteLyrics = is_delete_lyrics;
+		mType = type;
+		return new DeleteDialogFragment();
 	}
 
 }

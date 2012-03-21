@@ -47,11 +47,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
-import android.graphics.ColorFilter;
-import android.graphics.Paint;
-import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -64,18 +60,13 @@ import android.provider.MediaStore.Audio.Genres;
 import android.provider.MediaStore.Audio.Playlists;
 import android.text.format.Time;
 import android.util.Log;
-import android.view.Window;
 import android.widget.Toast;
 
 public class MediaUtils implements Constants {
 
 	private Context mContext;
-	
-	public MediaUtils(Context context) {
-		mContext = context;
-	}
-	
-	public static IMusicPlaybackService mService = null;
+
+	private static IMusicPlaybackService mService = null;
 
 	private static HashMap<Context, ServiceBinder> mConnectionMap = new HashMap<Context, ServiceBinder>();
 
@@ -124,6 +115,10 @@ public class MediaUtils implements Constants {
 	private static int mLogPtr = 0;
 
 	private static Time mTime = new Time();
+
+	public MediaUtils(Context context) {
+		mContext = context;
+	}
 
 	public void addToCurrentPlaylist(long[] list) {
 
@@ -310,8 +305,8 @@ public class MediaUtils implements Constants {
 			}
 		}
 		where.append(")");
-		Cursor c = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cols,
-				where.toString(), null, null);
+		Cursor c = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cols, where.toString(), null,
+				null);
 
 		int mDeletedLyricsCount = 0;
 
@@ -358,8 +353,8 @@ public class MediaUtils implements Constants {
 			}
 		}
 		where.append(")");
-		Cursor c = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cols,
-				where.toString(), null, null);
+		Cursor c = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cols, where.toString(), null,
+				null);
 
 		if (c != null) {
 
@@ -500,8 +495,7 @@ public class MediaUtils implements Constants {
 	 * Get album art for specified album. You should not pass in the album id
 	 * for the "unknown" album here (use -1 instead)
 	 */
-	public Bitmap getArtwork(long song_id, long album_id,
-			boolean allowdefault) {
+	public Bitmap getArtwork(long song_id, long album_id, boolean allowdefault) {
 
 		if (album_id < 0) {
 			// This is something that is not in the database, so get the album
@@ -670,26 +664,35 @@ public class MediaUtils implements Constants {
 		return null;
 	}
 
-	public Drawable getBackgroundImage(Bitmap bm, int width, int height,
-			float scale) {
+	public Drawable getBackgroundImage(Bitmap orig, int width, int height, float scale) {
 
-		if (bm == null) return null;
-		Bitmap bitmap1 = Bitmap.createScaledBitmap(bm, (int) (width * scale),
+		if (orig == null) return null;
+		Bitmap result = Bitmap.createScaledBitmap(orig, (int) (width * scale),
 				(int) (height * scale), true);
-		Paint paint = new Paint();
-		paint.setAntiAlias(true);
-		paint.setFilterBitmap(true);
-		paint.setMaskFilter(new BlurMaskFilter(Math.min(width, height) * scale,
-				BlurMaskFilter.Blur.NORMAL));
-
-		Bitmap result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		orig.recycle();
+		orig = null;
 		Canvas c = new Canvas(result);
-		Bitmap bitmap2 = Bitmap.createScaledBitmap(bitmap1, width, height, true);
-		c.drawBitmap(bitmap2, 0, 0, paint);
 		c.drawColor(0xD0000000, PorterDuff.Mode.DARKEN);
-		bitmap1.recycle();
-		bitmap2.recycle();
 		return new BitmapDrawable(mContext.getResources(), result);
+		// Paint paint = new Paint();
+		// paint.setAntiAlias(true);
+		// paint.setFilterBitmap(true);
+		// paint.setMaskFilter(new BlurMaskFilter(Math.min(width, height) *
+		// scale,
+		// BlurMaskFilter.Blur.NORMAL));
+		//
+		// Bitmap result = Bitmap.createBitmap(width, height,
+		// Bitmap.Config.ARGB_8888);
+		// Canvas c = new Canvas(result);
+		// Bitmap bitmap2 = Bitmap.createScaledBitmap(bitmap1, width, height,
+		// true);
+		// bitmap1.recycle();
+		// bitmap1 = null;
+		// c.drawBitmap(bitmap2, 0, 0, paint);
+		// c.drawColor(0xD0000000, PorterDuff.Mode.DARKEN);
+		// bitmap2.recycle();
+		// bitmap2 = null;
+		// return new BitmapDrawable(mContext.getResources(), result);
 	}
 
 	public String getBetterGenresWhereClause() {
@@ -736,8 +739,7 @@ public class MediaUtils implements Constants {
 		return builder.toString();
 	}
 
-	public Drawable getCachedArtwork(long index,
-			BitmapDrawable defaultArtwork) {
+	public Drawable getCachedArtwork(long index, BitmapDrawable defaultArtwork) {
 		Drawable d = null;
 		synchronized (mArtCache) {
 			d = mArtCache.get(index);
@@ -762,11 +764,6 @@ public class MediaUtils implements Constants {
 			}
 		}
 		return d;
-	}
-
-	public Drawable getCachedArtwork(long index, int width, int height) {
-		Bitmap b = getArtworkQuick(index, width, height);
-		return new FastBitmapDrawable(b);
 	}
 
 	public Bitmap getCachedArtworkBitmap(long index, int width, int height) {
@@ -937,8 +934,8 @@ public class MediaUtils implements Constants {
 		final String[] ccols = new String[] { MediaStore.Audio.Media._ID };
 		String where = MediaStore.Audio.Media.ALBUM_ID + "=" + id + " AND "
 				+ MediaStore.Audio.Media.IS_MUSIC + "=1";
-		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
-				null, MediaStore.Audio.Media.TRACK);
+		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where, null,
+				MediaStore.Audio.Media.TRACK);
 
 		if (cursor != null) {
 			long[] list = getSongListForCursor(cursor);
@@ -953,8 +950,8 @@ public class MediaUtils implements Constants {
 		final String[] ccols = new String[] { MediaStore.Audio.Media._ID };
 		String where = MediaStore.Audio.Media.ARTIST_ID + "=" + id + " AND "
 				+ MediaStore.Audio.Media.IS_MUSIC + "=1";
-		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
-				null, MediaStore.Audio.Media.ALBUM_KEY + "," + MediaStore.Audio.Media.TRACK);
+		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where, null,
+				MediaStore.Audio.Media.ALBUM_KEY + "," + MediaStore.Audio.Media.TRACK);
 
 		if (cursor != null) {
 			long[] list = getSongListForCursor(cursor);
@@ -986,8 +983,8 @@ public class MediaUtils implements Constants {
 	public long[] getSongListForPlaylist(long plid) {
 
 		final String[] ccols = new String[] { MediaStore.Audio.Playlists.Members.AUDIO_ID };
-		Cursor cursor = query(Playlists.Members.getContentUri("external", plid), ccols,
-				null, null, Playlists.Members.DEFAULT_SORT_ORDER);
+		Cursor cursor = query(Playlists.Members.getContentUri("external", plid), ccols, null, null,
+				Playlists.Members.DEFAULT_SORT_ORDER);
 
 		if (cursor != null) {
 			long[] list = getSongListForCursor(cursor);
@@ -1083,23 +1080,7 @@ public class MediaUtils implements Constants {
 		return result;
 	}
 
-	/*
-	 * Returns true if a file is currently opened for playback (regardless of
-	 * whether it's playing or paused).
-	 */
-	public static boolean isMusicLoaded() {
-
-		if (MediaUtils.mService != null) {
-			try {
-				return mService.getPath() != null;
-			} catch (RemoteException ex) {
-			}
-		}
-		return false;
-	}
-
-	public String makeAlbumsLabel(int numalbums, int numsongs,
-			boolean isUnknown) {
+	public String makeAlbumsLabel(int numalbums, int numsongs, boolean isUnknown) {
 
 		// There are two formats for the albums/songs information:
 		// "N Song(s)" - used for unknown artist/album
@@ -1126,8 +1107,7 @@ public class MediaUtils implements Constants {
 	/**
 	 * This is now only used for the query screen
 	 */
-	public String makeAlbumsSongsLabel(int numalbums, int numsongs,
-			boolean isUnknown) {
+	public String makeAlbumsSongsLabel(int numalbums, int numsongs, boolean isUnknown) {
 
 		// There are several formats for the albums/songs information:
 		// "1 Song" - used if there is only 1 song
@@ -1153,8 +1133,7 @@ public class MediaUtils implements Constants {
 		return songs_albums.toString();
 	}
 
-	public void makePlaylistList(boolean create_shortcut,
-			List<Map<String, String>> list) {
+	public void makePlaylistList(boolean create_shortcut, List<Map<String, String>> list) {
 
 		Map<String, String> map;
 
@@ -1236,8 +1215,7 @@ public class MediaUtils implements Constants {
 		return sFormatter.format(durationformat, timeArgs).toString();
 	}
 
-	public void movePlaylistItem(Cursor cursor, long playlist_id, int from,
-			int to) {
+	public void movePlaylistItem(Cursor cursor, long playlist_id, int from, int to) {
 
 		if (from < 0) {
 			from = 0;
@@ -1321,8 +1299,8 @@ public class MediaUtils implements Constants {
 		final String[] ccols = new String[] { MediaStore.Audio.Media._ID };
 		String where = MediaStore.MediaColumns.DATE_ADDED + ">"
 				+ (System.currentTimeMillis() / 1000 - weekX);
-		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where,
-				null, MediaStore.Audio.Media.DEFAULT_SORT_ORDER);
+		Cursor cursor = query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ccols, where, null,
+				MediaStore.Audio.Media.DEFAULT_SORT_ORDER);
 
 		if (cursor == null) // Todo: show a message
 			return;
@@ -1340,14 +1318,14 @@ public class MediaUtils implements Constants {
 		}
 	}
 
-	public Cursor query(Uri uri, String[] projection, String selection,
-			String[] selectionArgs, String sortOrder) {
+	public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+			String sortOrder) {
 
 		return query(uri, projection, selection, selectionArgs, sortOrder, 0);
 	}
 
-	public Cursor query(Uri uri, String[] projection, String selection,
-			String[] selectionArgs, String sortOrder, int limit) {
+	public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+			String sortOrder, int limit) {
 
 		try {
 			ContentResolver resolver = mContext.getContentResolver();
@@ -1529,16 +1507,16 @@ public class MediaUtils implements Constants {
 		try {
 			if (albumid < 0) {
 				Uri uri = Uri.parse("content://media/external/audio/media/" + songid + "/albumart");
-				ParcelFileDescriptor pfd = mContext.getContentResolver()
-						.openFileDescriptor(uri, "r");
+				ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(uri,
+						"r");
 				if (pfd != null) {
 					FileDescriptor fd = pfd.getFileDescriptor();
 					bm = BitmapFactory.decodeFileDescriptor(fd);
 				}
 			} else {
 				Uri uri = ContentUris.withAppendedId(mArtworkUri, albumid);
-				ParcelFileDescriptor pfd = mContext.getContentResolver()
-						.openFileDescriptor(uri, "r");
+				ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(uri,
+						"r");
 				if (pfd != null) {
 					FileDescriptor fd = pfd.getFileDescriptor();
 					bm = BitmapFactory.decodeFileDescriptor(fd);
@@ -1557,13 +1535,13 @@ public class MediaUtils implements Constants {
 		try {
 			if (albumid < 0) {
 				Uri uri = Uri.parse("content://media/external/audio/media/" + songid + "/albumart");
-				ParcelFileDescriptor pfd = mContext.getContentResolver()
-						.openFileDescriptor(uri, "r");
+				ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(uri,
+						"r");
 				if (pfd != null) return uri;
 			} else {
 				Uri uri = ContentUris.withAppendedId(mArtworkUri, albumid);
-				ParcelFileDescriptor pfd = mContext.getContentResolver()
-						.openFileDescriptor(uri, "r");
+				ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(uri,
+						"r");
 				if (pfd != null) return uri;
 			}
 		} catch (FileNotFoundException ex) {
@@ -1592,7 +1570,7 @@ public class MediaUtils implements Constants {
 	 * @param base
 	 *            The play order offset to use for this pass
 	 */
-	private static void makeInsertItems(long[] ids, int offset, int len, int base) {
+	private void makeInsertItems(long[] ids, int offset, int len, int base) {
 
 		// adjust 'len' if would extend beyond the end of the source array
 		if (offset + len > ids.length) {
@@ -1659,39 +1637,24 @@ public class MediaUtils implements Constants {
 		}
 	}
 
-	static protected Uri getContentURIForPath(String path) {
+	protected Uri getContentURIForPath(String path) {
 
 		return Uri.fromFile(new File(path));
 	}
 
-	// A really simple BitmapDrawable-like class, that doesn't do
-	// scaling, dithering or filtering.
-	private class FastBitmapDrawable extends Drawable {
+	/*
+	 * Returns true if a file is currently opened for playback (regardless of
+	 * whether it's playing or paused).
+	 */
+	public static boolean isMusicLoaded() {
 
-		private Bitmap mBitmap;
-
-		public FastBitmapDrawable(Bitmap b) {
-			mBitmap = b;
+		if (MediaUtils.mService != null) {
+			try {
+				return mService.getPath() != null;
+			} catch (RemoteException ex) {
+			}
 		}
-
-		@Override
-		public void draw(Canvas canvas) {
-			if (mBitmap == null) return;
-			canvas.drawBitmap(mBitmap, 0, 0, null);
-		}
-
-		@Override
-		public int getOpacity() {
-			return PixelFormat.OPAQUE;
-		}
-
-		@Override
-		public void setAlpha(int alpha) {
-		}
-
-		@Override
-		public void setColorFilter(ColorFilter cf) {
-		}
+		return false;
 	}
 
 	private class ServiceBinder implements ServiceConnection {

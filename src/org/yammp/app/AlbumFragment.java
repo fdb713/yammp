@@ -84,6 +84,14 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 
 	};
 
+	MediaUtils mUtils;
+
+	private int mScrollState = OnScrollListener.SCROLL_STATE_IDLE;
+
+	private boolean mScrollStopped = true;
+
+	private int mFirstVisible = 0;
+
 	public AlbumFragment() {
 
 	}
@@ -92,17 +100,15 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 		setArguments(args);
 	}
 
-	MediaUtils mUtils;
-	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 		// We have a menu item to show in action bar.
 		setHasOptionsMenu(true);
 
-		mImageLoader = new LazyImageLoader(getActivity().getApplicationContext(),
-				R.drawable.ic_mp_albumart_unknown, 120);
+		mImageLoader = ((YAMMPApplication) getSherlockActivity().getApplication())
+				.getLazyImageLoader();
 
 		mAdapter = new AlbumsAdapter(getSherlockActivity(), R.layout.album_grid_item, null,
 				new String[] {}, new int[] {}, 0);
@@ -128,8 +134,7 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 			switch (item.getItemId()) {
 				case PLAY_SELECTION:
 					int position = mSelectedPosition;
-					long[] list = mUtils
-							.getSongListForAlbum(mSelectedId);
+					long[] list = mUtils.getSongListForAlbum(mSelectedId);
 					mUtils.playAll(list, position);
 					return true;
 				case DELETE_ITEMS:
@@ -241,6 +246,21 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 	public void onSaveInstanceState(Bundle outState) {
 		outState.putAll(getArguments() != null ? getArguments() : new Bundle());
 		super.onSaveInstanceState(outState);
+	}
+
+	@Override
+	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount,
+			int totalItemCount) {
+		if (mScrollState == OnScrollListener.SCROLL_STATE_FLING) {
+			long item_id = view.getItemIdAtPosition(firstVisibleItem);
+			((YAMMPActivity) getSherlockActivity()).setBackground(0, item_id);
+		}
+
+	}
+
+	@Override
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		mScrollState = scrollState;
 	}
 
 	@Override
@@ -387,24 +407,6 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 
 		}
 
-	}
-
-	private int mScrollState = OnScrollListener.SCROLL_STATE_IDLE;
-	private boolean mScrollStopped = true;
-	private int mFirstVisible = 0;
-	
-	@Override
-	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-		if (mScrollState == OnScrollListener.SCROLL_STATE_FLING) {
-			long item_id = view.getItemIdAtPosition(firstVisibleItem);
-			((YAMMPActivity)getSherlockActivity()).setBackground(0, item_id);
-		}
-		
-	}
-
-	@Override
-	public void onScrollStateChanged(AbsListView view, int scrollState) {
-		mScrollState = scrollState;
 	}
 
 }

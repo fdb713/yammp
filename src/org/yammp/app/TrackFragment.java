@@ -95,7 +95,7 @@ public class TrackFragment extends SherlockListFragment implements LoaderCallbac
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 		// We have a menu item to show in action bar.
 		setHasOptionsMenu(true);
 

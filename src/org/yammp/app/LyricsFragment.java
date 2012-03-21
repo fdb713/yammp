@@ -103,7 +103,7 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 		View fragmentView = getView();
 		mLyricsScrollView = (TextScrollView) fragmentView.findViewById(R.id.lyrics_scroll);
 		mLyricsScrollView.setContentGravity(Gravity.CENTER_HORIZONTAL);

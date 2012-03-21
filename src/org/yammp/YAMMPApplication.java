@@ -1,58 +1,56 @@
 package org.yammp;
 
+import org.yammp.util.LazyImageLoader;
 import org.yammp.util.MediaUtils;
 import org.yammp.util.ServiceInterface;
-import org.yammp.util.ServiceToken;
 
 import android.app.Application;
-import android.content.ComponentName;
-import android.content.ServiceConnection;
 import android.content.res.Configuration;
-import android.os.IBinder;
 
-
-public class YAMMPApplication extends Application implements ServiceConnection{
+public class YAMMPApplication extends Application {
 
 	private MediaUtils mUtils;
 	private ServiceInterface mServiceInterface;
-	private ServiceToken mToken;
-	
-	@Override
-	public void onConfigurationChanged(Configuration newConfig) {
-		super.onConfigurationChanged(newConfig);
+	private LazyImageLoader mImageLoader;
+
+	public LazyImageLoader getLazyImageLoader() {
+		return mImageLoader;
 	}
-	
-	@Override
-	public void onTerminate() {
-		super.onTerminate();
-		mUtils.unbindFromService(mToken);
-		mUtils = null;
-	}
-	
-	@Override
-	public void onCreate() {
-		super.onCreate();
-		mUtils = new MediaUtils(this);
-		mToken = mUtils.bindToService(this);
-	}
-	
+
 	public MediaUtils getMediaUtils() {
 		return mUtils;
 	}
-	
+
 	public ServiceInterface getServiceInterface() {
 		return mServiceInterface;
 	}
 
 	@Override
-	public void onServiceConnected(ComponentName service, IBinder obj) {
-		IMusicPlaybackService mService = IMusicPlaybackService.Stub.asInterface(obj);
-		mServiceInterface = new ServiceInterface(mService);
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
 	}
 
 	@Override
-	public void onServiceDisconnected(ComponentName service) {
-		mServiceInterface = null;
+	public void onCreate() {
+		super.onCreate();
+		mUtils = new MediaUtils(this);
+		mImageLoader = new LazyImageLoader(this, R.drawable.ic_mp_albumart_unknown, getResources()
+				.getDimensionPixelSize(R.dimen.album_art_size) / 2);
+		mServiceInterface = new ServiceInterface(this);
 	}
-	
+
+	@Override
+	public void onLowMemory() {
+		super.onLowMemory();
+		if (mImageLoader != null) {
+			mImageLoader.clearMemoryCache();
+		}
+	}
+
+	@Override
+	public void onTerminate() {
+		super.onTerminate();
+		mUtils = null;
+	}
+
 }

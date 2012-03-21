@@ -25,8 +25,6 @@ import org.yammp.R;
 import org.yammp.YAMMPApplication;
 import org.yammp.util.MediaUtils;
 
-import com.actionbarsherlock.app.SherlockListFragment;
-
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -38,7 +36,6 @@ import android.os.IBinder;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
-import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -51,7 +48,10 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class QueryFragment extends SherlockListFragment implements Constants, LoaderCallbacks<Cursor> {
+import com.actionbarsherlock.app.SherlockListFragment;
+
+public class QueryFragment extends SherlockListFragment implements Constants,
+		LoaderCallbacks<Cursor> {
 
 	private QueryListAdapter mAdapter;
 
@@ -72,7 +72,7 @@ public class QueryFragment extends SherlockListFragment implements Constants, Lo
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 		// We have a menu item to show in action bar.
 		setHasOptionsMenu(true);
 
@@ -265,8 +265,7 @@ public class QueryFragment extends SherlockListFragment implements Constants, Lo
 				int numalbums = cursor.getInt(cursor.getColumnIndexOrThrow("data1"));
 				int numsongs = cursor.getInt(cursor.getColumnIndexOrThrow("data2"));
 
-				String songs_albums = mUtils.makeAlbumsSongsLabel(numalbums, numsongs,
-						isunknown);
+				String songs_albums = mUtils.makeAlbumsSongsLabel(numalbums, numsongs, isunknown);
 
 				viewholder.result_summary.setText(songs_albums);
 

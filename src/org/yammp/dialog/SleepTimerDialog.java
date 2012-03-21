@@ -54,7 +54,7 @@ public class SleepTimerDialog extends FragmentActivity implements OnSeekBarChang
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getApplication()).getMediaUtils();
 		setContentView(new LinearLayout(this));
 
 		DisplayMetrics dm = new DisplayMetrics();

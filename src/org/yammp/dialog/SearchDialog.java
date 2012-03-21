@@ -149,7 +149,7 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getApplication()).getMediaUtils();
 		mLinearLayout = new LinearLayout(this);
 		mLinearLayout.setOrientation(LinearLayout.VERTICAL);
 

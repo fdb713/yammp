@@ -66,7 +66,7 @@ public class Equalizer extends SherlockFragmentActivity implements Constants, Se
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getApplication()).getMediaUtils();
 		setContentView(R.layout.equalizer);
 
 		mEqualizerView = (EqualizerView) findViewById(R.id.equalizer_view);

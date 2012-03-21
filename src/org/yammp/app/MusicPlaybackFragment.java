@@ -20,8 +20,6 @@
 
 package org.yammp.app;
 
-import java.util.ArrayList;
-
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.MusicPlaybackService;
@@ -37,7 +35,6 @@ import org.yammp.util.VisualizerWrapper;
 import org.yammp.util.VisualizerWrapper.OnDataChangedListener;
 import org.yammp.view.SliderView;
 import org.yammp.view.SliderView.OnValueChangeListener;
-import org.yammp.view.TouchPaintView;
 import org.yammp.view.VisualizerViewFftSpectrum;
 import org.yammp.view.VisualizerViewWaveForm;
 import org.yammp.widget.RepeatingImageButton;
@@ -53,10 +50,8 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -69,9 +64,6 @@ import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -90,6 +82,7 @@ import android.widget.ViewSwitcher.ViewFactory;
 
 import com.actionbarsherlock.app.SherlockFragment;
 import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 
 public class MusicPlaybackFragment extends SherlockFragment implements Constants,
@@ -126,7 +119,6 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 	private boolean mLyricsWakelock = DEFAULT_LYRICS_WAKELOCK;
 
 	private TextView mTrackName, mTrackDetail;
-	private TouchPaintView mTouchPaintView;
 	private long mPosOverride = -1;
 	private boolean mFromTouch = false;
 	private long mDuration;
@@ -309,10 +301,18 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 	public void onActivityCreated(Bundle icicle) {
 
 		super.onActivityCreated(icicle);
-		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 		mPrefs = new PreferencesEditor(getSherlockActivity());
+		setHasOptionsMenu(true);
 		configureActivity();
 
+	}
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+
+		inflater.inflate(R.menu.music_playback, menu);
+		super.onCreateOptionsMenu(menu, inflater);
 	}
 
 	@Override
@@ -382,8 +382,7 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 				bundle.putString(
 						INTENT_KEY_PATH,
 						Uri.withAppendedPath(Audio.Media.EXTERNAL_CONTENT_URI,
-								Uri.encode(String.valueOf(mUtils.getCurrentAudioId())))
-								.toString());
+								Uri.encode(String.valueOf(mUtils.getCurrentAudioId()))).toString());
 				intent.putExtras(bundle);
 				startActivity(intent);
 				break;
@@ -568,20 +567,14 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 		 */
 
 		mPrevButton = (RepeatingImageButton) getView().findViewById(R.id.prev);
-		mPrevButton.setBackgroundDrawable(new ButtonStateDrawable(new Drawable[] { getResources()
-				.getDrawable(R.drawable.btn_mp_playback) }));
 		mPrevButton.setOnClickListener(mPrevListener);
 		mPrevButton.setRepeatListener(mRewListener, 260);
 
 		mPauseButton = (ImageButton) getView().findViewById(R.id.pause);
-		mPauseButton.setBackgroundDrawable(new ButtonStateDrawable(new Drawable[] { getResources()
-				.getDrawable(R.drawable.btn_mp_playback) }));
 		mPauseButton.requestFocus();
 		mPauseButton.setOnClickListener(mPauseListener);
 
 		mNextButton = (RepeatingImageButton) getView().findViewById(R.id.next);
-		mNextButton.setBackgroundDrawable(new ButtonStateDrawable(new Drawable[] { getResources()
-				.getDrawable(R.drawable.btn_mp_playback) }));
 		mNextButton.setOnClickListener(mNextListener);
 		mNextButton.setRepeatListener(mFfwdListener, 260);
 
@@ -941,6 +934,8 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			}
 		};
 
+		private MediaUtils mUtils;
+
 		@Override
 		public View makeView() {
 			ImageView view = new ImageView(getActivity());
@@ -950,11 +945,10 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			return view;
 		}
 
-		private MediaUtils mUtils;
 		@Override
 		public void onActivityCreated(Bundle savedInstanceState) {
 			super.onActivityCreated(savedInstanceState);
-			mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+			mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 			View view = getView();
 
 			mAlbum = (ImageSwitcher) view.findViewById(R.id.album_art);
@@ -1265,8 +1259,8 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			if (mService != null) {
 				try {
 					if (mAutoColor) {
-						mUIColor = ColorAnalyser
-								.analyse(mUtils.getArtwork(mService.getAudioId(), mService.getAlbumId()));
+						mUIColor = ColorAnalyser.analyse(mUtils.getArtwork(mService.getAudioId(),
+								mService.getAlbumId()));
 					} else {
 						mUIColor = mPrefs.getIntPref(KEY_CUSTOMIZED_COLOR, Color.WHITE);
 					}
@@ -1283,60 +1277,6 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 			setUIColor(mUIColor);
 		}
-	}
-
-	private class ButtonStateDrawable extends LayerDrawable {
-
-		int pressed = android.R.attr.state_pressed;
-		int focused = android.R.attr.state_focused;
-
-		public ButtonStateDrawable(Drawable[] layers) {
-
-			super(layers);
-		}
-
-		@Override
-		public boolean isStateful() {
-			return super.isStateful();
-		}
-
-		@Override
-		protected boolean onStateChange(int[] states) {
-
-			for (int state : states) {
-				if (state == pressed || state == focused) {
-					super.setColorFilter(mUIColor, Mode.MULTIPLY);
-					return super.onStateChange(states);
-				}
-			}
-			super.clearColorFilter();
-			return super.onStateChange(states);
-		}
-	}
-
-	private class PagerAdapter extends FragmentPagerAdapter {
-
-		private final ArrayList<Fragment> mFragments = new ArrayList<Fragment>();
-
-		public PagerAdapter(FragmentManager manager) {
-			super(manager);
-		}
-
-		public void addFragment(Fragment fragment) {
-			mFragments.add(fragment);
-			notifyDataSetChanged();
-		}
-
-		@Override
-		public int getCount() {
-			return mFragments.size();
-		}
-
-		@Override
-		public Fragment getItem(int position) {
-			return mFragments.get(position);
-		}
-
 	}
 
 }

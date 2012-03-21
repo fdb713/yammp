@@ -18,19 +18,12 @@ import android.widget.ViewSwitcher.ViewFactory;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 
-
 public class YAMMPActivity extends SherlockFragmentActivity implements ViewFactory {
 
 	private AsyncBackgroundEffect mBackgroundEffectTask;
 	private ImageSwitcher mBackground;
 	private MediaUtils mUtils;
-	
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
-	}
-	
+
 	@Override
 	public View makeView() {
 		ImageView view = new ImageView(this);
@@ -39,26 +32,37 @@ public class YAMMPActivity extends SherlockFragmentActivity implements ViewFacto
 				LayoutParams.MATCH_PARENT));
 		return view;
 	}
-	
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		mUtils = ((YAMMPApplication) getApplication()).getMediaUtils();
+	}
+
 	public void setBackground(long song_id, long album_id) {
+		// if (true) return;
 		if (mBackgroundEffectTask != null) {
 			mBackgroundEffectTask.cancel(true);
 		}
 		mBackgroundEffectTask = new AsyncBackgroundEffect();
 		mBackgroundEffectTask.execute(song_id, album_id);
 	}
-	
+
+	@Override
 	public void setContentView(int layoutResId) {
 		FrameLayout layout = new FrameLayout(this);
 		mBackground = new ImageSwitcher(this);
 		mBackground.setFactory(this);
 		mBackground.setInAnimation(this, android.R.anim.fade_in);
 		mBackground.setOutAnimation(this, android.R.anim.fade_out);
-		layout.addView(mBackground, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-		layout.addView(getLayoutInflater().inflate(layoutResId, null), new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+		layout.addView(mBackground, new FrameLayout.LayoutParams(
+				FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+		layout.addView(getLayoutInflater().inflate(layoutResId, null),
+				new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+						FrameLayout.LayoutParams.MATCH_PARENT));
 		super.setContentView(layout);
 	}
-	
+
 	private class AsyncBackgroundEffect extends AsyncTask<Long, Void, Drawable> {
 
 		@Override
@@ -74,8 +78,8 @@ public class YAMMPActivity extends SherlockFragmentActivity implements ViewFacto
 				bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_music);
 			}
 			float density = getResources().getDisplayMetrics().density;
-			Drawable drawable = mUtils.getBackgroundImage(bitmap,
-					mBackground.getWidth(), mBackground.getHeight(), 1.0f / 32 / density);
+			Drawable drawable = mUtils.getBackgroundImage(bitmap, mBackground.getWidth(),
+					mBackground.getHeight(), 1.0f / 32 / density);
 			return drawable;
 		}
 

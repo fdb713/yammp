@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<style name="Theme" parent="@style/Theme.Sherlock">
+	<style name="Theme" parent="@style/Theme.HoloEverywhereDark.Sherlock">
 		<item name="android:colorBackgroundCacheHint">@null</item>
 		<item name="vpiTabPageIndicatorStyle">@style/Widget.TabPageIndicator</item>
 		<item name="vpiVerticalTabPageIndicatorStyle">@style/Widget.TabPageIndicator.Vertical</item>

@@ -49,7 +49,7 @@ public class TrackBrowserActivity extends SherlockFragmentActivity implements Co
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getApplication()).getMediaUtils();
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
 		intent = getIntent();
@@ -149,8 +149,7 @@ public class TrackBrowserActivity extends SherlockFragmentActivity implements Co
 			name = mUtils.getAlbumName(id, true);
 		} else if (Audio.Genres.CONTENT_TYPE.equals(mimeType)) {
 			id = bundle.getLong(Audio.Genres._ID);
-			name = mUtils.parseGenreName(mUtils.getGenreName(id,
-					true));
+			name = mUtils.parseGenreName(mUtils.getGenreName(id, true));
 		} else {
 			setTitle(R.string.music_library);
 			return;

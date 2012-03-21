@@ -31,7 +31,7 @@ import android.widget.ListView;
  * Inspired by <a url="https://github.com/thest1/LazyList">LazyList</a>, this
  * class has extra features like image loading/caching image to
  * /mnt/sdcard/Android/data/[package name]/cache features.</br> </br> Requires
- * Android 2.2, you can modify {@link Context#getExternalCacheDir()} to other
+ * Android 2.2, you can modify {@link Context#getExternalCacheDir()} to other to
  * support Android 2.1 and below.
  * 
  * @author mariotaku

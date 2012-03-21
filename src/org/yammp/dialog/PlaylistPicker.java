@@ -71,7 +71,7 @@ public class PlaylistPicker extends FragmentActivity implements DialogInterface.
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getApplication()).getMediaUtils();
 		setContentView(new LinearLayout(this));
 
 		if (getIntent().getAction() != null) {

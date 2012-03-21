@@ -111,7 +111,7 @@ public class PlaylistDialog extends FragmentActivity implements Constants, TextW
 	public void onCreate(Bundle icicle) {
 
 		super.onCreate(icicle);
-		mUtils = ((YAMMPApplication)getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getApplication()).getMediaUtils();
 		setContentView(new LinearLayout(this));
 
 		action = getIntent().getAction();

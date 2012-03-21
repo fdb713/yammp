@@ -105,11 +105,11 @@ public class ArtistFragment extends SherlockFragment implements
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 		setHasOptionsMenu(true);
 
-		mImageLoader = new LazyImageLoader(getActivity().getApplicationContext(),
-				R.drawable.ic_mp_albumart_unknown, 120);
+		mImageLoader = ((YAMMPApplication) getSherlockActivity().getApplication())
+				.getLazyImageLoader();
 
 		mArtistsAdapter = new ArtistsAdapter(getSherlockActivity(), null,
 				R.layout.artist_list_item_group, new String[] {}, new int[] {},

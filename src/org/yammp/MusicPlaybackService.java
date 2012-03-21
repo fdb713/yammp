@@ -964,10 +964,10 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		super.onCreate();
 
-		mApplication =(YAMMPApplication)getApplication();
-		
+		mApplication = (YAMMPApplication) getApplication();
+
 		mUtils = mApplication.getMediaUtils();
-		
+
 		mPlaybackIntent = new Intent();
 
 		mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -1398,8 +1398,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 					INTENT_PLAYBACK_VIEWER), 0);
 
 			Notification notification = new Notification(R.drawable.ic_stat_playback, null, 0);
-			// notification.flags =
-			// Notification.FLAG_ONGOING_EVENT|Notification.FLAG_ONLY_ALERT_ONCE;
+			notification.flags = Notification.FLAG_ONGOING_EVENT;
 			notification.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
 			mNotificationManager.notify(ID_NOTIFICATION_PLAYBACK, notification);
 

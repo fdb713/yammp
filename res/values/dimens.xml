@@ -26,6 +26,7 @@
 	<dimen name="expandable_group_spacing_left">64dip</dimen>
 	<dimen name="item_editmode_spacing_left">36dip</dimen>
 	<dimen name="album_art_height">256dip</dimen>
+	<dimen name="album_art_size">256dip</dimen>
 	<dimen name="album_art_width">256dip</dimen>
 	<dimen name="player_progress_height">36dip</dimen>
 	<dimen name="player_control_height">58.0dip</dimen>

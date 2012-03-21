@@ -26,7 +26,6 @@
 		android:layout_width="0dip"
 		android:layout_height="match_parent"
 		android:layout_weight="1"
-		android:background="@drawable/btn_mp_playback"
 		android:src="@drawable/btn_playback_ic_prev"/>
 
 	<ImageButton
@@ -34,7 +33,6 @@
 		android:layout_width="0dip"
 		android:layout_height="match_parent"
 		android:layout_weight="2"
-		android:background="@drawable/btn_mp_playback"
 		android:src="@drawable/btn_playback_ic_play"/>
 
 	<org.yammp.widget.RepeatingImageButton
@@ -42,7 +40,6 @@
 		android:layout_width="0dip"
 		android:layout_height="match_parent"
 		android:layout_weight="1"
-		android:background="@drawable/btn_mp_playback"
 		android:src="@drawable/btn_playback_ic_next"/>
 
 </LinearLayout>

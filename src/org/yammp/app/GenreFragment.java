@@ -25,8 +25,6 @@ import org.yammp.R;
 import org.yammp.YAMMPApplication;
 import org.yammp.util.MediaUtils;
 
-import com.actionbarsherlock.app.SherlockListFragment;
-
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -34,7 +32,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -45,7 +42,10 @@ import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class GenreFragment extends SherlockListFragment implements LoaderCallbacks<Cursor>, Constants {
+import com.actionbarsherlock.app.SherlockListFragment;
+
+public class GenreFragment extends SherlockListFragment implements LoaderCallbacks<Cursor>,
+		Constants {
 
 	private GenresAdapter mAdapter;
 
@@ -64,7 +64,7 @@ public class GenreFragment extends SherlockListFragment implements LoaderCallbac
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		mUtils = ((YAMMPApplication)getSherlockActivity().getApplication()).getMediaUtils();
+		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
 		setHasOptionsMenu(true);
 
 		mAdapter = new GenresAdapter(getActivity(), null, false);
