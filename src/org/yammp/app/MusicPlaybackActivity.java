@@ -25,6 +25,7 @@ import org.yammp.IMusicPlaybackService;
 import org.yammp.MusicPlaybackService;
 import org.yammp.R;
 import org.yammp.YAMMPApplication;
+import org.yammp.fragment.LyricsFragment;
 import org.yammp.util.ColorAnalyser;
 import org.yammp.util.EqualizerWrapper;
 import org.yammp.util.MediaUtils;
@@ -40,7 +41,7 @@ import org.yammp.view.TouchPaintView.EventListener;
 import org.yammp.view.VisualizerViewFftSpectrum;
 import org.yammp.view.VisualizerViewWaveForm;
 import org.yammp.widget.RepeatingImageButton;
-import org.yammp.widget.RepeatingImageButton.RepeatListener;
+import org.yammp.widget.RepeatingImageButton.OnRepeatListener;
 
 import android.app.SearchManager;
 import android.content.ActivityNotFoundException;
@@ -246,7 +247,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		}
 	};
 
-	private RepeatListener mRewListener = new RepeatListener() {
+	private OnRepeatListener mRewListener = new OnRepeatListener() {
 
 		@Override
 		public void onRepeat(View v, long howlong, int repcnt) {
@@ -255,7 +256,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		}
 	};
 
-	private RepeatListener mFfwdListener = new RepeatListener() {
+	private OnRepeatListener mFfwdListener = new OnRepeatListener() {
 
 		@Override
 		public void onRepeat(View v, long howlong, int repcnt) {
@@ -649,7 +650,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 			} else {
 				Intent intent = new Intent(Intent.ACTION_MAIN);
 				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				intent.setClass(getApplicationContext(), MusicBrowserActivity.class);
+				intent.setClass(getApplicationContext(), MediaPlayerActivity.class);
 				startActivity(intent);
 				finish();
 			}

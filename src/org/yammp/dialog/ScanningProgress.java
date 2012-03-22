@@ -17,7 +17,7 @@
 package org.yammp.dialog;
 
 import org.yammp.R;
-import org.yammp.app.MusicBrowserActivity;
+import org.yammp.app.MediaPlayerActivity;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -43,7 +43,7 @@ public class ScanningProgress extends FragmentActivity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction())) {
-				startActivity(new Intent(getApplicationContext(), MusicBrowserActivity.class));
+				startActivity(new Intent(getApplicationContext(), MediaPlayerActivity.class));
 				finish();
 			}
 		}

@@ -1,22 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<style name="Theme" parent="@style/Theme.HoloEverywhereDark.Sherlock">
-		<item name="android:colorBackgroundCacheHint">@null</item>
+	<style name="Theme.YAMMP" parent="@style/Theme.HoloEverywhereDark.Sherlock">
 		<item name="vpiTabPageIndicatorStyle">@style/Widget.TabPageIndicator</item>
 		<item name="vpiVerticalTabPageIndicatorStyle">@style/Widget.TabPageIndicator.Vertical</item>
 		<item name="vpiTabTextStyle">@style/Widget.TabPageIndicator.Text</item>
 		<item name="vpiVerticalTabTextStyle">@style/Widget.TabPageIndicator.Text</item>
-	</style>
-
-	<style name="Theme.MusicBrowser"></style>
-
-	<style name="Theme.MusicPlayback">
-		<item name="android:windowBackground">@drawable/music_playback_background</item>
-	</style>
-
-	<style name="Widget.ActionBar">
-		<item name="android:background">@drawable/actionbar_background</item>
 	</style>
 
 </resources>

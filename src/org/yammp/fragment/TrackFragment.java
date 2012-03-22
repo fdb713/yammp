@@ -18,7 +18,7 @@
  *  along with YAMMP.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yammp.app;
+package org.yammp.fragment;
 
 import org.yammp.Constants;
 import org.yammp.R;

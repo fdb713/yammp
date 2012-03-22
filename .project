@@ -3,8 +3,9 @@
 	<name>yammp</name>
 	<comment></comment>
 	<projects>
-		<project>actionbarcompat</project>
+		<project>ActionBarSherlock</project>
 		<project>android-preferences</project>
+		<project>HoloEverywhereLib</project>
 		<project>ViewPagerIndicator</project>
 	</projects>
 	<buildSpec>

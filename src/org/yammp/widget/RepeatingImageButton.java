@@ -33,7 +33,7 @@ public class RepeatingImageButton extends ImageButton {
 	private long mStartTime;
 
 	private int mRepeatCount;
-	private RepeatListener mListener;
+	private OnRepeatListener mListener;
 	private long mInterval = 500;
 
 	private Runnable mRepeater = new Runnable() {
@@ -127,7 +127,7 @@ public class RepeatingImageButton extends ImageButton {
 	 * @param interval
 	 *            The interval in milliseconds for calls
 	 */
-	public void setRepeatListener(RepeatListener l, long interval) {
+	public void setRepeatListener(OnRepeatListener l, long interval) {
 
 		mListener = l;
 		mInterval = interval;
@@ -141,7 +141,7 @@ public class RepeatingImageButton extends ImageButton {
 		}
 	}
 
-	public interface RepeatListener {
+	public interface OnRepeatListener {
 
 		/**
 		 * This method will be called repeatedly at roughly the interval

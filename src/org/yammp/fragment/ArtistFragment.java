@@ -18,13 +18,14 @@
  *  along with YAMMP.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yammp.app;
+package org.yammp.fragment;
 
 import java.io.File;
 
 import org.yammp.Constants;
 import org.yammp.R;
 import org.yammp.YAMMPApplication;
+import org.yammp.app.TrackBrowserActivity;
 import org.yammp.dialog.DeleteDialogFragment;
 import org.yammp.util.LazyImageLoader;
 import org.yammp.util.MediaUtils;
@@ -195,7 +196,7 @@ public class ArtistFragment extends SherlockFragment implements
 			if (mCurrentGroupArtistName != null
 					&& !MediaStore.UNKNOWN_STRING.equals(mCurrentGroupArtistName)) {
 				menu.setHeaderTitle(mCurrentGroupArtistName);
-				menu.add(hashCode(), SEARCH, 0, R.string.play_selection);
+				menu.add(hashCode(), SEARCH, 0, android.R.string.search_go);
 			} else {
 				menu.setHeaderTitle(getString(R.string.unknown_artist));
 			}

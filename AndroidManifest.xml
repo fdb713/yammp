@@ -16,8 +16,8 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	android:installLocation="auto"
 	package="org.yammp"
+	android:installLocation="auto"
 	android:versionCode="26"
 	android:versionName="@string/app_version">
 
@@ -47,15 +47,14 @@
 		android:icon="@drawable/ic_launcher_music"
 		android:label="@string/app_name"
 		android:taskAffinity="android.task.music"
-		android:theme="@style/Theme">
+		android:theme="@style/Theme.YAMMP">
 		<meta-data
 			android:name="android.app.default_searchable"
 			android:value="org.yammp.QueryBrowserActivity"/>
 
 		<activity
-			android:name=".app.MusicBrowserActivity"
-			android:label="@string/music_label"
-			android:theme="@style/Theme.MusicBrowser">
+			android:name=".app.MediaPlayerActivity"
+			android:label="@string/label_media">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN"/>
 				<action android:name="org.yammp.MUSIC_BROWSER"/>
@@ -69,7 +68,6 @@
 			android:clearTaskOnLaunch="true"
 			android:icon="@drawable/ic_launcher_music"
 			android:label="@string/now_playing"
-			android:theme="@style/Theme.MusicPlayback"
 			android:windowSoftInputMode="stateAlwaysHidden">
 			<intent-filter>
 				<action android:name="org.yammp.PLAYBACK_VIEWER"/>
@@ -79,8 +77,7 @@
 		</activity>
 		<activity
 			android:name=".app.TrackBrowserActivity"
-			android:label="@string/tracks"
-			android:theme="@style/Theme.MusicBrowser">
+			android:label="@string/tracks">
 			<intent-filter>
 				<action android:name="android.intent.action.EDIT"/>
 				<action android:name="android.intent.action.VIEW"/>
@@ -92,8 +89,7 @@
 		</activity>
 		<activity
 			android:name=".app.QueryBrowserActivity"
-			android:label="@string/search_hint"
-			android:theme="@style/Theme.MusicBrowser">
+			android:label="@string/search_hint">
 			<intent-filter>
 				<action android:name="android.intent.action.SEARCH"/>
 				<action android:name="android.intent.action.MEDIA_SEARCH"/>

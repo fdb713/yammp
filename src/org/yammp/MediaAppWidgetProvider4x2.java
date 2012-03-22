@@ -20,7 +20,7 @@
 
 package org.yammp;
 
-import org.yammp.app.MusicBrowserActivity;
+import org.yammp.app.MediaPlayerActivity;
 import org.yammp.app.MusicPlaybackActivity;
 import org.yammp.util.MediaUtils;
 
@@ -84,7 +84,7 @@ public class MediaAppWidgetProvider4x2 extends AppWidgetProvider implements Cons
 	 * @param isPlaying
 	 *            True if player is active in background, which means widget
 	 *            click will launch {@link MusicPlaybackActivity}, otherwise we
-	 *            launch {@link MusicBrowserActivity}.
+	 *            launch {@link MediaPlayerActivity}.
 	 */
 	private void linkButtons(Context context, RemoteViews views, boolean isPlaying) {
 

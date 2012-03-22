@@ -37,7 +37,6 @@ import org.yammp.util.PreferencesEditor;
 import org.yammp.util.ShakeListener;
 import org.yammp.util.ShakeListener.OnShakeListener;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -63,6 +62,7 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.support.v4.app.NotificationCompat;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.text.format.DateUtils;
@@ -1397,10 +1397,13 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 			PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(
 					INTENT_PLAYBACK_VIEWER), 0);
 
-			Notification notification = new Notification(R.drawable.ic_stat_playback, null, 0);
-			notification.flags = Notification.FLAG_ONGOING_EVENT;
-			notification.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
-			mNotificationManager.notify(ID_NOTIFICATION_PLAYBACK, notification);
+			NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+			builder.setOngoing(true);
+			builder.setSmallIcon(R.drawable.ic_stat_playback);
+			builder.setContentIntent(contentIntent);
+			builder.setContentTitle(contentTitle);
+			builder.setContentText(contentText);
+			mNotificationManager.notify(ID_NOTIFICATION_PLAYBACK, builder.getNotification());
 
 			if (!mIsSupposedToBePlaying) {
 				mIsSupposedToBePlaying = true;
@@ -2224,13 +2227,15 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 		CharSequence contentTitle = getString(R.string.sleep_timer_enabled);
 		CharSequence contentText = getString(R.string.notification_sleep_timer, time);
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(), 0);
-		Notification notification = new Notification(R.drawable.ic_stat_playback, null, 0);
-		notification.flags = Notification.FLAG_ONGOING_EVENT;
-		notification.icon = R.drawable.ic_stat_sleeptimer;
-		notification.setLatestEventInfo(this, contentTitle, contentText, contentIntent);
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+		builder.setOngoing(true);
+		builder.setSmallIcon(R.drawable.ic_stat_sleeptimer);
+		builder.setContentIntent(contentIntent);
+		builder.setContentTitle(contentTitle);
+		builder.setContentText(contentText);
 
 		mGentleSleepTimer = gentle;
-		mNotificationManager.notify(ID_NOTIFICATION_SLEEPTIMER, notification);
+		mNotificationManager.notify(ID_NOTIFICATION_SLEEPTIMER, builder.getNotification());
 		mSleepTimerHandler.sendEmptyMessageDelayed(START_SLEEP_TIMER, milliseconds);
 		Toast.makeText(
 				this,

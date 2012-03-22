@@ -20,6 +20,8 @@
 
 package org.yammp.app;
 
+import org.yammp.fragment.PluginFragment;
+
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 

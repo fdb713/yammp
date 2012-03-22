@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import org.yammp.Constants;
 import org.yammp.R;
 import org.yammp.dialog.ScanningProgress;
+import org.yammp.fragment.MusicBrowserFragment;
+import org.yammp.fragment.MusicPlaybackFragment;
+import org.yammp.fragment.VideoFragment;
 
 import android.content.Intent;
 import android.media.AudioManager;
@@ -38,7 +41,7 @@ import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
 import com.actionbarsherlock.view.Window;
 
-public class MusicBrowserActivity extends YAMMPActivity implements Constants {
+public class MediaPlayerActivity extends BaseActivity implements Constants {
 
 	private ActionBar mActionBar;
 
@@ -65,7 +68,8 @@ public class MusicBrowserActivity extends YAMMPActivity implements Constants {
 		}
 
 		mAdapter = new PagesAdapter(mActionBar);
-		mAdapter.addPage(MusicBrowserFragment.class, getString(R.string.music_library));
+		mAdapter.addPage(MusicBrowserFragment.class, getString(R.string.label_music));
+		mAdapter.addPage(VideoFragment.class, getString(R.string.label_video));
 		mAdapter.addPage(MusicPlaybackFragment.class, getString(R.string.now_playing));
 
 	}

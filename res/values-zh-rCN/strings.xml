@@ -72,7 +72,9 @@
 	<string name="save_as_playlist">Save as playlist</string>
 	<string name="clear_playlist">Clear playlist</string>
 	<string name="shortcut_label">Music playlist</string>
-	<string name="music_label">音乐</string>
+	<string name="label_music">音乐</string>
+	<string name="label_video">视频</string>
+	<string name="label_media">媒体</string>
 	<string name="playback_failed">Sorry, the player does not support this type of audio file.</string>
 	<string name="remove_from_playlist">Remove from playlist</string>
 	<string name="streamloadingtext">Connecting to <xliff:g id="host">%s</xliff:g></string>

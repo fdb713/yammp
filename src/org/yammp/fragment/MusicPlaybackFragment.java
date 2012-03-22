@@ -18,27 +18,24 @@
  *  along with YAMMP.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yammp.app;
+package org.yammp.fragment;
 
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.MusicPlaybackService;
 import org.yammp.R;
 import org.yammp.YAMMPApplication;
-import org.yammp.util.ColorAnalyser;
 import org.yammp.util.EqualizerWrapper;
 import org.yammp.util.MediaUtils;
 import org.yammp.util.PreferencesEditor;
+import org.yammp.util.ServiceInterface;
+import org.yammp.util.ServiceInterface.MediaStateListener;
 import org.yammp.util.ServiceToken;
 import org.yammp.util.VisualizerCompat;
-import org.yammp.util.VisualizerWrapper;
-import org.yammp.util.VisualizerWrapper.OnDataChangedListener;
 import org.yammp.view.SliderView;
 import org.yammp.view.SliderView.OnValueChangeListener;
-import org.yammp.view.VisualizerViewFftSpectrum;
-import org.yammp.view.VisualizerViewWaveForm;
 import org.yammp.widget.RepeatingImageButton;
-import org.yammp.widget.RepeatingImageButton.RepeatListener;
+import org.yammp.widget.RepeatingImageButton.OnRepeatListener;
 
 import android.app.SearchManager;
 import android.content.ActivityNotFoundException;
@@ -49,7 +46,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -76,7 +72,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageSwitcher;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher.ViewFactory;
 
@@ -85,30 +80,21 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 
-public class MusicPlaybackFragment extends SherlockFragment implements Constants,
-		OnLongClickListener, ServiceConnection {
+public class MusicPlaybackFragment extends SherlockFragment implements Constants, OnClickListener,
+		OnLongClickListener, OnRepeatListener, MediaStateListener {
 
 	private long mStartSeekPos = 0;
 
 	private long mLastSeekEventTime;
 
-	private IMusicPlaybackService mService = null;
-
 	private RepeatingImageButton mPrevButton;
 	private ImageButton mPauseButton;
 	private RepeatingImageButton mNextButton;
 
-	private AsyncColorAnalyser mColorAnalyser;
-	private ServiceToken mToken;
 	private boolean mIntentDeRegistered = false;
 
 	private PreferencesEditor mPrefs;
 
-	private int mUIColor = Color.WHITE;
-	private boolean mAutoColor = true;
-
-	private VisualizerViewFftSpectrum mVisualizerViewFftSpectrum;
-	private VisualizerViewWaveForm mVisualizerViewWaveForm;
 	private boolean mDisplayVisualizer = false;
 	private FrameLayout mVisualizerView;
 
@@ -117,37 +103,6 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 	private static final int RESULT_ALBUMART_DOWNLOADED = 1;
 	private boolean mShowFadeAnimation = false;
 	private boolean mLyricsWakelock = DEFAULT_LYRICS_WAKELOCK;
-
-	private TextView mTrackName, mTrackDetail;
-	private long mPosOverride = -1;
-	private boolean mFromTouch = false;
-	private long mDuration;
-	private boolean paused;
-
-	private static final int REFRESH = 1;
-
-	private TrackFragment mQueueFragment;
-
-	private TextView mCurrentTime, mTotalTime;
-
-	private OnDataChangedListener mDataChangedListener = new OnDataChangedListener() {
-
-		@Override
-		public void onFftDataChanged(byte[] data, int len) {
-			if (mVisualizerViewFftSpectrum != null) {
-				mVisualizerViewFftSpectrum.updateVisualizer(data);
-			}
-		}
-
-		@Override
-		public void onWaveDataChanged(byte[] data, int len, boolean scoop) {
-
-			if (mVisualizerViewWaveForm != null) {
-				mVisualizerViewWaveForm.updateVisualizer(data, scoop);
-			}
-		}
-
-	};
 
 	int mInitialX = -1;
 
@@ -158,49 +113,33 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 	int mViewWidth = 0;
 	boolean mDraggingLabel = false;
 
-	private View.OnClickListener mPauseListener = new View.OnClickListener() {
-
-		@Override
-		public void onClick(View v) {
-
-			doPauseResume();
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()) {
+			case R.id.pause:
+				doPauseResume();
+				break;
+			case R.id.prev:
+				doPrev();
+				break;
+			case R.id.next:
+				doNext();
+				break;
+				
 		}
-	};
-
-	private View.OnClickListener mPrevListener = new View.OnClickListener() {
-
-		@Override
-		public void onClick(View v) {
-			doPrev();
+	}
+	
+	@Override
+	public void onRepeat(View v, long howlong, int repcnt) {
+		switch (v.getId()) {
+			case R.id.prev:
+				scanBackward(repcnt, howlong);
+				break;
+			case R.id.next:
+				scanForward(repcnt, howlong);
+				break;
 		}
-	};
-
-	private View.OnClickListener mNextListener = new View.OnClickListener() {
-
-		@Override
-		public void onClick(View v) {
-
-			doNext();
-		}
-	};
-
-	private RepeatListener mRewListener = new RepeatListener() {
-
-		@Override
-		public void onRepeat(View v, long howlong, int repcnt) {
-
-			scanBackward(repcnt, howlong);
-		}
-	};
-
-	private RepeatListener mFfwdListener = new RepeatListener() {
-
-		@Override
-		public void onRepeat(View v, long howlong, int repcnt) {
-
-			scanForward(repcnt, howlong);
-		}
-	};
+	}
 
 	private final static int DISABLE_VISUALIZER = 0;
 
@@ -222,45 +161,6 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 		}
 	};
 
-	private final Handler mHandler = new Handler() {
-
-		@Override
-		public void handleMessage(Message msg) {
-
-			switch (msg.what) {
-				case REFRESH:
-					long next = refreshNow();
-					queueNextRefresh(next);
-					break;
-
-				default:
-					break;
-			}
-		}
-	};
-
-	private BroadcastReceiver mStatusListener = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-
-			String action = intent.getAction();
-			if (BROADCAST_META_CHANGED.equals(action)) {
-				// redraw the artist/title info and
-				// set new max for progress bar
-				updateTrackInfo(mShowFadeAnimation);
-				// invalidateOptionsMenu();
-				setPauseButtonImage();
-				queueNextRefresh(1);
-			} else if (BROADCAST_PLAYSTATE_CHANGED.equals(action)) {
-				setPauseButtonImage();
-				setVisualizerView();
-			} else if (BROADCAST_FAVORITESTATE_CHANGED.equals(action)) {
-				// invalidateOptionsMenu();
-			}
-		}
-	};
-
 	private BroadcastReceiver mScreenTimeoutListener = new BroadcastReceiver() {
 
 		@Override
@@ -268,26 +168,15 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 			if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
 				if (mIntentDeRegistered) {
-					IntentFilter f = new IntentFilter();
-					f.addAction(BROADCAST_PLAYSTATE_CHANGED);
-					f.addAction(BROADCAST_META_CHANGED);
-					f.addAction(BROADCAST_FAVORITESTATE_CHANGED);
-					getSherlockActivity().registerReceiver(mStatusListener, new IntentFilter(f));
 					mIntentDeRegistered = false;
 				}
-				updateTrackInfo(false);
 				if (mDisplayVisualizer) {
 					enableVisualizer();
 				}
-				long next = refreshNow();
-				queueNextRefresh(next);
 				getSherlockActivity().invalidateOptionsMenu();
 			} else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-				paused = true;
 				disableVisualizer(true);
 				if (!mIntentDeRegistered) {
-					mHandler.removeMessages(REFRESH);
-					getSherlockActivity().unregisterReceiver(mStatusListener);
 					mIntentDeRegistered = true;
 				}
 			}
@@ -296,18 +185,22 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 	private MediaUtils mUtils;
 
-	/** Called when the activity is first created. */
+	private ServiceInterface mInterface;
+
 	@Override
 	public void onActivityCreated(Bundle icicle) {
 
-		super.onActivityCreated(icicle);
 		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
+		mInterface = ((YAMMPApplication) getSherlockActivity().getApplication())
+				.getServiceInterface();
 		mPrefs = new PreferencesEditor(getSherlockActivity());
+		
+		super.onActivityCreated(icicle);
 		setHasOptionsMenu(true);
 		configureActivity();
-
+		mInterface.addMediaStateListener(this);
 	}
-
+	
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 
@@ -405,13 +298,9 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			item.setVisible(EqualizerWrapper.isSupported());
 		}
 		item = menu.findItem(ADD_TO_FAVORITES);
-		try {
-			if (item != null && mService != null) {
-				item.setIcon(mService.isFavorite(mService.getAudioId()) ? R.drawable.ic_menu_star
-						: R.drawable.ic_menu_star_off);
-			}
-		} catch (RemoteException e) {
-			e.printStackTrace();
+		if (item != null && mInterface != null) {
+			item.setIcon(mInterface.isFavorite(mInterface.getAudioId()) ? R.drawable.ic_menu_star
+					: R.drawable.ic_menu_star_off);
 		}
 		super.onPrepareOptionsMenu(menu);
 	}
@@ -421,65 +310,15 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 		super.onResume();
 		if (mIntentDeRegistered) {
-			paused = false;
 		}
 
 		setPauseButtonImage();
 	}
 
 	@Override
-	public void onServiceConnected(ComponentName classname, IBinder obj) {
-
-		mService = IMusicPlaybackService.Stub.asInterface(obj);
-
-		try {
-			updateTrackInfo(false);
-			long next = refreshNow();
-			queueNextRefresh(next);
-			setPauseButtonImage();
-			getSherlockActivity().invalidateOptionsMenu();
-
-			mVisualizer = VisualizerWrapper.getInstance(mService.getAudioSessionId(), 50);
-			mDisplayVisualizer = mPrefs.getBooleanState(KEY_DISPLAY_VISUALIZER, false);
-			boolean mFftEnabled = String.valueOf(VISUALIZER_TYPE_FFT_SPECTRUM).equals(
-					mPrefs.getStringPref(KEY_VISUALIZER_TYPE, "1"));
-			boolean mWaveEnabled = String.valueOf(VISUALIZER_TYPE_WAVE_FORM).equals(
-					mPrefs.getStringPref(KEY_VISUALIZER_TYPE, "1"));
-
-			mVisualizerView.removeAllViews();
-
-			if (mFftEnabled) {
-				mVisualizerView.addView(mVisualizerViewFftSpectrum);
-			}
-			if (mWaveEnabled) {
-				mVisualizerView.addView(mVisualizerViewWaveForm);
-			}
-
-			mVisualizer.setFftEnabled(mFftEnabled);
-			mVisualizer.setWaveFormEnabled(mWaveEnabled);
-			mVisualizer.setOnDataChangedListener(mDataChangedListener);
-
-			setVisualizerView();
-
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	@Override
-	public void onServiceDisconnected(ComponentName classname) {
-		mVisualizer.release();
-		mService = null;
-		getSherlockActivity().finish();
-	}
-
-	@Override
 	public void onStart() {
 
 		super.onStart();
-		paused = false;
-		mToken = mUtils.bindToService(this);
 		loadPreferences();
 
 		if (mLyricsWakelock) {
@@ -501,97 +340,44 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 			e.printStackTrace();
 		}
 
-		IntentFilter f = new IntentFilter();
-		f.addAction(BROADCAST_PLAYSTATE_CHANGED);
-		f.addAction(BROADCAST_META_CHANGED);
-		f.addAction(BROADCAST_FAVORITESTATE_CHANGED);
-		getSherlockActivity().registerReceiver(mStatusListener, new IntentFilter(f));
-
 		IntentFilter s = new IntentFilter();
 		s.addAction(Intent.ACTION_SCREEN_ON);
 		s.addAction(Intent.ACTION_SCREEN_OFF);
 		getSherlockActivity().registerReceiver(mScreenTimeoutListener, new IntentFilter(s));
 
-		long next = refreshNow();
-		queueNextRefresh(next);
 	}
 
 	@Override
 	public void onStop() {
 
-		paused = true;
-		if (!mIntentDeRegistered) {
-			mHandler.removeMessages(REFRESH);
-			getSherlockActivity().unregisterReceiver(mStatusListener);
-		}
 		getSherlockActivity().unregisterReceiver(mScreenTimeoutListener);
 
 		getSherlockActivity().getWindow().clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-		mUtils.unbindFromService(mToken);
-		mService = null;
+		mInterface = null;
 		super.onStop();
 	}
 
 	private void configureActivity() {
 
-		// setContentView(R.layout.music_playback);
-
-		// ActionBar mActionBar = getSupportActionBar();
-
-		// mActionBar.setCustomView(R.layout.actionbar_music_playback);
-		// mActionBar.setDisplayShowCustomEnabled(true);
-		// mActionBar.setDisplayShowTitleEnabled(false);
-
-		// View mCustomView = mActionBar.getCustomView();
-
-		// mTouchPaintView = (TouchPaintView)
-		// mCustomView.findViewById(R.id.touch_paint);
-		// mTouchPaintView.setEventListener(mTouchPaintEventListener);
-
-		// mTrackName = (TextView) mCustomView.findViewById(R.id.track_name);
-		mTrackName = new TextView(getSherlockActivity());
-		// mTrackDetail = (TextView)
-		// mCustomView.findViewById(R.id.track_detail);
-		mTrackDetail = new TextView(getSherlockActivity());
-
-		// mCurrentTime = (TextView)
-		// mCustomView.findViewById(R.id.current_time);
-		mCurrentTime = new TextView(getSherlockActivity());
-		// mTotalTime = (TextView) mCustomView.findViewById(R.id.total_time);
-		mTotalTime = new TextView(getSherlockActivity());
-
-		/*
-		 * mAlbum.setOnClickListener(mQueueListener);
-		 * mAlbum.setOnLongClickListener(mSearchAlbumArtListener);
-		 */
-
 		mPrevButton = (RepeatingImageButton) getView().findViewById(R.id.prev);
-		mPrevButton.setOnClickListener(mPrevListener);
-		mPrevButton.setRepeatListener(mRewListener, 260);
+		mPrevButton.setOnClickListener(this);
+		mPrevButton.setRepeatListener(this, 260);
 
 		mPauseButton = (ImageButton) getView().findViewById(R.id.pause);
 		mPauseButton.requestFocus();
-		mPauseButton.setOnClickListener(mPauseListener);
+		mPauseButton.setOnClickListener(this);
 
 		mNextButton = (RepeatingImageButton) getView().findViewById(R.id.next);
-		mNextButton.setOnClickListener(mNextListener);
-		mNextButton.setRepeatListener(mFfwdListener, 260);
+		mNextButton.setOnClickListener(this);
+		mNextButton.setRepeatListener(this, 260);
 
-		mVisualizerViewFftSpectrum = new VisualizerViewFftSpectrum(getSherlockActivity());
-		mVisualizerViewWaveForm = new VisualizerViewWaveForm(getSherlockActivity());
 		mVisualizerView = (FrameLayout) getView().findViewById(R.id.visualizer_view);
 
 		if (getView().findViewById(R.id.albumart_frame) != null) {
 			getFragmentManager().beginTransaction()
 					.replace(R.id.albumart_frame, new AlbumArtFragment()).commit();
 		}
-
-		mQueueFragment = new TrackFragment();
-		Bundle bundle = new Bundle();
-		bundle.putString(INTENT_KEY_TYPE, MediaStore.Audio.Playlists.CONTENT_TYPE);
-		bundle.putLong(MediaStore.Audio.Playlists._ID, PLAYLIST_QUEUE);
-		mQueueFragment.setArguments(bundle);
 
 		getFragmentManager().beginTransaction()
 				.replace(R.id.playback_frame, new LyricsAndQueueFragment()).commit();
@@ -621,40 +407,30 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 	private void doNext() {
 
-		if (mService == null) return;
-		try {
-			mService.next();
-		} catch (RemoteException ex) {
-		}
+		if (mInterface == null) return;
+		mInterface.next();
 	}
 
 	private void doPauseResume() {
 
-		try {
-			if (mService != null) {
-				if (mService.isPlaying()) {
-					mService.pause();
-				} else {
-					mService.play();
-				}
-				refreshNow();
-				setPauseButtonImage();
+		if (mInterface != null) {
+			if (mInterface.isPlaying()) {
+				mInterface.pause();
+			} else {
+				mInterface.play();
 			}
-		} catch (RemoteException ex) {
+			setPauseButtonImage();
 		}
 	}
 
 	private void doPrev() {
 
-		if (mService == null) return;
-		try {
-			if (mService.position() < 2000) {
-				mService.prev();
-			} else {
-				mService.seek(0);
-				mService.play();
-			}
-		} catch (RemoteException ex) {
+		if (mInterface == null) return;
+		if (mInterface.position() < 2000) {
+			mInterface.prev();
+		} else {
+			mInterface.seek(0);
+			mInterface.play();
 		}
 	}
 
@@ -674,209 +450,86 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 	private void loadPreferences() {
 
 		mLyricsWakelock = mPrefs.getBooleanPref(KEY_LYRICS_WAKELOCK, DEFAULT_LYRICS_WAKELOCK);
-		mAutoColor = mPrefs.getBooleanPref(KEY_AUTO_COLOR, true);
-	}
-
-	private void queueNextRefresh(long delay) {
-
-		if (!paused && !mFromTouch) {
-			Message msg = mHandler.obtainMessage(REFRESH);
-			mHandler.removeMessages(REFRESH);
-			mHandler.sendMessageDelayed(msg, delay);
-		}
-	}
-
-	private long refreshNow() {
-		if (mService == null) return 500;
-		try {
-			long pos = mPosOverride < 0 ? mService.position() : mPosOverride;
-			long remaining = 1000 - pos % 1000;
-			if (pos >= 0 && mDuration > 0) {
-				mCurrentTime.setText(mUtils.makeTimeString(pos / 1000));
-
-				if (mService.isPlaying()) {
-					mCurrentTime.setVisibility(View.VISIBLE);
-				} else {
-					// blink the counter
-					// If the progress bar is still been dragged, then we do not
-					// want to blink the
-					// currentTime. It would cause flickering due to change in
-					// the visibility.
-					if (mFromTouch) {
-						mCurrentTime.setVisibility(View.VISIBLE);
-					} else {
-						int vis = mCurrentTime.getVisibility();
-						mCurrentTime.setVisibility(vis == View.INVISIBLE ? View.VISIBLE
-								: View.INVISIBLE);
-					}
-					remaining = 500;
-				}
-
-				// Normalize our progress along the progress bar's scale
-				// setSupportProgress((int) ((Window.PROGRESS_END -
-				// Window.PROGRESS_START) * pos / mDuration));
-			} else {
-				mCurrentTime.setText("--:--");
-				// setSupportProgress(Window.PROGRESS_END -
-				// Window.PROGRESS_START);
-			}
-			// return the number of milliseconds until the next full second, so
-			// the counter can be updated at just the right time
-			return remaining;
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-		return 500;
 	}
 
 	private void scanBackward(int repcnt, long delta) {
 
-		if (mService == null) return;
-		try {
-			if (repcnt == 0) {
-				mStartSeekPos = mService.position();
-				mLastSeekEventTime = 0;
+		if (mInterface == null) return;
+		if (repcnt == 0) {
+			mStartSeekPos = mInterface.position();
+			mLastSeekEventTime = 0;
+		} else {
+			if (delta < 5000) {
+				// seek at 10x speed for the first 5 seconds
+				delta = delta * 10;
 			} else {
-				if (delta < 5000) {
-					// seek at 10x speed for the first 5 seconds
-					delta = delta * 10;
-				} else {
-					// seek at 40x after that
-					delta = 50000 + (delta - 5000) * 40;
-				}
-				long newpos = mStartSeekPos - delta;
-				if (newpos < 0) {
-					// move to previous track
-					mService.prev();
-					long duration = mService.duration();
-					mStartSeekPos += duration;
-					newpos += duration;
-				}
-				if (delta - mLastSeekEventTime > 250 || repcnt < 0) {
-					mService.seek(newpos);
-					mLastSeekEventTime = delta;
-				}
-				if (repcnt >= 0) {
-					mPosOverride = newpos;
-				} else {
-					mPosOverride = -1;
-				}
-				refreshNow();
+				// seek at 40x after that
+				delta = 50000 + (delta - 5000) * 40;
 			}
-		} catch (RemoteException ex) {
+			long newpos = mStartSeekPos - delta;
+			if (newpos < 0) {
+				// move to previous track
+				mInterface.prev();
+				long duration = mInterface.duration();
+				mStartSeekPos += duration;
+				newpos += duration;
+			}
+			if (delta - mLastSeekEventTime > 250 || repcnt < 0) {
+				mInterface.seek(newpos);
+				mLastSeekEventTime = delta;
+			}
+			if (repcnt >= 0) {
+			} else {
+			}
 		}
 	}
 
 	private void scanForward(int repcnt, long delta) {
 
-		if (mService == null) return;
-		try {
-			if (repcnt == 0) {
-				mStartSeekPos = mService.position();
-				mLastSeekEventTime = 0;
+		if (mInterface == null) return;
+		if (repcnt == 0) {
+			mStartSeekPos = mInterface.position();
+			mLastSeekEventTime = 0;
+		} else {
+			if (delta < 5000) {
+				// seek at 10x speed for the first 5 seconds
+				delta = delta * 10;
 			} else {
-				if (delta < 5000) {
-					// seek at 10x speed for the first 5 seconds
-					delta = delta * 10;
-				} else {
-					// seek at 40x after that
-					delta = 50000 + (delta - 5000) * 40;
-				}
-				long newpos = mStartSeekPos + delta;
-				long duration = mService.duration();
-				if (newpos >= duration) {
-					// move to next track
-					mService.next();
-					mStartSeekPos -= duration; // is OK to go negative
-					newpos -= duration;
-				}
-				if (delta - mLastSeekEventTime > 250 || repcnt < 0) {
-					mService.seek(newpos);
-					mLastSeekEventTime = delta;
-				}
-				if (repcnt >= 0) {
-					mPosOverride = newpos;
-				} else {
-					mPosOverride = -1;
-				}
-				refreshNow();
+				// seek at 40x after that
+				delta = 50000 + (delta - 5000) * 40;
 			}
-		} catch (RemoteException ex) {
+			long newpos = mStartSeekPos + delta;
+			long duration = mInterface.duration();
+			if (newpos >= duration) {
+				// move to next track
+				mInterface.next();
+				mStartSeekPos -= duration; // is OK to go negative
+				newpos -= duration;
+			}
+			if (delta - mLastSeekEventTime > 250 || repcnt < 0) {
+				mInterface.seek(newpos);
+				mLastSeekEventTime = delta;
+			}
+			if (repcnt >= 0) {
+			} else {
+			}
 		}
 	}
 
 	private void setPauseButtonImage() {
 
-		try {
-			if (mService != null && mService.isPlaying()) {
-				mPauseButton.setImageResource(R.drawable.btn_playback_ic_pause);
-			} else {
-				mPauseButton.setImageResource(R.drawable.btn_playback_ic_play);
-			}
-		} catch (RemoteException ex) {
-		}
-	}
-
-	private void setUIColor(int color) {
-
-		// mVisualizerViewFftSpectrum.setColor(color);
-		// mVisualizerViewWaveForm.setColor(color);
-		// mTouchPaintView.setColor(color);
-	}
-
-	private void setVisualizerView() {
-		try {
-			if (mService != null && mService.isPlaying() && mDisplayVisualizer) {
-				enableVisualizer();
-			} else {
-				disableVisualizer(false);
-			}
-		} catch (RemoteException e) {
-			e.printStackTrace();
+		if (mInterface != null) {
+			mPauseButton.setImageResource(mInterface.isPlaying() ? R.drawable.btn_playback_ic_pause
+					: R.drawable.btn_playback_ic_play);
+		} else {
+			
 		}
 	}
 
 	private void toggleFavorite() {
 
-		if (mService == null) return;
-		try {
-			mService.toggleFavorite();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void updateTrackInfo(boolean animation) {
-
-		if (mService == null) {
-			getSherlockActivity().finish();
-			return;
-		}
-		try {
-			mTrackName.setText(mService.getTrackName());
-
-			if (mService.getArtistName() != null
-					&& !MediaStore.UNKNOWN_STRING.equals(mService.getArtistName())) {
-				mTrackDetail.setText(mService.getArtistName());
-			} else if (mService.getAlbumName() != null
-					&& !MediaStore.UNKNOWN_STRING.equals(mService.getAlbumName())) {
-				mTrackDetail.setText(mService.getAlbumName());
-			} else {
-				mTrackDetail.setText(R.string.unknown_artist);
-			}
-
-			if (mColorAnalyser != null) {
-				mColorAnalyser.cancel(true);
-			}
-			mColorAnalyser = new AsyncColorAnalyser();
-			mColorAnalyser.execute();
-
-			mDuration = mService.duration();
-			mTotalTime.setText(mUtils.makeTimeString(mDuration / 1000));
-		} catch (RemoteException e) {
-			e.printStackTrace();
-			// finish();
-		}
+		if (mInterface == null) return;
+		mInterface.toggleFavorite();
 	}
 
 	public static class AlbumArtFragment extends SherlockFragment implements ViewFactory,
@@ -1245,38 +898,39 @@ public class MusicPlaybackFragment extends SherlockFragment implements Constants
 
 		}
 
-		private void setUIColor(int color) {
-			mVolumeSliderRight.setColor(color);
-			mVolumeSliderLeft.setColor(color);
-		}
 	}
 
-	private class AsyncColorAnalyser extends AsyncTask<Void, Void, Integer> {
 
-		@Override
-		protected Integer doInBackground(Void... params) {
+	@Override
+	public void onFavoriteStateChanged() {
+		getSherlockActivity().invalidateOptionsMenu();
+	}
 
-			if (mService != null) {
-				try {
-					if (mAutoColor) {
-						mUIColor = ColorAnalyser.analyse(mUtils.getArtwork(mService.getAudioId(),
-								mService.getAlbumId()));
-					} else {
-						mUIColor = mPrefs.getIntPref(KEY_CUSTOMIZED_COLOR, Color.WHITE);
-					}
-					return mUIColor;
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
-			return Color.WHITE;
-		}
+	@Override
+	public void onMetaChanged() {
+		getSherlockActivity().invalidateOptionsMenu();
+		setPauseButtonImage();
 
-		@Override
-		protected void onPostExecute(Integer result) {
+	}
 
-			setUIColor(mUIColor);
-		}
+	@Override
+	public void onPlayStateChanged() {
+		setPauseButtonImage();
+	}
+
+	@Override
+	public void onQueueChanged() {
+
+	}
+
+	@Override
+	public void onRepeatModeChanged() {
+
+	}
+
+	@Override
+	public void onShuffleModeChanged() {
+
 	}
 
 }

@@ -3,6 +3,7 @@ package org.yammp.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.yammp.BuildConfig;
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.YAMMPApplication;
@@ -16,10 +17,12 @@ import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 
-public class ServiceInterface implements Constants, ServiceConnection {
+public class ServiceInterface implements Constants {
 
 	private IMusicPlaybackService mService;
+	private Context mContext;
 
 	private BroadcastReceiver mMediaStatusReceiver = new BroadcastReceiver() {
 
@@ -36,7 +39,7 @@ public class ServiceInterface implements Constants, ServiceConnection {
 				}
 			} else if (BROADCAST_FAVORITESTATE_CHANGED.equals(action)) {
 				for (MediaStateListener listener : mListeners) {
-					listener.onPlayStateChanged();
+					listener.onFavoriteStateChanged();
 				}
 			} else if (BROADCAST_SHUFFLEMODE_CHANGED.equals(action)) {
 				for (MediaStateListener listener : mListeners) {
@@ -59,19 +62,23 @@ public class ServiceInterface implements Constants, ServiceConnection {
 	private List<MediaStateListener> mListeners = new ArrayList<MediaStateListener>();
 
 	public ServiceInterface(Context context) {
-		((YAMMPApplication) context.getApplicationContext()).getMediaUtils().bindToService(this);
-		IntentFilter filter = new IntentFilter();
-		filter.addAction(BROADCAST_PLAYSTATE_CHANGED);
-		filter.addAction(BROADCAST_META_CHANGED);
-		filter.addAction(BROADCAST_FAVORITESTATE_CHANGED);
-		filter.addAction(BROADCAST_SHUFFLEMODE_CHANGED);
-		filter.addAction(BROADCAST_REPEATMODE_CHANGED);
-		filter.addAction(BROADCAST_QUEUE_CHANGED);
-		context.registerReceiver(mMediaStatusReceiver, filter);
+		((YAMMPApplication) context.getApplicationContext()).getMediaUtils().bindToService(
+				mConntecion);
+		mContext = context;
+
 	}
 
 	public void addMediaStateListener(MediaStateListener listener) {
-		mListeners.add(listener);
+		if (listener != null) {
+			mListeners.add(listener);
+			listener.onFavoriteStateChanged();
+			listener.onMetaChanged();
+			listener.onPlayStateChanged();
+			listener.onQueueChanged();
+			listener.onRepeatModeChanged();
+			listener.onShuffleModeChanged();
+		}
+
 	}
 
 	public void addToFavorites(long id) {
@@ -518,15 +525,26 @@ public class ServiceInterface implements Constants, ServiceConnection {
 		}
 	}
 
-	@Override
-	public void onServiceConnected(ComponentName service, IBinder obj) {
-		mService = IMusicPlaybackService.Stub.asInterface(obj);
-	}
+	private ServiceConnection mConntecion = new ServiceConnection() {
 
-	@Override
-	public void onServiceDisconnected(ComponentName service) {
-		mService = null;
-	}
+		@Override
+		public void onServiceConnected(ComponentName service, IBinder obj) {
+			mService = IMusicPlaybackService.Stub.asInterface(obj);
+			IntentFilter filter = new IntentFilter();
+			filter.addAction(BROADCAST_PLAYSTATE_CHANGED);
+			filter.addAction(BROADCAST_META_CHANGED);
+			filter.addAction(BROADCAST_FAVORITESTATE_CHANGED);
+			filter.addAction(BROADCAST_SHUFFLEMODE_CHANGED);
+			filter.addAction(BROADCAST_REPEATMODE_CHANGED);
+			filter.addAction(BROADCAST_QUEUE_CHANGED);
+			mContext.registerReceiver(mMediaStatusReceiver, filter);
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName service) {
+			mService = null;
+		}
+	};
 
 	public void open(long[] list, int position) {
 		if (mService == null) return;
@@ -640,7 +658,9 @@ public class ServiceInterface implements Constants, ServiceConnection {
 	}
 
 	public void removeMediaStateListener(MediaStateListener listener) {
-		mListeners.remove(listener);
+		if (listener != null) {
+			mListeners.remove(listener);
+		}
 	}
 
 	public int removeTrack(long id) {

@@ -18,7 +18,7 @@ import android.widget.ViewSwitcher.ViewFactory;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 
-public class YAMMPActivity extends SherlockFragmentActivity implements ViewFactory {
+public class BaseActivity extends SherlockFragmentActivity implements ViewFactory {
 
 	private AsyncBackgroundEffect mBackgroundEffectTask;
 	private ImageSwitcher mBackground;
@@ -40,7 +40,6 @@ public class YAMMPActivity extends SherlockFragmentActivity implements ViewFacto
 	}
 
 	public void setBackground(long song_id, long album_id) {
-		// if (true) return;
 		if (mBackgroundEffectTask != null) {
 			mBackgroundEffectTask.cancel(true);
 		}

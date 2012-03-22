@@ -18,10 +18,11 @@
  *  along with YAMMP.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yammp.app;
+package org.yammp.fragment;
 
 import org.yammp.Constants;
 import org.yammp.R;
+import org.yammp.app.TrackBrowserActivity;
 import org.yammp.widget.SeparatedListAdapter;
 
 import android.content.Context;

@@ -18,13 +18,16 @@
  *  along with YAMMP.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yammp.app;
+package org.yammp.fragment;
 
 import java.io.File;
 
 import org.yammp.Constants;
 import org.yammp.R;
 import org.yammp.YAMMPApplication;
+import org.yammp.app.BaseActivity;
+import org.yammp.app.MediaPlayerActivity;
+import org.yammp.app.TrackBrowserActivity;
 import org.yammp.dialog.DeleteDialogFragment;
 import org.yammp.util.LazyImageLoader;
 import org.yammp.util.MediaUtils;
@@ -177,7 +180,7 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 
 		mCurrentAlbumName = mCursor.getString(mAlbumIdx);
 		if (mCurrentAlbumName != null && !MediaStore.UNKNOWN_STRING.equals(mCurrentAlbumName)) {
-			menu.add(hashCode(), SEARCH, 0, R.string.play_selection);
+			menu.add(hashCode(), SEARCH, 0, android.R.string.search_go);
 			menu.setHeaderTitle(mCurrentAlbumName);
 		} else {
 			menu.setHeaderTitle(R.string.unknown_album);
@@ -207,7 +210,7 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 
 	@Override
 	public void onItemSelected(AdapterView<?> adapter, View view, int position, long id) {
-		((MusicBrowserActivity) getSherlockActivity()).setBackground(0, id);
+		((MediaPlayerActivity) getSherlockActivity()).setBackground(0, id);
 
 	}
 
@@ -253,7 +256,7 @@ public class AlbumFragment extends SherlockFragment implements Constants, OnItem
 			int totalItemCount) {
 		if (mScrollState == OnScrollListener.SCROLL_STATE_FLING) {
 			long item_id = view.getItemIdAtPosition(firstVisibleItem);
-			((YAMMPActivity) getSherlockActivity()).setBackground(0, item_id);
+			((BaseActivity) getSherlockActivity()).setBackground(0, item_id);
 		}
 
 	}
