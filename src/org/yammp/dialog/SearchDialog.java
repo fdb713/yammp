@@ -20,10 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 
-import org.xmlpull.v1.XmlPullParserException;
 import org.yammp.Constants;
 import org.yammp.R;
 import org.yammp.YAMMPApplication;
@@ -471,15 +468,15 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 		@Override
 		protected Void doInBackground(String... params) {
 
-			try {
-				mDownloader.download(Integer.valueOf(params[0]), params[1]);
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			// try {
+			// mDownloader.download(Integer.valueOf(params[0]), params[1]);
+			// } catch (NumberFormatException e) {
+			// e.printStackTrace();
+			// } catch (MalformedURLException e) {
+			// e.printStackTrace();
+			// } catch (IOException e) {
+			// e.printStackTrace();
+			// }
 			return null;
 		}
 
@@ -569,15 +566,15 @@ public class SearchDialog extends Activity implements Constants, TextWatcher, On
 		protected String[] doInBackground(String... params) {
 
 			mPath = params[2];
-			try {
-				return mDownloader.search(params[0], params[1]);
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			} catch (XmlPullParserException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			// try {
+			// return mDownloader.search(params[0], params[1]);
+			// } catch (UnsupportedEncodingException e) {
+			// e.printStackTrace();
+			// } catch (XmlPullParserException e) {
+			// e.printStackTrace();
+			// } catch (IOException e) {
+			// e.printStackTrace();
+			// }
 			return null;
 		}
 

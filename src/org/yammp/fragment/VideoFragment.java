@@ -1,16 +1,15 @@
 package org.yammp.fragment;
 
-import com.actionbarsherlock.app.SherlockListFragment;
-
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.provider.MediaStore.Video;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+
+import com.actionbarsherlock.app.SherlockListFragment;
 
 public class VideoFragment extends SherlockListFragment implements LoaderCallbacks<Cursor> {
 
@@ -23,8 +22,8 @@ public class VideoFragment extends SherlockListFragment implements LoaderCallbac
 		setHasOptionsMenu(true);
 
 		mAdapter = new SimpleCursorAdapter(getSherlockActivity(),
-				android.R.layout.simple_list_item_1, null,
-				new String[] { Video.Media.TITLE }, new int[] { android.R.id.text1 }, 0);
+				android.R.layout.simple_list_item_1, null, new String[] { Video.Media.TITLE },
+				new int[] { android.R.id.text1 }, 0);
 
 		setListAdapter(mAdapter);
 
@@ -42,14 +41,14 @@ public class VideoFragment extends SherlockListFragment implements LoaderCallbac
 	}
 
 	@Override
-	public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-		mAdapter.changeCursor(cursor);
+	public void onLoaderReset(Loader<Cursor> loader) {
+		mAdapter.changeCursor(null);
 
 	}
 
 	@Override
-	public void onLoaderReset(Loader<Cursor> loader) {
-		mAdapter.changeCursor(null);
+	public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+		mAdapter.changeCursor(cursor);
 
 	}
 

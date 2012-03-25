@@ -78,6 +78,7 @@
 	<string name="label_music">Music</string>
 	<string name="label_video">Video</string>
 	<string name="label_media">Media</string>
+	<string name="loading_video">Loading video.</string>
 	<string name="playback_failed">Sorry, the player does not support this type of audio file.</string>
 	<string name="remove_from_playlist">Remove from playlist</string>
 	<string name="streamloadingtext">Connecting to <xliff:g id="host">%s</xliff:g></string>

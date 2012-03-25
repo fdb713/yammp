@@ -21,60 +21,44 @@
 package org.yammp.fragment;
 
 import org.yammp.Constants;
-import org.yammp.IMusicPlaybackService;
 import org.yammp.R;
 import org.yammp.YAMMPApplication;
-import org.yammp.util.MediaUtils;
-import org.yammp.util.ServiceToken;
+import org.yammp.util.ServiceInterface;
+import org.yammp.util.ServiceInterface.LyricsStateListener;
 import org.yammp.widget.TextScrollView;
 import org.yammp.widget.TextScrollView.OnLineSelectedListener;
 
-import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.RemoteException;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
+import android.support.v4.app.FragmentManager.OnBackStackChangedListener;
+import android.support.v4.app.FragmentTransaction;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnLongClickListener;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.TextView;
+import android.widget.Button;
+import android.widget.LinearLayout;
 
 import com.actionbarsherlock.app.SherlockFragment;
 
 public class LyricsFragment extends SherlockFragment implements Constants, OnLineSelectedListener,
-		OnLongClickListener, ServiceConnection {
+		OnClickListener, OnBackStackChangedListener, LyricsStateListener {
 
-	private IMusicPlaybackService mService = null;
-	private ServiceToken mToken;
-
+	private ServiceInterface mInterface = null;
+	private final static String SEARCH_LYRICS = "search_lyrics";
 	// for lyrics displaying
 	private TextScrollView mLyricsScrollView;
-	private TextView mLyricsInfoMessage;
+	private Button mLyricsEmptyView;
+	private LinearLayout mLyricsSearchLayout;
 	private boolean mIntentDeRegistered = false;
-	private MediaUtils mUtils;
-
-	private BroadcastReceiver mStatusListener = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			String action = intent.getAction();
-			if (BROADCAST_NEW_LYRICS_LOADED.equals(action)) {
-				loadLyricsToView();
-			} else if (BROADCAST_LYRICS_REFRESHED.equals(action)) {
-				scrollLyrics(false);
-			}
-		}
-
-	};
+	private LyricsSearchFragment mSearchFragment;
+	private boolean mSearchShowed = false;
 
 	private BroadcastReceiver mScreenTimeoutListener = new BroadcastReceiver() {
 
@@ -83,17 +67,12 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 
 			if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
 				if (mIntentDeRegistered) {
-					IntentFilter f = new IntentFilter();
-					f.addAction(BROADCAST_NEW_LYRICS_LOADED);
-					f.addAction(BROADCAST_LYRICS_REFRESHED);
-					getActivity().registerReceiver(mStatusListener, new IntentFilter(f));
 					mIntentDeRegistered = false;
 				}
 				loadLyricsToView();
 				scrollLyrics(true);
 			} else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
 				if (!mIntentDeRegistered) {
-					getActivity().unregisterReceiver(mStatusListener);
 					mIntentDeRegistered = true;
 				}
 			}
@@ -102,15 +81,41 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
+		mInterface = ((YAMMPApplication) getSherlockActivity().getApplication())
+				.getServiceInterface();
 		super.onActivityCreated(savedInstanceState);
-		mUtils = ((YAMMPApplication) getSherlockActivity().getApplication()).getMediaUtils();
-		View fragmentView = getView();
-		mLyricsScrollView = (TextScrollView) fragmentView.findViewById(R.id.lyrics_scroll);
+		mSearchFragment = new LyricsSearchFragment();
+		getFragmentManager().addOnBackStackChangedListener(this);
+		View view = getView();
+		mLyricsScrollView = (TextScrollView) view.findViewById(R.id.lyrics_scroll);
 		mLyricsScrollView.setContentGravity(Gravity.CENTER_HORIZONTAL);
+		mLyricsScrollView.setLineSelectedListener(this);
+		mLyricsEmptyView = (Button) view.findViewById(R.id.lyrics_empty);
+		mLyricsEmptyView.setOnClickListener(this);
+		mLyricsSearchLayout = (LinearLayout) view.findViewById(R.id.search_lyrics);
+		mInterface.addLyricsStateListener(this);
+	}
 
-		mLyricsInfoMessage = (TextView) fragmentView.findViewById(R.id.message);
-		mLyricsInfoMessage.setOnLongClickListener(this);
+	@Override
+	public void onBackStackChanged() {
+		if (mSearchFragment != null) {
+			boolean search_showed = mSearchFragment.isAdded();
+			mSearchShowed = search_showed;
+			mLyricsSearchLayout.setVisibility(search_showed ? View.VISIBLE : View.GONE);
+			if (mInterface != null) {
+				boolean lyrics_status_ok = mInterface.getLyricsStatus() == LYRICS_STATUS_OK;
+				mLyricsEmptyView.setVisibility(search_showed || lyrics_status_ok ? View.GONE
+						: View.VISIBLE);
+				mLyricsScrollView.setVisibility(search_showed || !lyrics_status_ok ? View.GONE
+						: View.VISIBLE);
+			}
 
+		}
+	}
+
+	@Override
+	public void onClick(View v) {
+		searchLyrics();
 	}
 
 	@Override
@@ -120,49 +125,27 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 
 	@Override
 	public void onLineSelected(int id) {
-
-		try {
-			mService.seek(mService.getPositionByLyricsId(id));
-		} catch (RemoteException e) {
-			e.printStackTrace();
+		if (mInterface != null) {
+			mInterface.seek(mInterface.getPositionByLyricsId(id));
 		}
 
 	}
 
 	@Override
-	public boolean onLongClick(View v) {
+	public void onLyricsRefreshed() {
+		scrollLyrics(false);
 
-		searchLyrics();
-		return true;
 	}
 
 	@Override
-	public void onServiceConnected(ComponentName classname, IBinder obj) {
-		mService = IMusicPlaybackService.Stub.asInterface(obj);
-		try {
-			if (mService.getAudioId() >= 0 || mService.isPlaying() || mService.getPath() != null) {
-				loadLyricsToView();
-				scrollLyrics(true);
-			} else {
-				getActivity().finish();
-			}
+	public void onNewLyricsLoaded() {
+		loadLyricsToView();
 
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void onServiceDisconnected(ComponentName paramComponentName) {
-		mService = null;
-		getActivity().finish();
 	}
 
 	@Override
 	public void onStart() {
 		super.onStart();
-		mToken = mUtils.bindToService(this);
-		mLyricsScrollView.setLineSelectedListener(this);
 
 		try {
 			float mWindowAnimation = Settings.System.getFloat(getActivity().getContentResolver(),
@@ -173,11 +156,6 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 			e.printStackTrace();
 		}
 
-		IntentFilter lyricsstatusfilter = new IntentFilter();
-		lyricsstatusfilter.addAction(BROADCAST_NEW_LYRICS_LOADED);
-		lyricsstatusfilter.addAction(BROADCAST_LYRICS_REFRESHED);
-		getActivity().registerReceiver(mStatusListener, lyricsstatusfilter);
-
 		IntentFilter screenstatusfilter = new IntentFilter();
 		screenstatusfilter.addAction(Intent.ACTION_SCREEN_ON);
 		screenstatusfilter.addAction(Intent.ACTION_SCREEN_OFF);
@@ -187,66 +165,49 @@ public class LyricsFragment extends SherlockFragment implements Constants, OnLin
 	@Override
 	public void onStop() {
 
-		if (!mIntentDeRegistered) {
-			getActivity().unregisterReceiver(mStatusListener);
-		}
 		getActivity().unregisterReceiver(mScreenTimeoutListener);
 
-		mUtils.unbindFromService(mToken);
-		mService = null;
 		super.onStop();
 	}
 
 	// TODO lyrics load animation
 	private void loadLyricsToView() {
 
-		if (mLyricsScrollView == null || mService == null) return;
+		if (mLyricsScrollView == null || mInterface == null) return;
 
-		try {
-			mLyricsScrollView.setTextContent(mService.getLyrics());
-
-			if (mService.getLyricsStatus() == LYRICS_STATUS_OK) {
+		mLyricsScrollView.setTextContent(mInterface.getLyrics());
+		if (!mSearchShowed) {
+			if (mInterface.getLyricsStatus() == LYRICS_STATUS_OK) {
+				mLyricsScrollView.setVisibility(View.VISIBLE);
+				mLyricsEmptyView.setVisibility(View.GONE);
 			} else {
+				mLyricsScrollView.setVisibility(View.GONE);
+				mLyricsEmptyView.setVisibility(View.VISIBLE);
 			}
-
-		} catch (RemoteException e) {
-			e.printStackTrace();
 		}
 	}
 
 	private void scrollLyrics(boolean force) {
-		if (mService == null) return;
-		try {
-			if (mLyricsScrollView == null) return;
-			mLyricsScrollView.setCurrentLine(mService.getCurrentLyricsId(), force);
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
+		if (mInterface == null) return;
+		if (mLyricsScrollView == null) return;
+		mLyricsScrollView.setCurrentLine(mInterface.getCurrentLyricsId(), force);
 	}
 
 	private void searchLyrics() {
 
-		String artistName = "";
-		String trackName = "";
-		String mediaPath = "";
-		String lyricsPath = "";
-		try {
-			artistName = mService.getArtistName();
-			trackName = mService.getTrackName();
-			mediaPath = mService.getMediaPath();
-			lyricsPath = mediaPath.substring(0, mediaPath.lastIndexOf(".")) + ".lrc";
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		try {
-			Intent intent = new Intent(INTENT_SEARCH_LYRICS);
-			intent.putExtra(INTENT_KEY_ARTIST, artistName);
-			intent.putExtra(INTENT_KEY_TRACK, trackName);
-			intent.putExtra(INTENT_KEY_PATH, lyricsPath);
-			startActivity(intent);
-		} catch (ActivityNotFoundException e) {
-			// e.printStackTrace();
-		}
+		if (mInterface == null) return;
+		FragmentTransaction ft = getFragmentManager().beginTransaction();
+		ft.setTransitionStyle(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+		Bundle args = new Bundle();
+		args.putString(INTENT_KEY_TRACK, mInterface.getTrackName());
+		args.putString(INTENT_KEY_ARTIST, mInterface.getArtistName());
+		String media_path = mInterface.getMediaPath();
+		String lyrics_path = media_path.substring(0, media_path.lastIndexOf(".")) + ".lrc";
+		args.putString(INTENT_KEY_PATH, lyrics_path);
+		mSearchFragment.setArguments(args);
+		ft.replace(R.id.search_lyrics, mSearchFragment);
+		ft.addToBackStack(SEARCH_LYRICS);
+		ft.commit();
 	}
 
 }

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<ListView
+		android:id="@+id/android:list"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"/>
+
+	<RelativeLayout
+		android:id="@android:id/empty"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center">
+
+		<TextView
+			android:id="@+id/label_artist_name"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_alignParentLeft="true"
+			android:layout_alignParentTop="true"
+			android:text="@string/artist"/>
+
+		<EditText
+			android:id="@+id/artist_name"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_alignParentLeft="true"
+			android:layout_below="@+id/label_artist_name"
+			android:inputType="text"
+			android:singleLine="true"/>
+
+		<TextView
+			android:id="@+id/label_track_name"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_alignParentLeft="true"
+			android:layout_below="@+id/artist_name"
+			android:text="@string/track"/>
+
+		<EditText
+			android:id="@+id/track_name"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_alignParentLeft="true"
+			android:layout_below="@+id/label_track_name"
+			android:inputType="text"
+			android:singleLine="true"/>
+
+		<Button
+			android:id="@+id/search"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_below="@+id/track_name"
+			android:layout_centerHorizontal="true"
+			android:text="@android:string/search_go"/>
+
+		<FrameLayout
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_alignBottom="@+id/search"
+			android:layout_alignTop="@+id/search"
+			android:layout_toRightOf="@+id/search">
+
+			<ProgressBar
+				android:id="@+id/progress"
+				style="?android:attr/progressBarStyleSmall"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center"
+				android:visibility="gone"/>
+		</FrameLayout>
+	</RelativeLayout>
+
+</FrameLayout>

@@ -26,10 +26,15 @@
 		android:layout_weight="1"
 		android:orientation="horizontal">
 
-		<FrameLayout
-			android:id="@+id/albumart_frame"
+		<ImageSwitcher
+			android:id="@+id/album_art"
 			android:layout_width="@dimen/album_art_width"
-			android:layout_height="match_parent"/>
+			android:layout_height="@dimen/album_art_height"
+			android:layout_gravity="center"
+			android:adjustViewBounds="true"
+			android:background="@drawable/image_shadow"
+			android:inAnimation="@android:anim/fade_in"
+			android:outAnimation="@android:anim/fade_out"/>
 
 		<FrameLayout
 			android:layout_width="match_parent"
@@ -45,8 +50,8 @@
 				<include layout="@layout/visualizer_view"/>
 			</LinearLayout>
 
-			<android.support.v4.view.ViewPager
-				android:id="@+id/playback_frame"
+			<FrameLayout
+				android:id="@+id/playback_info_lyrics"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"/>
 		</FrameLayout>

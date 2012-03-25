@@ -574,7 +574,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 				startActivity(intent);
 				finish();
 				break;
-			case ADD_TO_FAVORITES:
+			case MENU_ADD_TO_FAVORITES:
 				toggleFavorite();
 				break;
 		}
@@ -588,7 +588,7 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		if (item != null) {
 			item.setVisible(EqualizerWrapper.isSupported());
 		}
-		item = menu.findItem(ADD_TO_FAVORITES);
+		item = menu.findItem(MENU_ADD_TO_FAVORITES);
 		try {
 			if (item != null && mService != null) {
 				item.setIcon(mService.isFavorite(mService.getAudioId()) ? R.drawable.ic_menu_star
@@ -780,14 +780,6 @@ public class MusicPlaybackActivity extends SherlockFragmentActivity implements C
 		mVisualizerViewFftSpectrum = new VisualizerViewFftSpectrum(this);
 		mVisualizerViewWaveForm = new VisualizerViewWaveForm(this);
 		mVisualizerView = (FrameLayout) findViewById(R.id.visualizer_view);
-
-		if (findViewById(R.id.albumart_frame) != null) {
-			getSupportFragmentManager().beginTransaction()
-					.replace(R.id.albumart_frame, new AlbumArtFragment()).commit();
-		}
-
-		getSupportFragmentManager().beginTransaction()
-				.replace(R.id.playback_frame, new LyricsAndQueueFragment()).commit();
 
 	}
 

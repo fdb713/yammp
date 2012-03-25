@@ -2,6 +2,8 @@
 <resources>
 
 	<item name="open_url" type="id"/>
+	<item name="toggle_shuffle" type="id"/>
+	<item name="toggle_repeat" type="id"/>
 	<item name="add_to_playlist" type="id"/>
 	<item name="sleep_timer" type="id"/>
 	<item name="save_as_playlist" type="id"/>

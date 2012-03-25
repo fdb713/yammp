@@ -1,12 +1,12 @@
 package org.yammp.widget;
 
-import org.yammp.R;
 import org.yammp.util.LyricsSplitter;
 
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -28,8 +28,7 @@ public class TextScrollView extends ScrollView implements OnLongClickListener {
 	private static final String ATTR_SHADOWDY = "shadowDy";
 	private static final String ATTR_SHADOWRADIUS = "shadowRadius";
 
-	private LinearLayout mScrollContainer;
-	private LinearLayout mContentContainer, mContentEmptyView;
+	private LinearLayout mContentContainer;
 	private boolean mSmoothScrolling = false;
 	private boolean mEnableAutoScrolling = true;
 	private int mTextColor = Color.WHITE, mShadowColor = Color.BLACK;
@@ -105,12 +104,10 @@ public class TextScrollView extends ScrollView implements OnLongClickListener {
 	}
 
 	@Override
-	public void onSizeChanged(int width, int height, int old_width, int old_height) {
-
-		mContentEmptyView.setLayoutParams(new LinearLayout.LayoutParams(width, height));
-		mContentContainer.setLayoutParams(new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-		mContentContainer.setPadding(0, height / 2, 0, height / 2);
+	public void onSizeChanged(int w, int h, int oldw, int oldh) {
+		super.onSizeChanged(w, h, oldw, oldh);
+		setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+		mContentContainer.setPadding(0, h / 2, 0, h / 2);
 	}
 
 	@Override
@@ -189,16 +186,6 @@ public class TextScrollView extends ScrollView implements OnLongClickListener {
 		mContent = content;
 		mLastLineId = -1;
 		mContentContainer.removeAllViews();
-		System.gc();
-
-		if (content == null || content.length == 0) {
-			mContentContainer.setVisibility(View.GONE);
-			mContentEmptyView.setVisibility(View.VISIBLE);
-			return;
-		}
-
-		mContentContainer.setVisibility(View.VISIBLE);
-		mContentEmptyView.setVisibility(View.GONE);
 
 		int content_id = 0;
 
@@ -238,22 +225,14 @@ public class TextScrollView extends ScrollView implements OnLongClickListener {
 
 		mContext = context;
 
+		ViewCompat.setOverScrollMode(this, ViewCompat.OVER_SCROLL_NEVER);
 		setVerticalScrollBarEnabled(false);
-		mScrollContainer = new LinearLayout(context);
-		mScrollContainer.setOrientation(LinearLayout.VERTICAL);
-		addView(mScrollContainer, new LayoutParams(LayoutParams.MATCH_PARENT,
-				LayoutParams.MATCH_PARENT));
 
 		mContentContainer = new LinearLayout(context);
 		mContentContainer.setOrientation(LinearLayout.VERTICAL);
 		mContentContainer.setPadding(0, getHeight() / 2, 0, getHeight() / 2);
-		mScrollContainer.addView(mContentContainer, new LayoutParams(LayoutParams.MATCH_PARENT,
-				LayoutParams.WRAP_CONTENT));
-
-		mContentEmptyView = (LinearLayout) inflate(context, R.layout.content_empty_view, null);
-		mContentEmptyView.setLayoutParams(new LayoutParams(getWidth(), getHeight()));
-		mScrollContainer.addView(mContentEmptyView, new LayoutParams(LayoutParams.MATCH_PARENT,
-				LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+		addView(mContentContainer, new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 	}
 
 	private float parseTextSize(String value) {

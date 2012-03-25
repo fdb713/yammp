@@ -44,15 +44,7 @@ public class LyricsDownloader {
 
 	private final static String UTF_8 = "utf-8";
 
-	private List<Integer> mIdList = new ArrayList<Integer>();
-
-	private List<String> mVerifyCodeList = new ArrayList<String>();
-
 	public OnProgressChangeListener mListener;
-
-	public LyricsDownloader() {
-
-	}
 
 	/**
 	 * Download lyrics from server
@@ -62,9 +54,10 @@ public class LyricsDownloader {
 	 * @param file
 	 *            Destination file.
 	 */
-	public void download(int id, File file) throws MalformedURLException, IOException {
+	public void download(int id, String verify_code, File file) throws MalformedURLException,
+			IOException {
 
-		String url_string = urlDownload(mIdList.get(id), mVerifyCodeList.get(id));
+		String url_string = getDownloadUrl(id, verify_code);
 
 		URL url = new URL(url_string);
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -95,14 +88,10 @@ public class LyricsDownloader {
 	 * @param file
 	 *            Destination file path.
 	 */
-	public void download(int id, String path) throws MalformedURLException, IOException {
+	public void download(int id, String verify_code, String path) throws MalformedURLException,
+			IOException {
 
-		download(id, new File(path));
-	}
-
-	public void removeOnProgressChangeListener(OnProgressChangeListener listener) {
-
-		mListener = null;
+		download(id, verify_code, new File(path));
 	}
 
 	/**
@@ -115,10 +104,10 @@ public class LyricsDownloader {
 	 * @param track
 	 *            The name of sound track.
 	 */
-	public String[] search(String artist, String track) throws UnsupportedEncodingException,
-			XmlPullParserException, IOException {
+	public SearchResultItem[] search(String track, String artist)
+			throws UnsupportedEncodingException, XmlPullParserException, IOException {
 
-		String url = urlSearch(encode(artist), encode(track));
+		String url = getSearchUrl(encode(artist), encode(track));
 		return parseResult(get(url, UTF_8));
 	}
 
@@ -184,17 +173,14 @@ public class LyricsDownloader {
 		return builder.toString();
 	}
 
-	private String[] parseResult(String xml) throws XmlPullParserException, IOException {
+	private SearchResultItem[] parseResult(String xml) throws XmlPullParserException, IOException {
 
-		if (xml == null || "".equals(xml)) return new String[] {};
+		if (xml == null || "".equals(xml)) return new SearchResultItem[] {};
 
-		mIdList = new ArrayList<Integer>();
-		mVerifyCodeList = new ArrayList<String>();
-		List<String> mNameList = new ArrayList<String>();
-		String TAG_RESULT = "result", TAG_LRC = "lrc";
-		String ATTR_ID = "id", ATTR_ARTIST = "artist", ATTR_TITLE = "title";
-		String verify_code = "", name = "";
-		int id = 0;
+		List<SearchResultItem> mItemList = new ArrayList<SearchResultItem>();
+		final String TAG_RESULT = "result", TAG_LRC = "lrc";
+		final String ATTR_ID = "id", ATTR_ARTIST = "artist", ATTR_TITLE = "title";
+		SearchResultItem item = null;
 
 		XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 		factory.setNamespaceAware(true);
@@ -216,7 +202,7 @@ public class LyricsDownloader {
 					eventType = parser.next();
 					break;
 				}
-				throw new RuntimeException("Expecting result, got " + tagName);
+				throw new RuntimeException("Expecting " + TAG_RESULT + " , got " + tagName);
 			}
 			eventType = parser.next();
 		} while (eventType != XmlPullParser.END_DOCUMENT);
@@ -233,11 +219,12 @@ public class LyricsDownloader {
 						String artist = parser
 								.getAttributeValue(parser.getNamespace(), ATTR_ARTIST);
 						String title = parser.getAttributeValue(parser.getNamespace(), ATTR_TITLE);
-						id = Integer.valueOf(parser.getAttributeValue(parser.getNamespace(),
+						int id = Integer.valueOf(parser.getAttributeValue(parser.getNamespace(),
 								ATTR_ID));
 
-						name = artist + "\n" + title;
-						verify_code = verify(artist, title, id);
+						String verify_code = verify(artist, title, id);
+						item = new SearchResultItem(title, artist, id, verify_code);
+
 					} else {
 						lookingForEndOfUnknownTag = true;
 						unknownTagName = tagName;
@@ -249,9 +236,9 @@ public class LyricsDownloader {
 						lookingForEndOfUnknownTag = false;
 						unknownTagName = null;
 					} else if (TAG_LRC.equals(tagName)) {
-						mNameList.add(name);
-						mIdList.add(id);
-						mVerifyCodeList.add(verify_code);
+						if (item != null) {
+							mItemList.add(item);
+						}
 					} else if (TAG_RESULT.equals(tagName)) {
 						reachedEndOfResult = true;
 					}
@@ -259,81 +246,88 @@ public class LyricsDownloader {
 			}
 			eventType = parser.next();
 		}
-		return mNameList.toArray(new String[mNameList.size()]);
+		return mItemList.toArray(new SearchResultItem[mItemList.size()]);
 	}
 
 	private String verify(String artist, String track, int id) {
 
+		if (artist == null) {
+			artist = "";
+		}
+		if (track == null) throw new IllegalArgumentException("Track name cannot be null!");
+		byte[] bytes;
 		try {
-			byte[] bytes = (artist + track).getBytes(UTF_8);
-			int[] song = new int[bytes.length];
-			for (int i = 0; i < bytes.length; i++) {
-				song[i] = bytes[i] & 0xff;
-			}
-			int intVal1 = 0, intVal2 = 0, intVal3 = 0;
-			intVal1 = (id & 0xFF00) >> 8;
-			if ((id & 0xFF0000) == 0) {
-				intVal3 = 0xFF & ~intVal1;
-			} else {
-				intVal3 = 0xFF & (id & 0x00FF0000) >> 16;
-			}
-
-			intVal3 = intVal3 | (0xFF & id) << 8;
-			intVal3 = intVal3 << 8;
-			intVal3 = intVal3 | 0xFF & intVal1;
-			intVal3 = intVal3 << 8;
-
-			if ((id & 0xFF000000) == 0) {
-				intVal3 = intVal3 | 0xFF & ~id;
-			} else {
-				intVal3 = intVal3 | 0xFF & id >> 24;
-			}
-
-			int uBound = bytes.length - 1;
-			while (uBound >= 0) {
-				int c = song[uBound];
-				if (c >= 0x80) {
-					c = c - 0x100;
-				}
-				intVal1 = c + intVal2;
-				intVal2 = intVal2 << uBound % 2 + 4;
-				intVal2 = intVal1 + intVal2;
-				uBound -= 1;
-			}
-
-			uBound = 0;
-			intVal1 = 0;
-
-			while (uBound <= bytes.length - 1) {
-				int c = song[uBound];
-				if (c >= 128) {
-					c -= 256;
-				}
-				int intVal4 = c + intVal1;
-				intVal1 = intVal1 << uBound % 2 + 3;
-				intVal1 = intVal1 + intVal4;
-				uBound += 1;
-			}
-
-			int intVal5 = intVal2 ^ intVal3;
-			intVal5 = intVal5 + (intVal1 | id);
-			intVal5 = intVal5 * (intVal1 | intVal3);
-			intVal5 = intVal5 * (intVal2 ^ id);
-
-			return String.valueOf(intVal5);
-		} catch (Exception e) {
-			e.printStackTrace();
+			bytes = (artist + track).getBytes(UTF_8);
+		} catch (UnsupportedEncodingException e) {
 			return "";
 		}
+		int[] song = new int[bytes.length];
+		for (int i = 0; i < bytes.length; i++) {
+			song[i] = bytes[i] & 0xff;
+		}
+		int intVal1 = 0, intVal2 = 0, intVal3 = 0;
+		intVal1 = (id & 0xFF00) >> 8;
+		if ((id & 0xFF0000) == 0) {
+			intVal3 = 0xFF & ~intVal1;
+		} else {
+			intVal3 = 0xFF & (id & 0x00FF0000) >> 16;
+		}
+
+		intVal3 = intVal3 | (0xFF & id) << 8;
+		intVal3 = intVal3 << 8;
+		intVal3 = intVal3 | 0xFF & intVal1;
+		intVal3 = intVal3 << 8;
+
+		if ((id & 0xFF000000) == 0) {
+			intVal3 = intVal3 | 0xFF & ~id;
+		} else {
+			intVal3 = intVal3 | 0xFF & id >> 24;
+		}
+
+		int uBound = bytes.length - 1;
+		while (uBound >= 0) {
+			int c = song[uBound];
+			if (c >= 0x80) {
+				c = c - 0x100;
+			}
+			intVal1 = c + intVal2;
+			intVal2 = intVal2 << uBound % 2 + 4;
+			intVal2 = intVal1 + intVal2;
+			uBound -= 1;
+		}
+
+		uBound = 0;
+		intVal1 = 0;
+
+		while (uBound <= bytes.length - 1) {
+			int c = song[uBound];
+			if (c >= 128) {
+				c -= 256;
+			}
+			int intVal4 = c + intVal1;
+			intVal1 = intVal1 << uBound % 2 + 3;
+			intVal1 = intVal1 + intVal4;
+			uBound += 1;
+		}
+
+		int intVal5 = intVal2 ^ intVal3;
+		intVal5 = intVal5 + (intVal1 | id);
+		intVal5 = intVal5 * (intVal1 | intVal3);
+		intVal5 = intVal5 * (intVal2 ^ id);
+
+		return String.valueOf(intVal5);
 	}
 
-	private static String urlDownload(int id, String code) {
+	private static String getDownloadUrl(int id, String code) {
 
 		return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?dl?Id=" + id + "&Code=" + code;
 	}
 
-	private static String urlSearch(String artist, String track) {
+	private static String getSearchUrl(String track, String artist) {
 
+		if (track == null) throw new IllegalArgumentException("Track name cannot be null!");
+		if (artist == null)
+			return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?sh?Title=" + track + "&Flags=0";
 		return "http://ttlrcct.qianqian.com/dll/lyricsvr.dll?sh?Artist=" + artist + "&Title="
 				+ track + "&Flags=0";
 	}
@@ -341,5 +335,20 @@ public class LyricsDownloader {
 	public interface OnProgressChangeListener {
 
 		void onProgressChange(int progress, int total);
+	}
+
+	public class SearchResultItem {
+
+		public String title = "";
+		public String artist = "";
+		public int id = 0;
+		public String verify_code = "";
+
+		public SearchResultItem(String title, String artist, int id, String verify_code) {
+			this.title = title;
+			this.artist = artist;
+			this.id = id;
+			this.verify_code = verify_code;
+		}
 	}
 }

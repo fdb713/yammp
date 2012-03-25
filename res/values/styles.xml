@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<style name="Theme.YAMMP" parent="@style/Theme.HoloEverywhereDark.Sherlock">
+	<style name="Theme.YAMMP" parent="@style/Theme.Holo">
 		<item name="vpiTabPageIndicatorStyle">@style/Widget.TabPageIndicator</item>
 		<item name="vpiVerticalTabPageIndicatorStyle">@style/Widget.TabPageIndicator.Vertical</item>
 		<item name="vpiTabTextStyle">@style/Widget.TabPageIndicator.Text</item>

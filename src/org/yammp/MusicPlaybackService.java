@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
@@ -112,7 +113,7 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 	private Cursor mCursor;
 	private int mPlayPos = -1;
 
-	private final Shuffler mShuffler = new Shuffler();
+	private Shuffler mShuffler = null;
 	private int mOpenFailedCounter = 0;
 	private String[] mCursorCols = new String[] { "audio._id AS _id",
 			MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM,
@@ -1947,6 +1948,8 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 					shift += 4;
 				}
 			}
+			//TODO shuffler.
+			mShuffler = new Shuffler(mPlayList);
 			mPlayListLen = plen;
 
 			int pos = mPrefs.getIntState(STATE_KEY_CURRPOS, 0);
@@ -2452,20 +2455,109 @@ public class MusicPlaybackService extends Service implements Constants, OnShakeL
 
 		private int mPrevious;
 		private Random mRandom = new Random();
+		private List<Long> mHistory = new ArrayList<Long>();
+		private long[] mQueue = new long[] {};
+		private List<Long> mUnplayed = new ArrayList<Long>();
+		private Long mPreviousRandom = null, mCurrentRandom = null, mNextRandom = null;
+		private int mPosition = 0;
+		private boolean mTracebackMode = false;
 
-		public int shuffle(int interval) {
-
-			int ret;
-			long ret_id;
-			do {
-				ret = mRandom.nextInt(interval);
-				ret_id = mPlayList[ret];
-			} while (ret == mPrevious && interval > 1 || !isFavorite(ret_id)
-					&& mHistory.contains(ret_id));
-
-			mPrevious = ret;
-			return ret;
+		public Shuffler(long[] queue) {
+			if (queue == null || queue.length <= 0) {
+				throw new IllegalArgumentException("queue cannot be null or zero-sized!");
+			}
+			mQueue = queue;
+			mPreviousRandom = null;
+			mCurrentRandom = (long) mRandom.nextInt(mQueue.length);
+			mHistory.add(mCurrentRandom);
+			long tmp_random = mRandom.nextInt(mQueue.length);
+			while (mCurrentRandom == tmp_random) {
+				tmp_random = mRandom.nextInt(mQueue.length);
+			}
+			mNextRandom = tmp_random;
 		}
+		
+		public void reloadQueue(long[] queue){
+			if (queue == null || queue.length <= 0) {
+				throw new IllegalArgumentException("queue cannot be null or zero-sized!");
+			}
+			mQueue = queue;
+			List<Long> tmp_list = new ArrayList<Long>();
+			for (long item : queue) {
+				tmp_list.add(item);
+			}
+			for (Long item : mHistory) {
+				if (!tmp_list.contains(item)) mHistory.remove(item);
+			}
+		}
+
+		public Long getPrevious() {
+			return mPreviousRandom;
+		}
+
+		public Long getNext() {
+			return mNextRandom;
+		}
+
+		public Long getCurrent() {
+			return mCurrentRandom;
+		}
+
+		public Long doNextShuffle() {
+			if (mHistory.size() > 0) {
+				if (!mTracebackMode) {
+					mPreviousRandom = mCurrentRandom;
+					mCurrentRandom = mNextRandom;
+					mHistory.add(mCurrentRandom);
+					if (mHistory.size() >= 1) {
+						mPosition = mHistory.size() - 1;
+					} else {
+						mPosition = 0;
+					}
+					long tmp_random = mRandom.nextInt(mQueue.length);
+					while (mCurrentRandom == tmp_random) {
+						tmp_random = mRandom.nextInt(mQueue.length);
+					}
+					mNextRandom = tmp_random;
+				} else {
+					mPreviousRandom = mPosition < 0 ? mHistory.get(mPosition) : null;
+					mCurrentRandom = mHistory.get(mPosition);
+					mNextRandom = mPosition < mHistory.size() - 1 ? mHistory.get(mPosition + 1)
+							: null;
+					mPosition++;
+				}
+			} else {
+				mPreviousRandom = null;
+				mCurrentRandom = (long) mRandom.nextInt(mQueue.length);
+				mHistory.add(mCurrentRandom);
+				long tmp_random = mRandom.nextInt(mQueue.length);
+				while (mCurrentRandom == tmp_random) {
+					tmp_random = mRandom.nextInt(mQueue.length);
+				}
+				mNextRandom = tmp_random;
+			}
+			return mCurrentRandom;
+		}
+
+		public void goToPosition(int position) {
+			if (position >= mHistory.size() - 1) {
+				mTracebackMode = false;
+				return;
+			} else if (position < 0) {
+				mPosition = 0;
+			} else {
+				mPosition = position;
+			}
+			mTracebackMode = true;
+			mPreviousRandom = mPosition < 0 ? mHistory.get(mPosition) : null;
+			mCurrentRandom = mHistory.get(mPosition);
+			mNextRandom = mPosition < mHistory.size() - 1 ? mHistory.get(mPosition + 1) : null;
+		}
+
+		public void goByPosition(int offset) {
+			goToPosition(mPosition + offset);
+		}
+
 	}
 
 	/*

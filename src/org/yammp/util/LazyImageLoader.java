@@ -244,7 +244,7 @@ public class LazyImageLoader {
 			} else {
 				cacheDir = context.getCacheDir();
 			}
-			if (!cacheDir.exists()) {
+			if (cacheDir != null && !cacheDir.exists()) {
 				cacheDir.mkdirs();
 			}
 		}

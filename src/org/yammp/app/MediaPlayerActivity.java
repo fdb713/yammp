@@ -29,6 +29,7 @@ import org.yammp.dialog.ScanningProgress;
 import org.yammp.fragment.MusicBrowserFragment;
 import org.yammp.fragment.MusicPlaybackFragment;
 import org.yammp.fragment.VideoFragment;
+import org.yammp.util.PreferencesEditor;
 
 import android.content.Intent;
 import android.media.AudioManager;
@@ -44,14 +45,15 @@ import com.actionbarsherlock.view.Window;
 public class MediaPlayerActivity extends BaseActivity implements Constants {
 
 	private ActionBar mActionBar;
-
 	private PagesAdapter mAdapter;
+	private PreferencesEditor mPrefs;
 
 	@Override
 	public void onCreate(Bundle icicle) {
 
 		requestWindowFeature(Window.FEATURE_ACTION_BAR_OVERLAY);
 		super.onCreate(icicle);
+		mPrefs = new PreferencesEditor(this);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		setContentView(R.layout.main);
 

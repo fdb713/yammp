@@ -167,6 +167,7 @@ public interface Constants {
 	public final static String KEY_SHAKING_THRESHOLD = "shaking_threshold";
 	public final static String KEY_SHAKING_BEHAVIOR = "shaking_behavior";
 	public final static String KEY_BLUR_BACKGROUND = "blur_background";
+	public final static String KEY_LAST_NOWPLAYING = "last_nowplaying";
 
 	public final static float DEFAULT_SHAKING_THRESHOLD = 5000f;
 
@@ -245,12 +246,14 @@ public interface Constants {
 	public final static String BROADCAST_SHUFFLEMODE_CHANGED = "org.yammp.shufflemodechanged";
 	public final static String BROADCAST_PLAYBACK_COMPLETE = "org.yammp.playbackcomplete";
 	public final static String BROADCAST_ASYNC_OPEN_COMPLETE = "org.yammp.asyncopencomplete";
-	public final static String BROADCAST_REFRESH_PROGRESSBAR = "org.yammp.refreshui";
+	public final static String BROADCAST_REFRESH_PROGRESSBAR = "org.yammp.refreshprogress";
 	public final static String BROADCAST_PLAYSTATUS_REQUEST = "org.yammp.playstatusrequest";
 	public final static String BROADCAST_PLAYSTATUS_RESPONSE = "org.yammp.playstatusresponse";
 
 	public final static int MENU_OPEN_URL = R.id.open_url;
 	public final static int MENU_ADD_TO_PLAYLIST = R.id.add_to_playlist;
+	public final static int MENU_TOGGLE_SHUFFLE = R.id.toggle_shuffle;
+	public final static int MENU_TOGGLE_REPEAT = R.id.toggle_repeat;
 	public final static int MENU_SLEEP_TIMER = R.id.sleep_timer;
 	public final static int MENU_SAVE_AS_PLAYLIST = R.id.save_as_playlist;
 	public final static int MENU_CLEAR_PLAYLIST = R.id.clear_playlist;
@@ -259,7 +262,7 @@ public interface Constants {
 	public final static int PLAY_SELECTION = R.id.play_selection;
 	public final static int GOTO_PLAYBACK = R.id.goto_playback;
 	public final static int GOTO_HOME = android.R.id.home;
-	public final static int ADD_TO_FAVORITES = R.id.add_to_favorite;
+	public final static int MENU_ADD_TO_FAVORITES = R.id.add_to_favorite;
 	public final static int PARTY_SHUFFLE = R.id.party_shuffle;
 	public final static int SHUFFLE_ALL = R.id.shuffle_all;
 	public final static int PLAY_ALL = R.id.play_all;

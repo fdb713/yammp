@@ -3,7 +3,6 @@ package org.yammp.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.yammp.BuildConfig;
 import org.yammp.Constants;
 import org.yammp.IMusicPlaybackService;
 import org.yammp.YAMMPApplication;
@@ -17,7 +16,6 @@ import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.util.Log;
 
 public class ServiceInterface implements Constants {
 
@@ -30,27 +28,27 @@ public class ServiceInterface implements Constants {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 			if (BROADCAST_META_CHANGED.equals(action)) {
-				for (MediaStateListener listener : mListeners) {
+				for (MediaStateListener listener : mMediaListeners) {
 					listener.onMetaChanged();
 				}
 			} else if (BROADCAST_PLAYSTATE_CHANGED.equals(action)) {
-				for (MediaStateListener listener : mListeners) {
+				for (MediaStateListener listener : mMediaListeners) {
 					listener.onPlayStateChanged();
 				}
 			} else if (BROADCAST_FAVORITESTATE_CHANGED.equals(action)) {
-				for (MediaStateListener listener : mListeners) {
+				for (MediaStateListener listener : mMediaListeners) {
 					listener.onFavoriteStateChanged();
 				}
 			} else if (BROADCAST_SHUFFLEMODE_CHANGED.equals(action)) {
-				for (MediaStateListener listener : mListeners) {
+				for (MediaStateListener listener : mMediaListeners) {
 					listener.onShuffleModeChanged();
 				}
 			} else if (BROADCAST_REPEATMODE_CHANGED.equals(action)) {
-				for (MediaStateListener listener : mListeners) {
+				for (MediaStateListener listener : mMediaListeners) {
 					listener.onRepeatModeChanged();
 				}
 			} else if (BROADCAST_QUEUE_CHANGED.equals(action)) {
-				for (MediaStateListener listener : mListeners) {
+				for (MediaStateListener listener : mMediaListeners) {
 					listener.onQueueChanged();
 				}
 			}
@@ -59,7 +57,60 @@ public class ServiceInterface implements Constants {
 
 	};
 
-	private List<MediaStateListener> mListeners = new ArrayList<MediaStateListener>();
+	private BroadcastReceiver mLyricsStatusReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if (BROADCAST_NEW_LYRICS_LOADED.equals(action)) {
+				for (LyricsStateListener listener : mLyricsListeners) {
+					listener.onNewLyricsLoaded();
+				}
+			} else if (BROADCAST_LYRICS_REFRESHED.equals(action)) {
+				for (LyricsStateListener listener : mLyricsListeners) {
+					listener.onLyricsRefreshed();
+				}
+			}
+
+		}
+
+	};
+
+	private List<MediaStateListener> mMediaListeners = new ArrayList<MediaStateListener>();
+	private List<LyricsStateListener> mLyricsListeners = new ArrayList<LyricsStateListener>();
+
+	private ServiceConnection mConntecion = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName service, IBinder obj) {
+			mService = IMusicPlaybackService.Stub.asInterface(obj);
+			IntentFilter filter = new IntentFilter() {
+
+				{
+					addAction(BROADCAST_PLAYSTATE_CHANGED);
+					addAction(BROADCAST_META_CHANGED);
+					addAction(BROADCAST_FAVORITESTATE_CHANGED);
+					addAction(BROADCAST_SHUFFLEMODE_CHANGED);
+					addAction(BROADCAST_REPEATMODE_CHANGED);
+					addAction(BROADCAST_QUEUE_CHANGED);
+				}
+			};
+			mContext.registerReceiver(mMediaStatusReceiver, filter);
+			filter = new IntentFilter() {
+
+				{
+					addAction(BROADCAST_NEW_LYRICS_LOADED);
+					addAction(BROADCAST_LYRICS_REFRESHED);
+				}
+			};
+			mContext.registerReceiver(mLyricsStatusReceiver, filter);
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName service) {
+			mService = null;
+		}
+	};
 
 	public ServiceInterface(Context context) {
 		((YAMMPApplication) context.getApplicationContext()).getMediaUtils().bindToService(
@@ -68,9 +119,18 @@ public class ServiceInterface implements Constants {
 
 	}
 
+	public void addLyricsStateListener(LyricsStateListener listener) {
+		if (listener != null) {
+			mLyricsListeners.add(listener);
+			listener.onNewLyricsLoaded();
+			listener.onLyricsRefreshed();
+		}
+
+	}
+
 	public void addMediaStateListener(MediaStateListener listener) {
 		if (listener != null) {
-			mListeners.add(listener);
+			mMediaListeners.add(listener);
 			listener.onFavoriteStateChanged();
 			listener.onMetaChanged();
 			listener.onPlayStateChanged();
@@ -525,27 +585,6 @@ public class ServiceInterface implements Constants {
 		}
 	}
 
-	private ServiceConnection mConntecion = new ServiceConnection() {
-
-		@Override
-		public void onServiceConnected(ComponentName service, IBinder obj) {
-			mService = IMusicPlaybackService.Stub.asInterface(obj);
-			IntentFilter filter = new IntentFilter();
-			filter.addAction(BROADCAST_PLAYSTATE_CHANGED);
-			filter.addAction(BROADCAST_META_CHANGED);
-			filter.addAction(BROADCAST_FAVORITESTATE_CHANGED);
-			filter.addAction(BROADCAST_SHUFFLEMODE_CHANGED);
-			filter.addAction(BROADCAST_REPEATMODE_CHANGED);
-			filter.addAction(BROADCAST_QUEUE_CHANGED);
-			mContext.registerReceiver(mMediaStatusReceiver, filter);
-		}
-
-		@Override
-		public void onServiceDisconnected(ComponentName service) {
-			mService = null;
-		}
-	};
-
 	public void open(long[] list, int position) {
 		if (mService == null) return;
 		try {
@@ -657,9 +696,15 @@ public class ServiceInterface implements Constants {
 		}
 	}
 
+	public void removeLyricsStateListener(LyricsStateListener listener) {
+		if (listener != null) {
+			mLyricsListeners.remove(listener);
+		}
+	}
+
 	public void removeMediaStateListener(MediaStateListener listener) {
 		if (listener != null) {
-			mListeners.remove(listener);
+			mMediaListeners.remove(listener);
 		}
 	}
 
@@ -804,6 +849,13 @@ public class ServiceInterface implements Constants {
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public interface LyricsStateListener {
+
+		void onLyricsRefreshed();
+
+		void onNewLyricsLoaded();
 	}
 
 	public interface MediaStateListener {
